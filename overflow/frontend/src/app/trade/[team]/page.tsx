@@ -166,40 +166,40 @@ export default function TradePage({ params }: PageProps) {
       <div className="border-b border-[#30363D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <Link
                 href="/"
-                className="flex items-center gap-1.5 text-xs text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
+                className="flex items-center gap-1.5 shrink-0 text-xs text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Markets
+                <span className="hidden sm:inline">Markets</span>
               </Link>
-              <div className="h-4 w-px bg-[#30363D]" />
-              <div className="flex items-center gap-2">
+              <div className="h-4 w-px bg-[#30363D] shrink-0" />
+              <div className="flex items-center gap-2 min-w-0">
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                   style={{ backgroundColor: team.color }}
                 >
                   {team.id}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-[#E6EDF3]">{team.symbol}</span>
-                    <span className="text-xs text-[#8B949E]">{team.name}</span>
+                    <span className="hidden sm:inline text-xs text-[#8B949E]">{team.name}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Price display */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 shrink-0">
               <div className="text-right">
-                <p className="text-xl font-bold tabular-nums text-[#E6EDF3]">
+                <p className="text-lg sm:text-xl font-bold tabular-nums text-[#E6EDF3]">
                   ${formatPrice(team.price)}
                 </p>
                 <div
                   className={cn(
-                    "flex items-center justify-end gap-1 text-sm font-medium",
+                    "flex items-center justify-end gap-1 text-xs sm:text-sm font-medium",
                     isPositive ? "text-[#3FB950]" : "text-[#F85149]"
                   )}
                 >

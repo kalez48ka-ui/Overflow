@@ -1,24 +1,48 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #0D1117;
-  --bg-secondary: #161B22;
-  --bg-tertiary: #1C2128;
-  --border: #30363D;
-  --text-primary: #E6EDF3;
-  --text-secondary: #8B949E;
-  --green: #3FB950;
-  --red: #F85149;
-  --blue: #58A6FF;
+  /* ── Brand ─────────────────────────────────────────────────── */
+  --brand-primary: #E4002B;
+  --brand-primary-hover: #C80025;
+  --brand-primary-muted: rgba(228, 0, 43, 0.15);
 
-  /* Legacy aliases kept for compatibility */
-  --background: #0D1117;
-  --foreground: #E6EDF3;
-  --card: #161B22;
-  --muted: #8B949E;
-  --accent: #E4002B;
-  --positive: #3FB950;
-  --negative: #F85149;
+  /* ── Backgrounds ───────────────────────────────────────────── */
+  --bg-primary: #0D1117;
+  --bg-card: #161B22;
+  --bg-elevated: #21262D;
+  --bg-tertiary: #1C2128;
+
+  /* ── Borders ───────────────────────────────────────────────── */
+  --border: #30363D;
+  --border-light: #3D444D;
+
+  /* ── Text ──────────────────────────────────────────────────── */
+  --text-primary: #E6EDF3;
+  --text-secondary: #C9D1D9;
+  --text-muted: #8B949E;
+
+  /* ── Status / Accent ───────────────────────────────────────── */
+  --green: #3FB950;
+  --green-muted: rgba(63, 185, 80, 0.15);
+  --red: #F85149;
+  --red-muted: rgba(248, 81, 73, 0.15);
+  --blue: #58A6FF;
+  --blue-muted: rgba(88, 166, 255, 0.15);
+  --yellow: #FDB913;
+  --yellow-muted: rgba(253, 185, 19, 0.15);
+  --purple: #6A0DAD;
+  --purple-muted: rgba(106, 13, 173, 0.15);
+
+  /* ── Legacy aliases (backwards-compatible) ─────────────────── */
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --bg-secondary: var(--bg-card);
+  --card: var(--bg-card);
+  --muted: var(--text-muted);
+  --accent: var(--brand-primary);
+  --positive: var(--green);
+  --negative: var(--red);
+  --text-secondary-legacy: var(--text-muted);
 }
 
 * {

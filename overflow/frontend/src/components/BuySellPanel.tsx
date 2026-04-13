@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, ChevronDown, Info, Loader2, Wallet } from "lucide-react";
+import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { parseEther, type Address } from "viem";
 import type { PSLTeam } from "@/types";
@@ -70,22 +71,35 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
       setTxResult("success");
       setTxHash(contractTxHash ?? null);
       setAmount("");
+      toast.success(
+        `${isBuy ? "Buy" : "Sell"} order for ${team.symbol} submitted`,
+        {
+          description: contractTxHash
+            ? `Tx: ${contractTxHash.slice(0, 10)}...${contractTxHash.slice(-6)}`
+            : "Transaction confirmed on-chain",
+        },
+      );
       const timer = setTimeout(() => {
         setTxResult(null);
         setTxHash(null);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [contractSuccess, contractTxHash, useRealContracts]);
+  }, [contractSuccess, contractTxHash, useRealContracts, isBuy, team.symbol]);
 
   useEffect(() => {
     if (useRealContracts && contractError) {
       setIsLoading(false);
       setTxResult("error");
+      const errorMsg = (buyError || sellError)?.message?.slice(0, 120) || "Unknown error";
+      toast.error(
+        `${isBuy ? "Buy" : "Sell"} order for ${team.symbol} failed`,
+        { description: errorMsg },
+      );
       const timer = setTimeout(() => setTxResult(null), 5000);
       return () => clearTimeout(timer);
     }
-  }, [contractError, useRealContracts]);
+  }, [contractError, useRealContracts, isBuy, team.symbol, buyError, sellError]);
 
   useEffect(() => {
     if (useRealContracts) {
@@ -129,6 +143,10 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
       setIsLoading(false);
       setTxResult("success");
       setTxHash(null);
+      toast.success(
+        `${isBuy ? "Bought" : "Sold"} ${team.symbol} (demo mode)`,
+        { description: `${numAmount} ${isBuy ? "WIRE" : team.symbol} — simulated trade` },
+      );
       setTimeout(() => setTxResult(null), 3000);
       setAmount("");
     }

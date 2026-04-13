@@ -9,7 +9,7 @@ module.exports = {
         PORT: 3001,
         DATABASE_URL: "postgresql://overflow:overflow_dev@localhost:5432/overflow",
         RPC_URL: "https://testnet-rpc.wirefluid.com",
-        CRICKET_API_KEY: "",
+        CRICKET_API_KEY: "3f8971a7-5b66-499d-b429-bfc72e35b920",
         FACTORY_ADDRESS: "",
         ORACLE_PRIVATE_KEY: "",
       },

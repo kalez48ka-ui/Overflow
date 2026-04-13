@@ -91,15 +91,15 @@ function UpsetHistoryCard({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-[#8B949E]">
-          <span>Favorite:</span>
-          <span className="font-semibold text-[#F85149]">{event.favoriteTeam}</span>
-          <ChevronRight className="h-3 w-3" />
-          <span>Winner:</span>
-          <span className="font-semibold text-[#3FB950]">{event.upsetTeam}</span>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-xs text-[#8B949E] min-w-0">
+          <span className="shrink-0">Fav:</span>
+          <span className="font-semibold text-[#F85149] truncate">{event.favoriteTeam}</span>
+          <ChevronRight className="h-3 w-3 shrink-0" />
+          <span className="shrink-0">Win:</span>
+          <span className="font-semibold text-[#3FB950] truncate">{event.upsetTeam}</span>
         </div>
-        <span className="text-[10px] text-[#8B949E]">
+        <span className="text-[10px] text-[#8B949E] shrink-0">
           {formatTimestamp(event.date)}
         </span>
       </div>

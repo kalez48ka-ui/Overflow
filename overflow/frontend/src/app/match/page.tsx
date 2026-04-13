@@ -111,10 +111,13 @@ function AiAnalysisPanel() {
   );
 }
 
-function MatchTradingButtons() {
+function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: string }) {
+  const t1 = PSL_TEAMS.find((t) => t.id === team1Id);
+  const t2 = PSL_TEAMS.find((t) => t.id === team2Id);
+
   const teams = [
-    { id: "IU", name: "Islamabad United", symbol: "$IU", color: "#E4002B", price: 0.0842, change: 12.4 },
-    { id: "LQ", name: "Lahore Qalandars", symbol: "$LQ", color: "#00A651", price: 0.0631, change: -3.2 },
+    { id: t1?.id ?? team1Id, name: t1?.name ?? team1Id, symbol: t1?.symbol ?? `$${team1Id}`, color: t1?.color ?? "#58A6FF", price: t1?.price ?? 0.05, change: t1?.change24h ?? 0 },
+    { id: t2?.id ?? team2Id, name: t2?.name ?? team2Id, symbol: t2?.symbol ?? `$${team2Id}`, color: t2?.color ?? "#58A6FF", price: t2?.price ?? 0.05, change: t2?.change24h ?? 0 },
   ];
 
   return (
@@ -305,7 +308,7 @@ function mapApiMatchToMatchData(m: MatchInfo, base: MatchData): MatchData {
   return {
     id: m.id,
     status: m.status,
-    matchType: base.matchType,
+    matchType: m.cricApiName || base.matchType,
     venue: m.venue || base.venue,
     currentBowler: base.currentBowler,
     currentOver,
@@ -317,12 +320,18 @@ function mapApiMatchToMatchData(m: MatchInfo, base: MatchData): MatchData {
 }
 
 export default function MatchPage() {
-  const [activeChart, setActiveChart] = useState<"IU" | "LQ">("IU");
+  const [activeChart, setActiveChart] = useState<string>(LIVE_MATCH.team1.teamId);
   const [matchData, setMatchData] = useState<MatchData>(LIVE_MATCH);
   const [upcomingMatch, setUpcomingMatch] = useState<MatchInfo | null>(null);
   const [hasLiveMatch, setHasLiveMatch] = useState(true);
   const [loading, setLoading] = useState(true);
   const socketRef = useRef<Socket | null>(null);
+
+  // Derive dynamic team IDs from current match data
+  const team1Id = matchData.team1.teamId;
+  const team2Id = matchData.team2.teamId;
+  const team1 = PSL_TEAMS.find((t) => t.id === team1Id);
+  const team2 = PSL_TEAMS.find((t) => t.id === team2Id);
 
   // Fetch live match data from API
   const fetchLiveData = useCallback(async () => {
@@ -330,7 +339,17 @@ export default function MatchPage() {
       const liveMatches = await api.matches.getLive();
       if (liveMatches && liveMatches.length > 0) {
         setHasLiveMatch(true);
-        setMatchData((prev) => mapApiMatchToMatchData(liveMatches[0], prev));
+        const live = liveMatches[0];
+        setMatchData((prev) => mapApiMatchToMatchData(live, prev));
+        // Default chart to team1 of the live match
+        const t1 = live.team1Id || LIVE_MATCH.team1.teamId;
+        setActiveChart((prev) => {
+          // Only reset if the current teams changed
+          if (prev !== t1 && prev !== (live.team2Id || LIVE_MATCH.team2.teamId)) {
+            return t1;
+          }
+          return prev;
+        });
         return true;
       } else {
         setHasLiveMatch(false);
@@ -442,8 +461,11 @@ export default function MatchPage() {
     };
   }, [fetchLiveData]);
 
-  const iuTeam = PSL_TEAMS.find((t) => t.id === "IU")!;
-  const lqTeam = PSL_TEAMS.find((t) => t.id === "LQ")!;
+  // Build the two-team array for chart switcher and trading buttons
+  const matchTeams = [
+    { id: team1Id, team: team1 },
+    { id: team2Id, team: team2 },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0D1117]">
@@ -524,30 +546,27 @@ export default function MatchPage() {
                 <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
                   <span className="text-sm font-medium text-[#E6EDF3]">Price Chart</span>
                   <div className="ml-auto flex items-center gap-1">
-                    {(["IU", "LQ"] as const).map((id) => {
-                      const team = PSL_TEAMS.find((t) => t.id === id)!;
-                      return (
-                        <button
-                          key={id}
-                          onClick={() => setActiveChart(id)}
-                          className={cn(
-                            "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
-                            activeChart === id
-                              ? "text-white"
-                              : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
-                          )}
-                          style={activeChart === id ? { backgroundColor: team.color } : {}}
-                        >
-                          {team.symbol}
-                        </button>
-                      );
-                    })}
+                    {matchTeams.map(({ id, team: t }) => (
+                      <button
+                        key={id}
+                        onClick={() => setActiveChart(id)}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                          activeChart === id
+                            ? "text-white"
+                            : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
+                        )}
+                        style={activeChart === id ? { backgroundColor: t?.color ?? "#58A6FF" } : {}}
+                      >
+                        {t?.symbol ?? `$${id}`}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className="p-2">
                   <TradingChart
-                    data={CANDLESTICK_DATA[activeChart]}
-                    teamColor={PSL_TEAMS.find((t) => t.id === activeChart)!.color}
+                    data={CANDLESTICK_DATA[activeChart] ?? CANDLESTICK_DATA["IU"]}
+                    teamColor={PSL_TEAMS.find((t) => t.id === activeChart)?.color ?? "#58A6FF"}
                     height={280}
                   />
                 </div>
@@ -567,7 +586,7 @@ export default function MatchPage() {
                 matchContext={matchData.matchType}
                 defaultOpen={false}
               />
-              <MatchTradingButtons />
+              <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
             </div>
           </div>
         </div>
@@ -584,10 +603,7 @@ export default function MatchPage() {
                 <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
                   <span className="text-sm font-medium text-[#E6EDF3]">Price Chart</span>
                   <div className="ml-auto flex items-center gap-1">
-                    {[
-                      { id: "IU" as const, team: iuTeam },
-                      { id: "LQ" as const, team: lqTeam },
-                    ].map(({ id, team }) => (
+                    {matchTeams.map(({ id, team: t }) => (
                       <button
                         key={id}
                         onClick={() => setActiveChart(id)}
@@ -599,19 +615,19 @@ export default function MatchPage() {
                         )}
                         style={
                           activeChart === id
-                            ? { backgroundColor: team.color }
+                            ? { backgroundColor: t?.color ?? "#58A6FF" }
                             : {}
                         }
                       >
-                        {team.symbol}
+                        {t?.symbol ?? `$${id}`}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="p-2">
                   <TradingChart
-                    data={CANDLESTICK_DATA[activeChart]}
-                    teamColor={activeChart === "IU" ? iuTeam.color : lqTeam.color}
+                    data={CANDLESTICK_DATA[activeChart] ?? CANDLESTICK_DATA["IU"]}
+                    teamColor={PSL_TEAMS.find((t) => t.id === activeChart)?.color ?? "#58A6FF"}
                     height={280}
                   />
                 </div>
@@ -635,7 +651,7 @@ export default function MatchPage() {
                 matchContext={matchData.matchType}
                 defaultOpen={false}
               />
-              <MatchTradingButtons />
+              <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
             </div>
           </div>
         </div>

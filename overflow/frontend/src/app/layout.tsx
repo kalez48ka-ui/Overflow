@@ -4,6 +4,7 @@ import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
 import { Navbar } from "@/components/Navbar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToastProvider } from "@/components/ToastProvider";
 import { Zap, CheckCircle2 } from "lucide-react";
 
 const inter = Inter({
@@ -105,6 +106,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-[#0D1117] text-[#E6EDF3] antialiased">
         <WalletProvider>
+          <ToastProvider />
           <Navbar />
           <main>
             <ErrorBoundary>{children}</ErrorBoundary>

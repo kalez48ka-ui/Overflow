@@ -200,6 +200,12 @@ export const api = {
     getUpcoming: (): Promise<MatchInfo[]> =>
       fetchJSON(`${API_URL}/api/matches/upcoming`),
 
+    getAll: (): Promise<MatchInfo[]> =>
+      fetchJSON(`${API_URL}/api/matches`),
+
+    getCompleted: (): Promise<MatchInfo[]> =>
+      fetchJSON(`${API_URL}/api/matches/completed`),
+
     getById: (id: string): Promise<MatchInfo> =>
       fetchJSON(`${API_URL}/api/matches/${encodeURIComponent(id)}`),
   },

@@ -1,7 +1,16 @@
-import { createConfig, http } from "wagmi";
+import { http, createConfig, createStorage, cookieStorage } from "wagmi";
 import { defineChain } from "viem";
-import { getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+import {
+  injectedWallet,
+  metaMaskWallet,
+  walletConnectWallet,
+  coinbaseWallet,
+} from "@rainbow-me/rainbowkit/wallets";
 
+// ---------------------------------------------------------------------------
+// WireFluid Testnet chain definition
+// ---------------------------------------------------------------------------
 export const wireFluid = defineChain({
   id: 7777,
   name: "WireFluid Testnet",
@@ -24,13 +33,41 @@ export const wireFluid = defineChain({
   testnet: true,
 });
 
-export const wagmiConfig = getDefaultConfig({
+// ---------------------------------------------------------------------------
+// Wallet connectors — MetaMask + injected always work without a project ID.
+// WalletConnect is only added when a real project ID is provided.
+// ---------------------------------------------------------------------------
+const wcProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? "";
+const hasValidProjectId =
+  wcProjectId.length > 10 && wcProjectId !== "YOUR_PROJECT_ID" && wcProjectId !== "demo";
+
+const walletList: Parameters<typeof connectorsForWallets>[0] = [
+  {
+    groupName: "Recommended",
+    wallets: [
+      injectedWallet,
+      metaMaskWallet,
+      coinbaseWallet,
+      ...(hasValidProjectId ? [walletConnectWallet] : []),
+    ],
+  },
+];
+
+const connectors = connectorsForWallets(walletList, {
   appName: "Overflow",
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "YOUR_PROJECT_ID",
+  projectId: hasValidProjectId ? wcProjectId : "placeholder_unused",
+});
+
+// ---------------------------------------------------------------------------
+// wagmi config
+// ---------------------------------------------------------------------------
+export const wagmiConfig = createConfig({
+  connectors,
   chains: [wireFluid],
   transports: {
     [wireFluid.id]: http("https://testnet-rpc.wirefluid.com"),
   },
+  storage: createStorage({ storage: cookieStorage }),
   ssr: true,
 });
 

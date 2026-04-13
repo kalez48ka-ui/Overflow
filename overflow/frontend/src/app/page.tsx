@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { SafeConnectButton } from "@/components/WalletProvider";
 import {
@@ -12,6 +12,9 @@ import {
   Activity,
   Trophy,
   Flame,
+  Search,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 // Note: Footer is rendered by the root layout — no per-page footer needed.
 import { TeamCard } from "@/components/TeamCard";
@@ -41,6 +44,55 @@ export default function LandingPage() {
   const [teams, setTeams] = useState<PSLTeam[]>(PSL_TEAMS);
   const [loading, setLoading] = useState(true);
   const [vaultState, setVaultState] = useState<VaultState | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"rank" | "price" | "change24h" | "volume" | "marketCap">("rank");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const displayTeams = useMemo(() => {
+    let filtered = teams;
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      filtered = teams.filter(
+        (t) =>
+          t.name.toLowerCase().includes(q) ||
+          t.symbol.toLowerCase().includes(q)
+      );
+    }
+
+    const sorted = [...filtered].sort((a, b) => {
+      let aVal: number;
+      let bVal: number;
+
+      switch (sortBy) {
+        case "rank":
+          aVal = a.ranking ?? 999;
+          bVal = b.ranking ?? 999;
+          break;
+        case "price":
+          aVal = a.price;
+          bVal = b.price;
+          break;
+        case "change24h":
+          aVal = a.change24h;
+          bVal = b.change24h;
+          break;
+        case "volume":
+          aVal = a.volume24h;
+          bVal = b.volume24h;
+          break;
+        case "marketCap":
+          aVal = a.marketCap;
+          bVal = b.marketCap;
+          break;
+        default:
+          return 0;
+      }
+
+      return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+    });
+
+    return sorted;
+  }, [teams, searchQuery, sortBy, sortDir]);
 
   useEffect(() => {
     let cancelled = false;
@@ -144,7 +196,7 @@ export default function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-center"
           >
-            <h1 className="mx-auto max-w-3xl text-5xl font-black leading-[1.1] tracking-tight text-[#E6EDF3] sm:text-6xl lg:text-7xl">
+            <h1 className="mx-auto max-w-3xl text-3xl font-black leading-[1.1] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl">
               Every Ball Moves{" "}
               <span className="bg-gradient-to-r from-[#E4002B] via-[#FDB913] to-[#00A651] bg-clip-text text-transparent">
                 Markets.
@@ -212,6 +264,60 @@ export default function LandingPage() {
           </Link>
         </div>
 
+        {/* Search & sort controls */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8B949E]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search teams..."
+              className="w-full rounded-lg border border-[#30363D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-colors focus:border-[#58A6FF] sm:w-56"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {(
+              [
+                { key: "rank", label: "Rank" },
+                { key: "price", label: "Price" },
+                { key: "change24h", label: "24h Change" },
+                { key: "volume", label: "Volume" },
+                { key: "marketCap", label: "Market Cap" },
+              ] as const
+            ).map(({ key, label }) => {
+              const isActive = sortBy === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => {
+                    if (isActive) {
+                      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                    } else {
+                      setSortBy(key);
+                      setSortDir("asc");
+                    }
+                  }}
+                  className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    isActive
+                      ? "border-[#58A6FF] bg-[#161B22] text-[#E6EDF3]"
+                      : "border-[#30363D] text-[#8B949E] hover:border-[#58A6FF]/50"
+                  }`}
+                >
+                  {label}
+                  {isActive &&
+                    (sortDir === "asc" ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    ))}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {loading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: PSL_TEAMS.length }).map((_, i) => (
@@ -221,9 +327,16 @@ export default function LandingPage() {
               />
             ))}
           </div>
+        ) : displayTeams.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-[#30363D] bg-[#161B22] py-16 text-center">
+            <Search className="mb-3 h-8 w-8 text-[#30363D]" />
+            <p className="text-sm text-[#8B949E]">
+              No teams match &quot;{searchQuery}&quot;
+            </p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {teams.map((team, i) => (
+            {displayTeams.map((team, i) => (
               <TeamCard key={team.id} team={team} index={i} />
             ))}
           </div>
@@ -299,6 +412,16 @@ export default function LandingPage() {
               </motion.div>
             ))}
           </div>
+
+          <div className="mt-8 text-center">
+            <Link
+              href="/how-it-works"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[#58A6FF] hover:text-[#79C0FF] transition-colors"
+            >
+              Learn the full mechanics
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -309,13 +432,13 @@ export default function LandingPage() {
           <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full bg-[#6A0DAD]/10 blur-3xl" />
           <div className="pointer-events-none absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-[#6A0DAD]/5 blur-3xl" />
 
-          <div className="relative grid md:grid-cols-2 gap-0">
-            <div className="p-8 sm:p-10">
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-0">
+            <div className="p-6 sm:p-10">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#6A0DAD]/50 bg-[#6A0DAD]/20 px-3 py-1 text-xs font-semibold text-[#A855F7]">
                 <Flame className="h-3 w-3" />
                 Upset Vault
               </div>
-              <h2 className="text-3xl font-black text-[#E6EDF3] leading-tight">
+              <h2 className="text-2xl font-black text-[#E6EDF3] leading-tight sm:text-3xl">
                 Favorites Lose.{" "}
                 <span className="text-[#A855F7]">You Win.</span>
               </h2>
@@ -358,12 +481,12 @@ export default function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="flex items-center justify-center border-l border-[#6A0DAD]/20 p-8 sm:p-10">
+            <div className="flex items-center justify-center border-t border-[#6A0DAD]/20 p-6 sm:p-10 md:border-l md:border-t-0">
               <div className="text-center">
                 <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#8B949E]">
                   Current Vault Balance
                 </p>
-                <p className="mt-3 text-5xl font-black text-[#E6EDF3] sm:text-6xl tabular-nums tracking-tight">
+                <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight">
                   $42.8K
                 </p>
                 <p className="mt-2 text-sm font-medium text-[#A855F7]">
