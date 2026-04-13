@@ -10,6 +10,8 @@ import {
   TrendingUp,
   Zap,
   Activity,
+  Trophy,
+  Flame,
 } from "lucide-react";
 // Note: Footer is rendered by the root layout — no per-page footer needed.
 import { TeamCard } from "@/components/TeamCard";
@@ -28,8 +30,8 @@ function FeaturePill({
   label: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-[#30363D] bg-[#161B22] px-3 py-1.5 text-xs text-[#8B949E]">
-      <Icon className="h-3 w-3" />
+    <div className="flex items-center gap-2 rounded-full border border-[#30363D]/60 bg-[#161B22]/80 px-4 py-1.5 text-xs font-medium text-[#C9D1D9] backdrop-blur-sm">
+      <Icon className="h-3.5 w-3.5 text-[#58A6FF]" />
       {label}
     </div>
   );
@@ -98,19 +100,33 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#0D1117]">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* Background effects */}
+        {/* Animated gradient background */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/4 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-[#E4002B]/5 blur-3xl" />
-          <div className="absolute right-1/4 top-20 h-96 w-96 translate-x-1/2 rounded-full bg-[#00529B]/5 blur-3xl" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_60%,#0D1117)]" />
+          <div
+            className="absolute inset-0 opacity-30"
+            style={{
+              background:
+                "radial-gradient(ellipse 80% 50% at 50% -20%, #E4002B15 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 80% 50%, #6A0DAD10 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 20% 60%, #00529B10 0%, transparent 50%)",
+            }}
+          />
+          {/* Subtle grid overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage:
+                "linear-gradient(#E6EDF3 1px, transparent 1px), linear-gradient(90deg, #E6EDF3 1px, transparent 1px)",
+              backgroundSize: "64px 64px",
+            }}
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,#0D1117)]" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-12 pt-16 sm:px-6 sm:pt-20">
+        <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pt-24">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-6 flex justify-center"
+            className="mb-8 flex justify-center"
           >
             <div className="flex items-center gap-2 rounded-full border border-[#E4002B]/40 bg-[#E4002B]/10 px-4 py-1.5 text-xs font-medium text-[#E4002B]">
               <span className="relative flex h-2 w-2">
@@ -128,17 +144,14 @@ export default function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-center"
           >
-            <h1 className="mx-auto max-w-4xl text-4xl font-black leading-tight tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-6xl">
-              Where Cricket Knowledge
-              <br />
+            <h1 className="mx-auto max-w-3xl text-5xl font-black leading-[1.1] tracking-tight text-[#E6EDF3] sm:text-6xl lg:text-7xl">
+              Every Ball Moves{" "}
               <span className="bg-gradient-to-r from-[#E4002B] via-[#FDB913] to-[#00A651] bg-clip-text text-transparent">
-                Becomes Financial Power
+                Markets.
               </span>
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-base text-[#8B949E] sm:text-lg">
-              Trade tokenized PSL team stocks on the WireFluid blockchain. Token
-              prices move with team performance. Earn from upsets, predict
-              outcomes, and profit from your cricket expertise.
+            <p className="mx-auto mt-5 max-w-lg text-base text-[#8B949E] sm:text-lg">
+              Trade PSL team tokens. Prices shift with live match performance.
             </p>
           </motion.div>
 
@@ -147,9 +160,9 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
+            className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
-            <SafeConnectButton label="Connect Wallet to Trade" showBalance={false} />
+            <SafeConnectButton label="Start Trading" showBalance={false} />
             <Link
               href="/match"
               className="flex items-center gap-2 rounded-xl border border-[#30363D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#8B949E] transition-colors"
@@ -159,17 +172,17 @@ export default function LandingPage() {
             </Link>
           </motion.div>
 
-          {/* Feature pills */}
+          {/* Trust signal pills */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-2"
           >
-            <FeaturePill icon={TrendingUp} label="Performance-backed prices" />
-            <FeaturePill icon={Shield} label="Upset Vault rewards" />
-            <FeaturePill icon={Zap} label="Real-time settlement" />
-            <FeaturePill icon={BarChart2} label="Dynamic sell tax" />
+            <FeaturePill icon={Trophy} label="6 Teams" />
+            <FeaturePill icon={Activity} label="Live Prices" />
+            <FeaturePill icon={Zap} label="AI Signals" />
+            <FeaturePill icon={Flame} label="Upset Vault" />
           </motion.div>
         </div>
       </section>
@@ -221,9 +234,11 @@ export default function LandingPage() {
       <section className="border-t border-[#30363D] bg-[#161B22]/30">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold text-[#E6EDF3]">How Overflow Works</h2>
+            <h2 className="text-2xl font-black text-[#E6EDF3]">
+              Four Steps. Zero Complexity.
+            </h2>
             <p className="mt-2 text-sm text-[#8B949E]">
-              Cricket knowledge translates directly to trading edge
+              From wallet connect to payout in minutes
             </p>
           </div>
 
@@ -231,39 +246,46 @@ export default function LandingPage() {
             {[
               {
                 step: "01",
-                title: "Connect Wallet",
-                desc: "Connect to WireFluid Testnet with your Web3 wallet to access the platform.",
+                title: "Connect",
+                desc: "Link your Web3 wallet to WireFluid Testnet. Takes 10 seconds.",
                 color: "#58A6FF",
               },
               {
                 step: "02",
-                title: "Pick Your Team",
-                desc: "Buy tokens for the PSL teams you believe will perform. Prices move with match outcomes.",
+                title: "Pick a Side",
+                desc: "Buy tokens for teams you back. Prices are driven by real match outcomes.",
                 color: "#3FB950",
               },
               {
                 step: "03",
-                title: "Watch & Trade",
-                desc: "Monitor live match data. React to wickets, sixes, and run rates before prices adjust.",
+                title: "Trade Live",
+                desc: "React to wickets, sixes, and collapses. The pitch is your trading floor.",
                 color: "#FDB913",
               },
               {
                 step: "04",
-                title: "Earn from Upsets",
-                desc: "When underdogs win, the Upset Vault distributes rewards to those who called it.",
+                title: "Collect",
+                desc: "Underdogs win? The Upset Vault rewards you for calling it right.",
                 color: "#6A0DAD",
               },
-            ].map(({ step, title, desc, color }) => (
+            ].map(({ step, title, desc, color }, i) => (
               <motion.div
                 key={step}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="rounded-xl border border-[#30363D] bg-[#161B22] p-5"
+                transition={{ delay: i * 0.08 }}
+                className="group relative rounded-xl border border-[#30363D] bg-[#161B22] p-5 transition-colors hover:border-opacity-60"
+                style={{ ["--step-color" as string]: color }}
               >
+                {/* Top accent line */}
+                <div
+                  className="absolute top-0 left-4 right-4 h-px opacity-0 transition-opacity group-hover:opacity-100"
+                  style={{ backgroundColor: color }}
+                />
                 <div
                   className="mb-3 text-3xl font-black"
-                  style={{ color: `${color}60` }}
+                  style={{ color: `${color}50` }}
                 >
                   {step}
                 </div>
@@ -282,64 +304,80 @@ export default function LandingPage() {
 
       {/* Upset Vault explainer */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="overflow-hidden rounded-2xl border border-[#6A0DAD]/30 bg-gradient-to-br from-[#2A0050]/40 to-[#161B22]">
-          <div className="grid md:grid-cols-2 gap-0">
-            <div className="p-8">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#6A0DAD]/50 bg-[#6A0DAD]/20 px-3 py-1 text-xs font-semibold text-[#6A0DAD]">
-                <Shield className="h-3 w-3" />
+        <div className="relative overflow-hidden rounded-2xl border border-[#6A0DAD]/30 bg-gradient-to-br from-[#2A0050]/40 via-[#161B22] to-[#161B22]">
+          {/* Decorative glow */}
+          <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full bg-[#6A0DAD]/10 blur-3xl" />
+          <div className="pointer-events-none absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-[#6A0DAD]/5 blur-3xl" />
+
+          <div className="relative grid md:grid-cols-2 gap-0">
+            <div className="p-8 sm:p-10">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#6A0DAD]/50 bg-[#6A0DAD]/20 px-3 py-1 text-xs font-semibold text-[#A855F7]">
+                <Flame className="h-3 w-3" />
                 Upset Vault
               </div>
-              <h2 className="text-2xl font-black text-[#E6EDF3]">
-                Profit When Favorites Lose
+              <h2 className="text-3xl font-black text-[#E6EDF3] leading-tight">
+                Favorites Lose.{" "}
+                <span className="text-[#A855F7]">You Win.</span>
               </h2>
               <p className="mt-3 text-sm text-[#8B949E] leading-relaxed">
-                Every trade contributes 2% of fees to the Upset Vault. When an
-                underdog team wins a match, the vault distributes funds to
-                holders of the winning team&apos;s tokens — scaled by an Upset
-                Multiplier that grows with the odds differential.
+                2% of every trade fee flows into the Vault. When an underdog
+                pulls off the upset, holders of the winning team&apos;s tokens
+                split the pot — with a multiplier that scales with how unlikely
+                the win was.
               </p>
-              <div className="mt-6 space-y-3">
+              <div className="mt-6 space-y-2.5">
                 {[
-                  { label: "Minor upset (40% win prob)", multiplier: "1.5x" },
-                  { label: "Major upset (25% win prob)", multiplier: "2.8x" },
-                  { label: "Extreme upset (<15% prob)", multiplier: "4.2x+" },
-                ].map(({ label, multiplier }) => (
-                  <div key={label} className="flex items-center justify-between">
-                    <span className="text-xs text-[#8B949E]">{label}</span>
-                    <span className="rounded-full bg-[#6A0DAD]/20 px-2 py-0.5 text-xs font-bold text-[#6A0DAD]">
-                      {multiplier}
-                    </span>
+                  { label: "Minor upset (40% win prob)", multiplier: "1.5x", width: "40%" },
+                  { label: "Major upset (25% win prob)", multiplier: "2.8x", width: "65%" },
+                  { label: "Extreme upset (<15% prob)", multiplier: "4.2x+", width: "90%" },
+                ].map(({ label, multiplier, width }) => (
+                  <div key={label}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-[#8B949E]">{label}</span>
+                      <span className="text-xs font-black text-[#A855F7]">
+                        {multiplier}
+                      </span>
+                    </div>
+                    <div className="h-1 rounded-full bg-[#21262D] overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-full bg-gradient-to-r from-[#6A0DAD] to-[#A855F7]"
+                        initial={{ width: 0 }}
+                        whileInView={{ width }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
               <Link
                 href="/vault"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#6A0DAD] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#7B1FA2] transition-colors"
+                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#6A0DAD] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#7B1FA2] transition-colors shadow-lg shadow-[#6A0DAD]/20"
               >
                 View Upset Vault
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="flex items-center justify-center border-l border-[#6A0DAD]/20 p-8">
+            <div className="flex items-center justify-center border-l border-[#6A0DAD]/20 p-8 sm:p-10">
               <div className="text-center">
-                <p className="text-xs uppercase tracking-widest text-[#8B949E]">
+                <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#8B949E]">
                   Current Vault Balance
                 </p>
-                <p className="mt-2 text-6xl font-black text-[#E6EDF3]">
+                <p className="mt-3 text-5xl font-black text-[#E6EDF3] sm:text-6xl tabular-nums tracking-tight">
                   $42.8K
                 </p>
-                <p className="mt-1 text-sm text-[#6A0DAD]">
+                <p className="mt-2 text-sm font-medium text-[#A855F7]">
                   Next payout: IU vs LQ tonight
                 </p>
-                <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+                <div className="mt-8 grid grid-cols-3 gap-4 text-center">
                   {[
-                    { label: "Total Paid Out", value: "$249K" },
-                    { label: "Upset Events", value: "18" },
-                    { label: "Avg Multiplier", value: "2.7x" },
+                    { label: "Paid Out", value: "$249K" },
+                    { label: "Upsets", value: "18" },
+                    { label: "Avg Mult.", value: "2.7x" },
                   ].map(({ label, value }) => (
-                    <div key={label}>
-                      <p className="text-lg font-bold text-[#E6EDF3]">{value}</p>
-                      <p className="text-[10px] text-[#8B949E]">{label}</p>
+                    <div key={label} className="rounded-lg bg-[#0D1117]/60 px-3 py-3 border border-[#30363D]/50">
+                      <p className="text-lg font-black tabular-nums text-[#E6EDF3]">{value}</p>
+                      <p className="text-[10px] text-[#8B949E] mt-0.5">{label}</p>
                     </div>
                   ))}
                 </div>

@@ -24,11 +24,11 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E4002B]">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#E4002B] to-[#B8002A] shadow-lg shadow-[#E4002B]/20 transition-shadow group-hover:shadow-[#E4002B]/30">
               <Zap className="h-4 w-4 text-white" />
             </div>
-            <span className="text-lg font-bold text-[#E6EDF3] tracking-tight">
+            <span className="text-lg font-black text-[#E6EDF3] tracking-tight">
               Over<span className="text-[#E4002B]">flow</span>
             </span>
           </Link>
@@ -52,7 +52,8 @@ export function Navbar() {
                   {label}
                   {href === "/match" && (
                     <span className="relative ml-1 flex h-2 w-2 items-center justify-center">
-                      <span className="absolute inline-flex h-2 w-2 animate-ping rounded-full bg-[#3FB950] opacity-75" />
+                      <span className="absolute inline-flex h-3 w-3 animate-ping rounded-full bg-[#3FB950] opacity-50" />
+                      <span className="absolute inline-flex h-4 w-4 rounded-full bg-[#3FB950]/10" />
                       <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FB950]" />
                     </span>
                   )}

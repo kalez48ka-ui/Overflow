@@ -4,7 +4,7 @@ import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
 import { Navbar } from "@/components/Navbar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Zap } from "lucide-react";
+import { Zap, CheckCircle2 } from "lucide-react";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s | Overflow",
   },
   description:
-    "Trade PSL cricket team tokens on WireFluid blockchain. Backed by real-time match performance, AI-powered upset detection, and DeFi mechanics. The first Halal-compliant cricket prediction market.",
+    "Trade PSL cricket team tokens on WireFluid blockchain. Backed by real-time match performance, AI-powered upset detection, and DeFi mechanics. Shariah-compliant cricket prediction market.",
   keywords: [
     "PSL",
     "cricket",
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "WireFluid",
     "Pakistan Super League",
     "crypto",
-    "halal",
+    "shariah-compliant",
   ],
   authors: [{ name: "Overflow Team" }],
   creator: "Overflow",
@@ -64,23 +64,26 @@ function Footer() {
         <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
           {/* Brand */}
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#E4002B]">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-[#E4002B] to-[#B8002A]">
               <Zap className="h-3 w-3 text-white" aria-hidden="true" />
             </div>
-            <span className="font-bold text-[#E6EDF3]">
+            <span className="font-black text-[#E6EDF3]">
               Over<span className="text-[#E4002B]">flow</span>
             </span>
           </div>
 
           {/* Center tagline */}
-          <p className="text-xs text-[#8B949E]">
+          <p className="flex items-center gap-1 text-xs text-[#8B949E]">
             Built on{" "}
             <span className="text-[#58A6FF] font-medium">WireFluid</span>
             {" "}·{" "}
             Powered by{" "}
             <span className="text-[#58A6FF] font-medium">AI</span>
             {" "}·{" "}
-            <span className="text-[#3FB950] font-medium">Halal Compliant</span>
+            <span className="inline-flex items-center gap-1 text-[#3FB950] font-medium">
+              <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
+              Shariah Compliant
+            </span>
           </p>
 
           {/* Right disclaimer */}

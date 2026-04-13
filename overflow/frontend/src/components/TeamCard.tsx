@@ -65,16 +65,27 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07, duration: 0.35 }}
-      whileHover={{ y: -3, transition: { duration: 0.2 } }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
     >
-      <Link href={`/trade/${team.id.toLowerCase()}`} className="block">
+      <Link href={`/trade/${team.id.toLowerCase()}`} className="block group">
         <div
-          className="relative overflow-hidden rounded-xl border border-[#30363D] bg-[#161B22] p-5 transition-all hover:border-opacity-60"
-          style={{ borderColor: hexToRgba(team.color, 0.35) }}
+          className="relative overflow-hidden rounded-xl border bg-[#161B22] p-5 transition-all duration-300"
+          style={{
+            borderColor: hexToRgba(team.color, 0.25),
+            boxShadow: "0 0 0 0 transparent",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = hexToRgba(team.color, 0.5);
+            e.currentTarget.style.boxShadow = `0 0 24px ${hexToRgba(team.color, 0.12)}, 0 0 0 1px ${hexToRgba(team.color, 0.1)}`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = hexToRgba(team.color, 0.25);
+            e.currentTarget.style.boxShadow = "0 0 0 0 transparent";
+          }}
         >
           {/* Accent glow */}
           <div
-            className="pointer-events-none absolute inset-0 rounded-xl opacity-5"
+            className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.04] transition-opacity duration-300 group-hover:opacity-[0.08]"
             style={{ background: `radial-gradient(circle at top left, ${team.color}, transparent 70%)` }}
           />
 
@@ -83,41 +94,54 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
             <div className="flex items-center gap-3">
               {/* Team logo placeholder */}
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
-                style={{ backgroundColor: team.color }}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-lg"
+                style={{
+                  backgroundColor: team.color,
+                  boxShadow: `0 4px 12px ${hexToRgba(team.color, 0.3)}`,
+                }}
               >
                 {team.id}
               </div>
               <div>
-                <p className="text-xs text-[#8B949E]">{team.symbol}</p>
-                <h3 className="text-sm font-semibold text-[#E6EDF3] leading-tight">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[#8B949E]">{team.symbol}</p>
+                <h3 className="text-sm font-bold text-[#E6EDF3] leading-tight">
                   {team.name}
                 </h3>
               </div>
             </div>
 
-            {/* Sell tax badge */}
-            <span className="rounded-full bg-[#0D1117] px-2 py-0.5 text-[10px] font-medium text-[#8B949E] border border-[#30363D]">
-              {team.sellTax}% tax
-            </span>
+            {/* Ranking badge */}
+            {team.ranking && (
+              <div
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold"
+                style={{
+                  backgroundColor: hexToRgba(team.color, 0.15),
+                  color: team.color,
+                }}
+              >
+                #{team.ranking}
+              </div>
+            )}
           </div>
 
           {/* Price & Chart */}
           <div className="mb-3 flex items-end justify-between">
             <div>
-              <p className="text-xl font-bold tabular-nums text-[#E6EDF3]">
+              <p className="text-2xl font-black tabular-nums tracking-tight text-[#E6EDF3]">
                 ${formatPrice(team.price)}
               </p>
               <div
                 className={cn(
-                  "mt-0.5 flex items-center gap-1 text-sm font-medium",
-                  isPositive ? "text-[#3FB950]" : "text-[#F85149]"
+                  "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold",
+                  isPositive
+                    ? "bg-[#3FB950]/10 text-[#3FB950]"
+                    : "bg-[#F85149]/10 text-[#F85149]"
                 )}
               >
                 {isPositive ? (
-                  <TrendingUp className="h-3.5 w-3.5" />
+                  <TrendingUp className="h-3 w-3" />
                 ) : (
-                  <TrendingDown className="h-3.5 w-3.5" />
+                  <TrendingDown className="h-3 w-3" />
                 )}
                 {formatPercent(team.change24h)}
               </div>
@@ -130,24 +154,30 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-2 gap-2 border-t border-[#30363D] pt-3">
+          <div className="grid grid-cols-3 gap-2 border-t border-[#30363D]/60 pt-3">
             <div>
-              <p className="text-[10px] text-[#8B949E]">24h Volume</p>
-              <p className="text-xs font-semibold text-[#E6EDF3]">
+              <p className="text-[10px] text-[#8B949E]">Volume</p>
+              <p className="text-xs font-bold tabular-nums text-[#E6EDF3]">
                 {formatCurrency(team.volume24h)}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-[#8B949E]">Market Cap</p>
-              <p className="text-xs font-semibold text-[#E6EDF3]">
+              <p className="text-[10px] text-[#8B949E]">Mkt Cap</p>
+              <p className="text-xs font-bold tabular-nums text-[#E6EDF3]">
                 {formatCurrency(team.marketCap)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-[#8B949E]">Tax</p>
+              <p className="text-xs font-bold tabular-nums text-[#8B949E]">
+                {team.sellTax}%
               </p>
             </div>
           </div>
 
           {/* Bottom color bar */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-0.5"
+            className="absolute bottom-0 left-0 right-0 h-[2px] transition-opacity duration-300 opacity-60 group-hover:opacity-100"
             style={{ backgroundColor: team.color }}
           />
         </div>

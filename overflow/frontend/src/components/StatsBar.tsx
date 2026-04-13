@@ -33,18 +33,18 @@ interface StatItemProps {
 
 function StatItem({ label, value, icon: Icon, color, mono }: StatItemProps) {
   return (
-    <div className="flex items-center gap-3 px-4 py-4 sm:px-6">
+    <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6">
       <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-        style={{ backgroundColor: `${color}20` }}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md"
+        style={{ backgroundColor: `${color}15` }}
         aria-hidden="true"
       >
-        <Icon className="h-4 w-4" style={{ color }} />
+        <Icon className="h-3.5 w-3.5" style={{ color }} />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-[#8B949E]">{label}</p>
+        <p className="text-[10px] uppercase tracking-wider font-medium text-[#6E7681]">{label}</p>
         <p
-          className={`truncate text-sm font-bold text-[#E6EDF3] ${mono ? "font-mono tabular-nums" : ""}`}
+          className={`truncate text-sm font-black tracking-tight text-[#E6EDF3] ${mono ? "font-mono" : ""} tabular-nums`}
         >
           {value}
         </p>
@@ -98,12 +98,12 @@ export function StatsBar({
 
   return (
     <div
-      className="border-y border-[#30363D] bg-[#161B22]/50 backdrop-blur"
+      className="border-y border-[#21262D] bg-[#0D1117]/80 backdrop-blur-md"
       role="region"
       aria-label="Platform statistics"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="grid grid-cols-2 divide-x divide-[#30363D] md:grid-cols-4">
+        <div className="grid grid-cols-2 divide-x divide-[#21262D] md:grid-cols-4">
           {stats.map((stat) => (
             <StatItem key={stat.label} {...stat} />
           ))}
