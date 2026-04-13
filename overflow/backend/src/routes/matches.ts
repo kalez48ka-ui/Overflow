@@ -5,11 +5,11 @@ import { CricketDataService } from '../modules/cricket/cricket-data.service';
 function mapMatchToFrontend(match: any) {
   return {
     id: match.id,
-    team1Id: match.homeTeamId,
+    team1Id: match.homeTeam?.symbol ?? match.homeTeamId,
     team1Name: match.homeTeam?.name ?? '',
     team1Symbol: match.homeTeam?.symbol ?? '',
     team1Color: match.homeTeam?.color ?? '',
-    team2Id: match.awayTeamId,
+    team2Id: match.awayTeam?.symbol ?? match.awayTeamId,
     team2Name: match.awayTeam?.name ?? '',
     team2Symbol: match.awayTeam?.symbol ?? '',
     team2Color: match.awayTeam?.color ?? '',

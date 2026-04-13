@@ -233,13 +233,13 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
             </p>
             <div className="grid grid-cols-2 gap-1">
               <Link
-                href={`/trade/${team.id.toLowerCase()}`}
+                href={`/trade/${team.symbol.replace('$', '').toLowerCase()}`}
                 className="rounded-md bg-[#238636] py-2.5 text-center text-xs font-bold text-white hover:bg-[#2EA043] transition-colors"
               >
                 Buy
               </Link>
               <Link
-                href={`/trade/${team.id.toLowerCase()}`}
+                href={`/trade/${team.symbol.replace('$', '').toLowerCase()}`}
                 className="rounded-md bg-[#DA3633] py-2.5 text-center text-xs font-bold text-white hover:bg-[#F85149] transition-colors"
               >
                 Sell
