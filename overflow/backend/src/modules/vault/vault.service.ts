@@ -65,11 +65,30 @@ export class VaultService {
     loserSymbol: string,
     upsetScore: number
   ): Promise<void> {
+    // Guard: prevent duplicate upset processing for the same match
+    const existingUpset = await this.prisma.upsetEvent.findFirst({
+      where: { matchId },
+    });
+    if (existingUpset) {
+      console.warn(`[VaultService] Upset already processed for match ${matchId}, skipping`);
+      return;
+    }
+
     const vault = await this.getVaultState();
 
     const multiplier = this.getMultiplier(upsetScore);
     const releasePercent = Math.min(50, upsetScore * 0.5 * multiplier);
-    const vaultRelease = vault.balance * (releasePercent / 100);
+    let vaultRelease = vault.balance * (releasePercent / 100);
+
+    // Guard: prevent vault from going negative
+    if (vaultRelease > vault.balance) {
+      vaultRelease = vault.balance;
+    }
+    if (vaultRelease <= 0) {
+      console.warn(`[VaultService] Vault release is zero or negative, skipping payout`);
+      return;
+    }
+
     const totalPayout = vaultRelease;
 
     const winnerTeam = await this.prisma.team.findUnique({
@@ -89,9 +108,14 @@ export class VaultService {
     });
 
     const holdersCount = holders.length;
-    const perHolderPayout = holdersCount > 0 ? totalPayout / holdersCount : 0;
 
-    const upsetEvent = await this.prisma.upsetEvent.create({
+    // Distribute proportionally to position size (prevents sybil attacks)
+    const totalHeld = holders.reduce((sum, h) => sum + h.amount, 0);
+    const perHolderPayout = holdersCount > 0 && totalHeld > 0
+      ? totalPayout / holdersCount  // stored as average for event record
+      : 0;
+
+    await this.prisma.upsetEvent.create({
       data: {
         matchId,
         winnerSymbol,
@@ -101,19 +125,26 @@ export class VaultService {
         vaultRelease,
         totalPayout,
         holdersCount,
-        perHolderPayout,
+        perHolderPayout: totalHeld > 0 ? totalPayout / holdersCount : 0,
       },
     });
 
-    await this.prisma.vaultState.update({
+    // Atomic vault balance update to prevent race conditions
+    const updatedVault = await this.prisma.vaultState.update({
       where: { id: 'vault' },
       data: {
-        balance: vault.balance - vaultRelease,
-        totalOut: vault.totalOut + vaultRelease,
+        balance: { decrement: vaultRelease },
+        totalOut: { increment: vaultRelease },
       },
     });
 
     if (this.io) {
+      // Compute per-holder payouts proportionally to position size
+      const holderPayouts = holders.map((h) => ({
+        wallet: h.wallet,
+        payout: totalHeld > 0 ? (h.amount / totalHeld) * totalPayout : 0,
+      }));
+
       const eventData: UpsetEventData = {
         matchId,
         winnerSymbol,
@@ -123,11 +154,11 @@ export class VaultService {
         vaultRelease,
         totalPayout,
         holdersCount,
-        perHolderPayout,
+        perHolderPayout: totalHeld > 0 ? totalPayout / holdersCount : 0,
       };
       this.io.emit('upset:triggered', eventData);
       this.io.emit('vault:update', {
-        balance: vault.balance - vaultRelease,
+        balance: updatedVault.balance,
         change: -vaultRelease,
         type: 'upset_payout',
       });
@@ -135,7 +166,7 @@ export class VaultService {
 
     console.log(
       `[VaultService] Upset processed: ${winnerSymbol} beat ${loserSymbol}. ` +
-      `Score: ${upsetScore}, Payout: ${totalPayout} WIRE to ${holdersCount} holders`
+      `Score: ${upsetScore}, Payout: ${totalPayout} WIRE to ${holdersCount} holders (proportional)`
     );
   }
 

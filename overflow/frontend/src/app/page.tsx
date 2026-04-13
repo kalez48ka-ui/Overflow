@@ -233,7 +233,7 @@ export default function LandingPage() {
             transition={{ delay: 0.35 }}
             className="mt-8 flex flex-wrap items-center justify-center gap-2"
           >
-            <FeaturePill icon={Trophy} label="6 Teams" />
+            <FeaturePill icon={Trophy} label="8 Teams" />
             <FeaturePill icon={Activity} label="Live Prices" />
             <FeaturePill icon={Zap} label="AI Signals" />
             <FeaturePill icon={Flame} label="Upset Vault" />

@@ -1,7 +1,19 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { OracleService } from '../modules/oracle/oracle.service';
 import { VaultService } from '../modules/vault/vault.service';
+
+/** Middleware: verify x-admin-token header against ADMIN_SECRET env var */
+export function requireAdminAuth(req: Request, res: Response, next: NextFunction): void {
+  const token = req.headers['x-admin-token'];
+  const secret = process.env.ADMIN_SECRET || 'overflow2026';
+
+  if (!token || token !== secret) {
+    res.status(401).json({ error: 'Unauthorized: invalid or missing admin token' });
+    return;
+  }
+  next();
+}
 
 export function createAdminRouter(
   prisma: PrismaClient,
@@ -9,6 +21,9 @@ export function createAdminRouter(
   vaultService: VaultService,
 ): Router {
   const router = Router();
+
+  // All admin routes require authentication
+  router.use(requireAdminAuth);
 
   /**
    * POST /api/admin/match-result

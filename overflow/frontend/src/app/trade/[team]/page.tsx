@@ -586,20 +586,23 @@ export default function TradePage({ params }: PageProps) {
                   </span>
                   <span className="text-[#F85149]">{team.losses}L</span>
                 </div>
-                <div className="flex h-2 overflow-hidden rounded-full">
-                  <div
-                    className="bg-[#3FB950] transition-all"
-                    style={{
-                      width: `${(team.wins / (team.wins + team.losses)) * 100}%`,
-                    }}
-                  />
-                  <div
-                    className="bg-[#F85149]"
-                    style={{
-                      width: `${(team.losses / (team.wins + team.losses)) * 100}%`,
-                    }}
-                  />
-                </div>
+                {(() => {
+                  const totalPlayed = team.wins + team.losses;
+                  const winPct = totalPlayed > 0 ? (team.wins / totalPlayed) * 100 : 50;
+                  const lossPct = totalPlayed > 0 ? (team.losses / totalPlayed) * 100 : 50;
+                  return (
+                    <div className="flex h-2 overflow-hidden rounded-full">
+                      <div
+                        className="bg-[#3FB950] transition-all"
+                        style={{ width: `${winPct}%` }}
+                      />
+                      <div
+                        className="bg-[#F85149]"
+                        style={{ width: `${lossPct}%` }}
+                      />
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="space-y-2">

@@ -19,12 +19,14 @@ export function createLeaderboardRouter(prisma: PrismaClient): Router {
       const limit = Math.min(parseInt(String(req.query.limit || '50')) || 50, 100);
       const sort = String(req.query.sort || 'pnl');
 
-      // Fetch all trades with team data
+      // Fetch recent trades with team data (bounded to prevent loading entire table)
+      const maxTrades = 10000;
       const trades = await prisma.trade.findMany({
         include: {
           team: { select: { symbol: true, currentPrice: true } },
         },
         orderBy: { createdAt: 'desc' },
+        take: maxTrades,
       });
 
       // Aggregate per wallet

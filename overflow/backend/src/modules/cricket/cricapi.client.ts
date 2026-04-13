@@ -93,7 +93,7 @@ export class CricApiClient {
     const { data } = await this.http.get<CricApiResponse<CricApiMatch[]>>('/currentMatches', {
       params: { apikey: this.apiKey, offset },
     });
-    return data;
+    return this.stripApiKey(data);
   }
 
   // ---------------------------------------------------------------------------
@@ -104,7 +104,7 @@ export class CricApiClient {
     const { data } = await this.http.get<CricApiResponse<CricApiMatch[]>>('/matches', {
       params: { apikey: this.apiKey, offset },
     });
-    return data;
+    return this.stripApiKey(data);
   }
 
   // ---------------------------------------------------------------------------
@@ -115,7 +115,7 @@ export class CricApiClient {
     const { data } = await this.http.get<CricApiResponse<CricApiMatch>>('/match_info', {
       params: { apikey: this.apiKey, id: matchId },
     });
-    return data;
+    return this.stripApiKey(data);
   }
 
   // ---------------------------------------------------------------------------
@@ -129,7 +129,7 @@ export class CricApiClient {
     const { data } = await this.http.get<CricApiResponse<CricApiSeries[]>>('/series', {
       params,
     });
-    return data;
+    return this.stripApiKey(data);
   }
 
   // ---------------------------------------------------------------------------

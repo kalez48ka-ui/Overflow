@@ -163,6 +163,36 @@ async function fetchJSON<T>(
   return res.json() as Promise<T>;
 }
 
+/** Build headers that include the admin token when available. */
+export function adminHeaders(): Record<string, string> {
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("overflow_admin_token")
+      : null;
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { "x-admin-token": token } : {}),
+  };
+}
+
+async function adminFetchJSON<T>(
+  url: string,
+  options?: RequestInit,
+): Promise<T> {
+  const headers = adminHeaders();
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...headers, ...(options?.headers as Record<string, string>) },
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text().catch(() => "Unknown error");
+    throw new Error(`API error ${res.status}: ${errorBody}`);
+  }
+
+  return res.json() as Promise<T>;
+}
+
 // ---------------------------------------------------------------------------
 // API client
 // ---------------------------------------------------------------------------
@@ -340,11 +370,25 @@ export interface AdminPriceUpdateResponse {
 // ---------------------------------------------------------------------------
 
 export const adminApi = {
+  /** Verify admin token against the backend. Returns true on 200, false on 401. */
+  verifyToken: async (): Promise<boolean> => {
+    try {
+      await adminFetchJSON(`${API_URL}/api/admin/recalculate`, {
+        method: "POST",
+      });
+      return true;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("401")) return false;
+      // Network errors etc. — treat as unauthenticated to be safe
+      return false;
+    }
+  },
+
   submitMatchResult: (
     matchId: string,
     winnerId: string,
   ): Promise<AdminMatchResultResponse> =>
-    fetchJSON(`${API_URL}/api/admin/match-result`, {
+    adminFetchJSON(`${API_URL}/api/admin/match-result`, {
       method: "POST",
       body: JSON.stringify({ matchId, winnerId }),
     }),
@@ -355,13 +399,13 @@ export const adminApi = {
     loserSymbol: string,
     upsetScore: number,
   ): Promise<AdminUpsetResponse> =>
-    fetchJSON(`${API_URL}/api/admin/trigger-upset`, {
+    adminFetchJSON(`${API_URL}/api/admin/trigger-upset`, {
       method: "POST",
       body: JSON.stringify({ matchId, winnerSymbol, loserSymbol, upsetScore }),
     }),
 
   recalculateRankings: (): Promise<AdminRecalculateResponse> =>
-    fetchJSON(`${API_URL}/api/admin/recalculate`, {
+    adminFetchJSON(`${API_URL}/api/admin/recalculate`, {
       method: "POST",
     }),
 
@@ -369,7 +413,7 @@ export const adminApi = {
     teamSymbol: string,
     newPrice: number,
   ): Promise<AdminPriceUpdateResponse> =>
-    fetchJSON(`${API_URL}/api/admin/price-update`, {
+    adminFetchJSON(`${API_URL}/api/admin/price-update`, {
       method: "POST",
       body: JSON.stringify({ teamSymbol, newPrice }),
     }),

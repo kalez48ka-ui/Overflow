@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { requireAdminAuth } from './admin';
 import { CricketDataService } from '../modules/cricket/cricket-data.service';
 
 function mapMatchToFrontend(match: any) {
@@ -77,8 +78,8 @@ export function createMatchesRouter(cricketService: CricketDataService): Router 
     res.json(cricketService.getApiStats());
   });
 
-  // Force sync PSL matches from CricAPI
-  router.post('/sync', async (_req: Request, res: Response) => {
+  // Force sync PSL matches from CricAPI (admin only)
+  router.post('/sync', requireAdminAuth, async (_req: Request, res: Response) => {
     try {
       await cricketService.syncPSLMatches();
       res.json({ status: 'ok', message: 'PSL matches synced' });
@@ -88,8 +89,8 @@ export function createMatchesRouter(cricketService: CricketDataService): Router 
     }
   });
 
-  // Force refresh a specific match from CricAPI
-  router.post('/refresh/:cricApiId', async (req: Request, res: Response) => {
+  // Force refresh a specific match from CricAPI (admin only)
+  router.post('/refresh/:cricApiId', requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { cricApiId } = req.params;
       const result = await cricketService.forceRefreshMatch(cricApiId as string);

@@ -49,6 +49,11 @@ export function BallByBall({ events }: BallByBallProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [localEvents, setLocalEvents] = useState(events);
 
+  // Sync local state when parent passes new events (e.g. from WebSocket)
+  useEffect(() => {
+    setLocalEvents(events);
+  }, [events]);
+
   // Auto-scroll to top on new event
   useEffect(() => {
     if (scrollRef.current) {

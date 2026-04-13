@@ -26,36 +26,57 @@ import type {
 } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
-// Password gate
+// Token-based auth — password is sent to backend as x-admin-token header
 // ---------------------------------------------------------------------------
 
-const ADMIN_PASSWORD =
-  process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "overflow2026";
-const STORAGE_KEY = "overflow_admin_auth";
+const TOKEN_STORAGE_KEY = "overflow_admin_token";
 
 function useAdminAuth() {
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "true") {
-      setAuthenticated(true);
+    const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (stored) {
+      // Verify stored token against backend
+      localStorage.setItem(TOKEN_STORAGE_KEY, stored);
+      adminApi
+        .verifyToken()
+        .then((valid) => {
+          if (valid) {
+            setAuthenticated(true);
+          } else {
+            localStorage.removeItem(TOKEN_STORAGE_KEY);
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem(TOKEN_STORAGE_KEY);
+        })
+        .finally(() => setChecking(false));
+    } else {
+      setChecking(false);
     }
-    setChecking(false);
   }, []);
 
-  const login = useCallback((password: string): boolean => {
-    if (password === ADMIN_PASSWORD) {
-      localStorage.setItem(STORAGE_KEY, "true");
-      setAuthenticated(true);
-      return true;
+  const login = useCallback(async (password: string): Promise<boolean> => {
+    // Store token first so adminHeaders() picks it up for the verification call
+    localStorage.setItem(TOKEN_STORAGE_KEY, password);
+    try {
+      const valid = await adminApi.verifyToken();
+      if (valid) {
+        setAuthenticated(true);
+        return true;
+      }
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      return false;
+    } catch {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      return false;
     }
-    return false;
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
     setAuthenticated(false);
   }, []);
 
@@ -279,17 +300,24 @@ function getUpsetTier(score: number): {
 // Login gate
 // ---------------------------------------------------------------------------
 
-function LoginGate({ onLogin }: { onLogin: (pw: string) => boolean }) {
+function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const ok = onLogin(password);
-    if (!ok) {
-      setError(true);
-      setTimeout(() => setError(false), 2000);
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const ok = await onLogin(password);
+      if (!ok) {
+        setError(true);
+        setTimeout(() => setError(false), 2000);
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -349,9 +377,10 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => boolean }) {
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-[#E4002B] py-2.5 text-sm font-semibold text-white transition hover:bg-[#C80025]"
+          disabled={submitting}
+          className="w-full rounded-lg bg-[#E4002B] py-2.5 text-sm font-semibold text-white transition hover:bg-[#C80025] disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Authenticate
+          {submitting ? "Verifying..." : "Authenticate"}
         </button>
       </form>
     </div>

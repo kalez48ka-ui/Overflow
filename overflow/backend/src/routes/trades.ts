@@ -41,7 +41,8 @@ export function createTradesRouter(
         type = (body.side as string).toUpperCase();
       }
 
-      const { teamSymbol, wallet, amount, price, txHash } = body;
+      const { teamSymbol, amount, price, txHash } = body;
+      let wallet: string | undefined = body.wallet;
 
       if (!teamSymbol || !wallet || !type || !amount || !price) {
         res.status(400).json({
@@ -49,6 +50,13 @@ export function createTradesRouter(
         });
         return;
       }
+
+      // Validate and normalize wallet address
+      if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+        res.status(400).json({ error: 'Invalid wallet address format' });
+        return;
+      }
+      wallet = wallet.toLowerCase();
 
       if (type !== 'BUY' && type !== 'SELL') {
         res.status(400).json({ error: 'side must be buy or sell (or type must be BUY or SELL)' });
@@ -60,109 +68,120 @@ export function createTradesRouter(
         return;
       }
 
-      const team = await prisma.team.findUnique({
-        where: { symbol: teamSymbol.toUpperCase() },
+      // Wrap the entire trade flow in a serializable transaction to prevent race conditions
+      const result = await prisma.$transaction(async (tx) => {
+        const team = await tx.team.findUnique({
+          where: { symbol: teamSymbol.toUpperCase() },
+        });
+
+        if (!team) {
+          return { error: 'Team not found', status: 404 } as const;
+        }
+
+        // For SELL orders, validate that the user holds enough tokens inside the transaction
+        if (type === 'SELL') {
+          const existingPosition = await tx.position.findUnique({
+            where: { wallet_teamId: { wallet: wallet!, teamId: team.id } },
+          });
+
+          if (!existingPosition || existingPosition.amount <= 0) {
+            return {
+              error: 'No position found for this token. Cannot sell tokens you do not hold.',
+              status: 400,
+            } as const;
+          }
+
+          if (existingPosition.amount < amount) {
+            return {
+              error: `Insufficient balance. You hold ${existingPosition.amount} but tried to sell ${amount}.`,
+              status: 400,
+            } as const;
+          }
+        }
+
+        // Use market price (team.currentPrice) for economic calculations, not user-supplied price
+        const marketPrice = team.currentPrice;
+        const taxRate = type === 'SELL' ? team.sellTaxRate : 0;
+        const totalValue = amount * marketPrice;
+        const fee = totalValue * (taxRate / 100);
+
+        const trade = await tx.trade.create({
+          data: {
+            teamId: team.id,
+            wallet: wallet!,
+            type: type!,
+            amount,
+            price: marketPrice,
+            totalValue,
+            fee,
+            taxRate,
+            txHash: txHash || null,
+          },
+        });
+
+        if (type === 'BUY') {
+          const existing = await tx.position.findUnique({
+            where: { wallet_teamId: { wallet: wallet!, teamId: team.id } },
+          });
+
+          if (existing) {
+            const newAmount = existing.amount + amount;
+            const newAvg =
+              (existing.avgBuyPrice * existing.amount + marketPrice * amount) / newAmount;
+            await tx.position.update({
+              where: { id: existing.id },
+              data: { amount: newAmount, avgBuyPrice: newAvg },
+            });
+          } else {
+            await tx.position.create({
+              data: {
+                wallet: wallet!,
+                teamId: team.id,
+                amount,
+                avgBuyPrice: marketPrice,
+              },
+            });
+          }
+        } else {
+          const existing = await tx.position.findUnique({
+            where: { wallet_teamId: { wallet: wallet!, teamId: team.id } },
+          });
+
+          if (!existing) {
+            return {
+              error: 'No position found for this token. Cannot sell tokens you do not hold.',
+              status: 400,
+            } as const;
+          }
+
+          const newAmount = existing.amount - amount;
+          if (newAmount <= 0) {
+            await tx.position.delete({ where: { id: existing.id } });
+          } else {
+            await tx.position.update({
+              where: { id: existing.id },
+              data: { amount: newAmount },
+            });
+          }
+        }
+
+        return { trade, team, marketPrice, totalValue, fee } as const;
       });
 
-      if (!team) {
-        res.status(404).json({ error: 'Team not found' });
+      // Handle error results from the transaction
+      if ('error' in result) {
+        res.status(result.status).json({ error: result.error });
         return;
       }
 
-      // For SELL orders, validate that the user holds enough tokens before proceeding
-      if (type === 'SELL') {
-        const existingPosition = await prisma.position.findUnique({
-          where: { wallet_teamId: { wallet, teamId: team.id } },
-        });
+      const { trade, team, marketPrice, totalValue, fee } = result;
 
-        if (!existingPosition || existingPosition.amount <= 0) {
-          res.status(400).json({
-            error: 'No position found for this token. Cannot sell tokens you do not hold.',
-          });
-          return;
-        }
-
-        if (existingPosition.amount < amount) {
-          res.status(400).json({
-            error: `Insufficient balance. You hold ${existingPosition.amount} but tried to sell ${amount}.`,
-          });
-          return;
-        }
-      }
-
-      // Use market price (team.currentPrice) for economic calculations, not user-supplied price
-      const marketPrice = team.currentPrice;
-      const taxRate = type === 'SELL' ? team.sellTaxRate : 0;
-      const totalValue = amount * marketPrice;
-      const fee = totalValue * (taxRate / 100);
-
-      const trade = await prisma.trade.create({
-        data: {
-          teamId: team.id,
-          wallet,
-          type,
-          amount,
-          price: marketPrice,
-          totalValue,
-          fee,
-          taxRate,
-          txHash: txHash || null,
-        },
-      });
-
-      if (type === 'BUY') {
-        const existing = await prisma.position.findUnique({
-          where: { wallet_teamId: { wallet, teamId: team.id } },
-        });
-
-        if (existing) {
-          const newAmount = existing.amount + amount;
-          const newAvg =
-            (existing.avgBuyPrice * existing.amount + marketPrice * amount) / newAmount;
-          await prisma.position.update({
-            where: { id: existing.id },
-            data: { amount: newAmount, avgBuyPrice: newAvg },
-          });
-        } else {
-          await prisma.position.create({
-            data: {
-              wallet,
-              teamId: team.id,
-              amount,
-              avgBuyPrice: marketPrice,
-            },
-          });
-        }
-      } else {
-        // Position existence and sufficient balance already validated above
-        const existing = await prisma.position.findUnique({
-          where: { wallet_teamId: { wallet, teamId: team.id } },
-        });
-
-        if (!existing) {
-          // This should not happen due to pre-validation, but guard defensively
-          res.status(400).json({
-            error: 'No position found for this token. Cannot sell tokens you do not hold.',
-          });
-          return;
-        }
-
-        const newAmount = existing.amount - amount;
-        if (newAmount <= 0) {
-          await prisma.position.delete({ where: { id: existing.id } });
-        } else {
-          await prisma.position.update({
-            where: { id: existing.id },
-            data: { amount: newAmount },
-          });
-        }
-      }
-
+      // Side effects outside the transaction (vault, price updates, websocket)
       if (fee > 0) {
         await vaultService.addToVault(fee);
       }
 
-      await priceService.updatePriceAfterTrade(team.id, type, amount, marketPrice);
+      await priceService.updatePriceAfterTrade(team.id, type as 'BUY' | 'SELL', amount, marketPrice);
 
       io.emit('trade:new', {
         id: trade.id,
@@ -212,14 +231,25 @@ export function createTradesRouter(
     }
   });
 
-  // Trades by wallet address
+  // Trades by wallet address (paginated)
   router.get('/wallet/:wallet', async (req: Request, res: Response) => {
     try {
-      const wallet = String(req.params.wallet);
+      const wallet = String(req.params.wallet).toLowerCase();
+
+      // Validate wallet format
+      if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+        res.status(400).json({ error: 'Invalid wallet address format' });
+        return;
+      }
+
+      const limit = Math.min(parseInt(String(req.query.limit || '50')) || 50, 200);
+      const offset = Math.max(parseInt(String(req.query.offset || '0')) || 0, 0);
 
       const trades = await prisma.trade.findMany({
         where: { wallet },
         orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
         include: { team: { select: { symbol: true, name: true, color: true } } },
       });
 

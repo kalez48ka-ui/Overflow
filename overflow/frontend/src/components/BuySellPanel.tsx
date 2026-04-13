@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, ChevronDown, Info, Loader2, Wallet } from "lucide-react";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import { parseEther, type Address } from "viem";
 import type { PSLTeam } from "@/types";
 import { cn, formatPrice, formatCurrency } from "@/lib/utils";
@@ -34,6 +34,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const { isConnected, address } = useAccount();
+  const { data: walletBalance } = useBalance({ address });
 
   // Real contract hooks
   const {
@@ -118,7 +119,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
     ? tokenAmount * (1 - taxRate / 100)
     : (wireAmount - taxAmount);
 
-  const quickAmounts = isBuy ? [10, 25, 50, 100] : [1000, 5000, 10000, 25000];
+  const quickAmounts = isBuy ? [0.5, 1, 5, 10] : [1000, 5000, 10000, 25000];
 
   const handleSubmit = useCallback(async () => {
     if (!numAmount || isLoading) return;
@@ -214,7 +215,12 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               {isBuy ? "Amount (WIRE)" : `Amount (${team.symbol})`}
             </label>
             <span className="text-xs text-[#8B949E]">
-              Balance: {isBuy ? "245.80 WIRE" : "12,500 " + team.symbol}
+              Balance:{" "}
+              {isConnected && walletBalance
+                ? isBuy
+                  ? `${parseFloat(walletBalance.formatted).toFixed(4)} ${walletBalance.symbol}`
+                  : "—"
+                : "—"}
             </span>
           </div>
           <div className="relative">
@@ -245,7 +251,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               onClick={() => setAmount(qa.toString())}
               className="rounded-md bg-[#21262D] px-2 py-1.5 text-xs font-medium text-[#8B949E] hover:bg-[#30363D] hover:text-[#E6EDF3] transition-colors"
             >
-              {isBuy ? `$${qa}` : qa >= 1000 ? `${qa / 1000}K` : qa}
+              {isBuy ? qa : qa >= 1000 ? `${qa / 1000}K` : qa}
             </button>
           ))}
         </div>

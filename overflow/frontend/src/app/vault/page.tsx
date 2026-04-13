@@ -235,19 +235,26 @@ export default function VaultPage() {
 
       // Update upsets if API succeeded
       if (upsetsResult.status === "fulfilled" && upsetsResult.value && upsetsResult.value.length > 0) {
-        const mapped: UpsetEvent[] = upsetsResult.value.map((u, i) => ({
-          id: `u-api-${i}`,
-          match: `${u.winnerTeam} vs ${u.loserTeam}`,
-          date: new Date(u.timestamp).getTime(),
-          favoriteTeam: u.loserTeam,
-          upsetTeam: u.winnerTeam,
-          multiplier: u.releasedAmount > 0 && u.upsetScore > 0
-            ? Math.round((u.releasedAmount / u.upsetScore) * 10) / 10
-            : 1.0,
-          vaultSnapshot: u.releasedAmount,
-          totalPayout: u.releasedAmount,
-          upsetScore: u.upsetScore,
-        }));
+        const mapped: UpsetEvent[] = upsetsResult.value.map((u, i) => {
+          // Derive multiplier from upset score tier:
+          // 0-3 = 1x, 4-6 = 3x, 7-9 = 5x, 10+ = 10x
+          let tierMultiplier = 1;
+          if (u.upsetScore >= 10) tierMultiplier = 10;
+          else if (u.upsetScore >= 7) tierMultiplier = 5;
+          else if (u.upsetScore >= 4) tierMultiplier = 3;
+
+          return {
+            id: `u-api-${i}`,
+            match: `${u.winnerTeam} vs ${u.loserTeam}`,
+            date: new Date(u.timestamp).getTime(),
+            favoriteTeam: u.loserTeam,
+            upsetTeam: u.winnerTeam,
+            multiplier: tierMultiplier,
+            vaultSnapshot: u.releasedAmount,
+            totalPayout: u.releasedAmount,
+            upsetScore: u.upsetScore,
+          };
+        });
         newData = { ...newData, upsetEvents: mapped };
         updated = true;
       }
