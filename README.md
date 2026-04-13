@@ -312,7 +312,7 @@ Overflow/
 │   ├── ecosystem.config.js     # PM2 process manager
 │   └── .env.example            # Environment template
 ├── OVERFLOW_BUILD_PLAN.md      # Technical build roadmap
-├── CricTrade Whitepaper v1.pdf # Whitepaper (original)
+├── CricTrade Whitepaper v1.pdf # Whitepaper (original PDF, pre-rename)
 ├── WHITEPAPER.md               # Whitepaper (markdown)
 └── README.md                   # This file
 ```

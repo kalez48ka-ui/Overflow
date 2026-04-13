@@ -29,7 +29,7 @@ export function Navbar() {
               <Zap className="h-4 w-4 text-white" />
             </div>
             <span className="text-lg font-bold text-[#E6EDF3] tracking-tight">
-              Cric<span className="text-[#E4002B]">Trade</span>
+              Over<span className="text-[#E4002B]">flow</span>
             </span>
           </Link>
 

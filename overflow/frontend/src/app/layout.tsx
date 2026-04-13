@@ -68,7 +68,7 @@ function Footer() {
               <Zap className="h-3 w-3 text-white" aria-hidden="true" />
             </div>
             <span className="font-bold text-[#E6EDF3]">
-              Cric<span className="text-[#E4002B]">Trade</span>
+              Over<span className="text-[#E4002B]">flow</span>
             </span>
           </div>
 
