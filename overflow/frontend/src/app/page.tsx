@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { SafeConnectButton } from "@/components/WalletProvider";
 import {
   ArrowRight,
@@ -16,15 +16,24 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-// Note: Footer is rendered by the root layout — no per-page footer needed.
+// Note: Footer is rendered by the layout — no per-page footer needed.
 import { TeamCard } from "@/components/TeamCard";
 import { StatsBar } from "@/components/StatsBar";
+import {
+  MouseTrackCard,
+  CountUp,
+  StaggerReveal,
+  LayoutGrid,
+} from "@/components/motion";
 import { PSL_TEAMS, GLOBAL_STATS } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import type { PSLTeam } from "@/types";
 import type { VaultState } from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 import Link from "next/link";
+import { Spotlight } from "@/components/ui/spotlight";
+import { MovingBorderButton } from "@/components/ui/moving-border";
+import { Meteors } from "@/components/ui/meteors";
 
 function FeaturePill({
   icon: Icon,
@@ -34,7 +43,7 @@ function FeaturePill({
   label: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-[#30363D]/60 bg-[#161B22]/80 px-4 py-1.5 text-xs font-medium text-[#C9D1D9] backdrop-blur-sm">
+    <div className="flex items-center gap-2 rounded-full border border-[#30363D]/60 bg-[#161B22]/80 px-4 py-1.5 text-xs font-medium text-[#C9D1D9] backdrop-blur-sm transition-all duration-300 hover:border-[#58A6FF]/40 hover:bg-[#161B22]">
       <Icon className="h-3.5 w-3.5 text-[#58A6FF]" />
       {label}
     </div>
@@ -48,6 +57,16 @@ export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"rank" | "price" | "change24h" | "volume" | "marketCap">("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const prefersReduced = useReducedMotion();
+
+  // Hero parallax — headline moves slower than background on scroll
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroParallaxY = useTransform(scrollYProgress, [0, 1], [0, -60]);
 
   const displayTeams = useMemo(() => {
     let filtered = teams;
@@ -149,39 +168,70 @@ export default function LandingPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Vault balance for display
+  const vaultBalance = vaultState?.balance ?? GLOBAL_STATS.upsetVaultBalance;
+
   return (
     <div className="min-h-screen bg-[#0D1117]">
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        {/* Animated gradient background */}
+      <section ref={heroRef} className="relative overflow-hidden">
+        {/* Animated cycling gradient background */}
+        <div className="pointer-events-none absolute inset-0 hero-gradient-bg" />
+
+        {/* Radial color splashes */}
         <div className="pointer-events-none absolute inset-0">
           <div
-            className="absolute inset-0 opacity-30"
+            className="absolute inset-0 opacity-40"
             style={{
               background:
-                "radial-gradient(ellipse 80% 50% at 50% -20%, #E4002B15 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 80% 50%, #6A0DAD10 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 20% 60%, #00529B10 0%, transparent 50%)",
+                "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(228,0,43,0.12) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 80% 50%, rgba(106,13,173,0.08) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 20% 60%, rgba(0,82,155,0.08) 0%, transparent 50%)",
             }}
           />
-          {/* Subtle grid overlay */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage:
-                "linear-gradient(#E6EDF3 1px, transparent 1px), linear-gradient(90deg, #E6EDF3 1px, transparent 1px)",
-              backgroundSize: "64px 64px",
-            }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,#0D1117)]" />
+
+          {/* Animated grid overlay */}
+          <div className="absolute inset-0 hero-grid" />
+
+          {/* Floating particles (CSS-only) */}
+          {[
+            { left: "15%", top: "20%", delay: "0s", dur: "12s", color: "#E4002B" },
+            { left: "35%", top: "60%", delay: "2s", dur: "14s", color: "#FDB913" },
+            { left: "55%", top: "30%", delay: "4s", dur: "10s", color: "#00A651" },
+            { left: "75%", top: "70%", delay: "1s", dur: "16s", color: "#6A0DAD" },
+            { left: "85%", top: "25%", delay: "3s", dur: "11s", color: "#58A6FF" },
+            { left: "25%", top: "80%", delay: "5s", dur: "13s", color: "#E4002B" },
+            { left: "65%", top: "50%", delay: "6s", dur: "15s", color: "#FDB913" },
+            { left: "45%", top: "15%", delay: "7s", dur: "12s", color: "#3FB950" },
+          ].map((p, i) => (
+            <div
+              key={i}
+              className="particle"
+              style={{
+                left: p.left,
+                top: p.top,
+                backgroundColor: p.color,
+                boxShadow: `0 0 6px ${p.color}`,
+                animation: `particleFloat ${p.dur} ease-in-out ${p.delay} infinite`,
+              }}
+            />
+          ))}
+
+          {/* Bottom fade to base */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_40%,#0D1117)]" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pt-24">
+        <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="#E4002B" />
+
+        <motion.div
+          className="relative mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pt-24"
+          style={prefersReduced ? undefined : { y: heroParallaxY }}
+        >
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 flex justify-center"
           >
-            <div className="flex items-center gap-2 rounded-full border border-[#E4002B]/40 bg-[#E4002B]/10 px-4 py-1.5 text-xs font-medium text-[#E4002B]">
+            <div className="flex items-center gap-2 rounded-full border border-[#E4002B]/40 bg-[#E4002B]/10 px-4 py-1.5 text-xs font-medium text-[#E4002B] backdrop-blur-sm">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E4002B] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E4002B]" />
@@ -200,7 +250,7 @@ export default function LandingPage() {
             <h1 className="mx-auto max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl">
               Your Cricket IQ.{" "}
               <br className="hidden sm:block" />
-              <span className="bg-gradient-to-r from-[#E4002B] via-[#FDB913] to-[#00A651] bg-clip-text text-transparent">
+              <span className="text-shimmer">
                 Your Edge.
               </span>
             </h1>
@@ -217,29 +267,74 @@ export default function LandingPage() {
             transition={{ delay: 0.2 }}
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
-            <SafeConnectButton label="Start Trading" showBalance={false} />
+            <MovingBorderButton
+              as="div"
+              containerClassName="cta-pulse rounded-xl"
+              className="px-5 py-3 text-sm font-bold text-[#E6EDF3]"
+              borderRadius="0.75rem"
+            >
+              <SafeConnectButton label="Start Trading" showBalance={false} />
+            </MovingBorderButton>
             <Link
               href="/match"
-              className="flex items-center gap-2 rounded-xl border border-[#30363D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#8B949E] transition-colors"
+              className="hover-lift flex items-center gap-2 rounded-xl border border-[#30363D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-300"
             >
               <Activity className="h-4 w-4 text-[#3FB950]" />
               Watch Live Match
             </Link>
           </motion.div>
 
+          {/* Live FOMO ticker */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8 flex justify-center"
+          >
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#30363D]/60 bg-[#161B22]/60 px-5 py-2 text-xs backdrop-blur-md">
+              <span className="flex items-center gap-1.5 text-[#F85149] font-bold">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F85149] opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#F85149]" />
+                </span>
+                LIVE
+              </span>
+              <span className="text-[#8B949E]">PZ vs MS</span>
+              <span className="text-[#30363D]">|</span>
+              <span className="text-[#A855F7] font-semibold vault-glow">
+                <CountUp
+                  value={vaultBalance}
+                  formatter={(n) => formatCurrency(n)}
+                  duration={2}
+                />
+                {" "}in Upset Vault
+              </span>
+              <span className="text-[#30363D]">|</span>
+              <span className="text-[#8B949E]">
+                <span className="text-[#3FB950] font-semibold tabular-nums">
+                  <CountUp
+                    value={GLOBAL_STATS.activeTraders}
+                    formatter={(n) => formatNumber(Math.round(n))}
+                    duration={2}
+                  />
+                </span>{" "}traders active
+              </span>
+            </div>
+          </motion.div>
+
           {/* Trust signal pills */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
-            className="mt-8 flex flex-wrap items-center justify-center gap-2"
+            transition={{ delay: 0.4 }}
+            className="mt-6 flex flex-wrap items-center justify-center gap-2"
           >
             <FeaturePill icon={Trophy} label="8 Teams" />
             <FeaturePill icon={Activity} label="Live Prices" />
             <FeaturePill icon={Zap} label="AI Signals" />
             <FeaturePill icon={Flame} label="Upset Vault" />
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Stats bar — passes real vault balance when API is available */}
@@ -250,7 +345,7 @@ export default function LandingPage() {
       />
 
       {/* Team cards grid */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+      <section className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-[#E6EDF3]">PSL Team Tokens</h2>
@@ -285,7 +380,7 @@ export default function LandingPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search teams..."
-              className="w-full rounded-lg border border-[#30363D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-colors focus:border-[#58A6FF] sm:w-56"
+              className="w-full rounded-lg border border-[#30363D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all duration-300 focus:border-[#58A6FF] focus:shadow-[0_0_12px_rgba(88,166,255,0.15)] sm:w-56"
             />
           </div>
 
@@ -347,16 +442,19 @@ export default function LandingPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {displayTeams.map((team, i) => (
-              <TeamCard key={team.id} team={team} index={i} />
+          <LayoutGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {displayTeams.map((team) => (
+              <MouseTrackCard key={team.id}>
+                <TeamCard team={team} />
+              </MouseTrackCard>
             ))}
-          </div>
+          </LayoutGrid>
         )}
       </section>
 
       {/* How it works */}
-      <section className="border-t border-[#30363D] bg-[#161B22]/30">
+      <section className="relative bg-[#161B22]/30">
+        <div className="gradient-divider" />
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-black text-[#E6EDF3]">
@@ -367,7 +465,11 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerReveal
+            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            staggerDelay={0.1}
+            yOffset={24}
+          >
             {[
               {
                 step: "01",
@@ -393,14 +495,10 @@ export default function LandingPage() {
                 desc: "Underdogs win? The Upset Vault rewards you for calling it right.",
                 color: "#6A0DAD",
               },
-            ].map(({ step, title, desc, color }, i) => (
-              <motion.div
+            ].map(({ step, title, desc, color }) => (
+              <div
                 key={step}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className="group relative rounded-xl border border-[#30363D] bg-[#161B22] p-5 transition-colors hover:border-opacity-60"
+                className="group relative rounded-xl border border-[#30363D] bg-[#161B22] p-5 transition-all duration-300 hover:border-opacity-60 hover-lift"
                 style={{ ["--step-color" as string]: color }}
               >
                 {/* Top accent line */}
@@ -421,9 +519,9 @@ export default function LandingPage() {
                   {title}
                 </h3>
                 <p className="text-xs leading-relaxed text-[#8B949E]">{desc}</p>
-              </motion.div>
+              </div>
             ))}
-          </div>
+          </StaggerReveal>
 
           <div className="mt-8 text-center">
             <Link
@@ -438,8 +536,11 @@ export default function LandingPage() {
       </section>
 
       {/* Upset Vault explainer */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+      <section className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="relative overflow-hidden rounded-2xl border border-[#6A0DAD]/30 bg-gradient-to-br from-[#2A0050]/40 via-[#161B22] to-[#161B22]">
+          {/* Meteor shower */}
+          <Meteors number={15} className="before:from-[#A855F7]" />
+
           {/* Decorative glow */}
           <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full bg-[#6A0DAD]/10 blur-3xl" />
           <div className="pointer-events-none absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-[#6A0DAD]/5 blur-3xl" />
@@ -487,7 +588,7 @@ export default function LandingPage() {
               </div>
               <Link
                 href="/vault"
-                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#6A0DAD] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#7B1FA2] transition-colors shadow-lg shadow-[#6A0DAD]/20"
+                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#6A0DAD] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#7B1FA2] transition-all duration-300 shadow-lg shadow-[#6A0DAD]/20 hover-lift"
               >
                 View Upset Vault
                 <ArrowRight className="h-4 w-4" />
@@ -498,7 +599,7 @@ export default function LandingPage() {
                 <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#8B949E]">
                   Current Vault Balance
                 </p>
-                <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight">
+                <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight vault-glow">
                   {formatCurrency(vaultState?.balance ?? GLOBAL_STATS.upsetVaultBalance)}
                 </p>
                 <p className="mt-2 text-sm font-medium text-[#A855F7]">

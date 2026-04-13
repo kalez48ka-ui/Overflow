@@ -22,8 +22,8 @@ module.exports = {
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
     wirefluid: {
-      url: process.env.WIREFLUID_RPC_URL || "https://testnet-rpc.wirefluid.com",
-      chainId: 7777,
+      url: process.env.WIREFLUID_RPC_URL || "https://evm.wirefluid.com",
+      chainId: 92533,
       accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
     },
   },

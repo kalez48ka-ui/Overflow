@@ -129,6 +129,228 @@ input[type="number"] {
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
+/* ── Hero gradient cycle (PSL red > gold > green, 20s) ─────── */
+@keyframes heroGradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  33% {
+    background-position: 50% 50%;
+  }
+  66% {
+    background-position: 100% 50%;
+  }
+}
+
+.hero-gradient-bg {
+  background: linear-gradient(
+    135deg,
+    rgba(228, 0, 43, 0.08) 0%,
+    rgba(253, 185, 19, 0.06) 25%,
+    rgba(0, 166, 81, 0.06) 50%,
+    rgba(106, 13, 173, 0.06) 75%,
+    rgba(228, 0, 43, 0.08) 100%
+  );
+  background-size: 400% 400%;
+  animation: heroGradientShift 20s ease-in-out infinite;
+}
+
+/* ── Animated grid pattern ────────────────────────────────────── */
+@keyframes gridPulse {
+  0%, 100% { opacity: 0.025; }
+  50% { opacity: 0.06; }
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(228, 0, 43, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(228, 0, 43, 0.15) 1px, transparent 1px);
+  background-size: 64px 64px;
+  animation: gridPulse 8s ease-in-out infinite;
+}
+
+/* ── Text shimmer effect ──────────────────────────────────────── */
+@keyframes textShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #E4002B 0%,
+    #FDB913 25%,
+    #00A651 50%,
+    #FDB913 75%,
+    #E4002B 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textShimmer 4s linear infinite;
+}
+
+/* ── CTA button glow pulse ────────────────────────────────────── */
+@keyframes ctaGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(228, 0, 43, 0.2), 0 0 40px rgba(228, 0, 43, 0.05); }
+  50% { box-shadow: 0 0 30px rgba(228, 0, 43, 0.35), 0 0 60px rgba(228, 0, 43, 0.1); }
+}
+
+.cta-pulse {
+  animation: ctaGlow 3s ease-in-out infinite;
+}
+
+/* ── Card border gradient rotation ────────────────────────────── */
+@keyframes borderRotate {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.card-border-glow {
+  animation: borderRotate 6s linear infinite;
+}
+
+/* ── Price flash micro-animation ──────────────────────────────── */
+@keyframes priceTick {
+  0%, 85%, 100% { opacity: 1; }
+  90% { opacity: 0.6; }
+  95% { opacity: 1; text-shadow: 0 0 8px rgba(63, 185, 80, 0.5); }
+}
+
+.price-tick {
+  animation: priceTick 5s ease-in-out infinite;
+}
+
+.price-tick-down {
+  animation: priceTick 5s ease-in-out infinite;
+}
+
+.price-tick-down {
+  animation-name: priceTickDown;
+}
+
+@keyframes priceTickDown {
+  0%, 85%, 100% { opacity: 1; }
+  90% { opacity: 0.6; }
+  95% { opacity: 1; text-shadow: 0 0 8px rgba(248, 81, 73, 0.5); }
+}
+
+/* ── Counting animation for stats ─────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-animate {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* ── Subtle vault purple glow ─────────────────────────────────── */
+@keyframes vaultGlow {
+  0%, 100% { text-shadow: 0 0 12px rgba(106, 13, 173, 0.3); }
+  50% { text-shadow: 0 0 20px rgba(168, 85, 247, 0.5); }
+}
+
+.vault-glow {
+  animation: vaultGlow 3s ease-in-out infinite;
+}
+
+/* ── Live indicator pulsing dot ───────────────────────────────── */
+@keyframes liveDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.6; }
+}
+
+.live-dot {
+  animation: liveDot 1.5s ease-in-out infinite;
+}
+
+/* ── Floating particles (CSS-only) ────────────────────────────── */
+@keyframes particleFloat {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  50% { transform: translateY(-80px) translateX(20px); }
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ── Section gradient divider ─────────────────────────────────── */
+.gradient-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(228, 0, 43, 0.3) 20%,
+    rgba(253, 185, 19, 0.3) 50%,
+    rgba(0, 166, 81, 0.3) 80%,
+    transparent 100%
+  );
+}
+
+/* ── Nav link underline animation ─────────────────────────────── */
+.nav-underline {
+  position: relative;
+}
+
+.nav-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #E4002B, #FDB913);
+  border-radius: 1px;
+  transition: width 0.3s ease, left 0.3s ease;
+}
+
+.nav-underline:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+/* ── Global hover scale for interactive elements ──────────────── */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: scale(1.02);
+}
+
+/* ── Aceternity: Spotlight effect ────────────────────────────── */
+@keyframes spotlight {
+  0% { opacity: 0; transform: translate(-72%, -62%) scale(0.5); }
+  100% { opacity: 1; transform: translate(-50%,-40%) scale(1); }
+}
+.animate-spotlight {
+  animation: spotlight 2s ease .75s 1 forwards;
+}
+
+/* ── Aceternity: Meteor shower ───────────────────────────────── */
+@keyframes meteor {
+  0% { transform: rotate(215deg) translateX(0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: rotate(215deg) translateX(-500px); opacity: 0; }
+}
+.animate-meteor-effect {
+  animation: meteor 5s linear infinite;
+}
+
 /* Focus ring */
 :focus-visible {
   outline: 2px solid var(--blue);

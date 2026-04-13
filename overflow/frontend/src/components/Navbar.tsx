@@ -149,7 +149,7 @@ export function Navbar() {
                   key={href}
                   href={href}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
+                    "nav-underline flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
                     isActive
                       ? "bg-[#161B22] text-[#E6EDF3] shadow-sm shadow-black/20"
                       : "text-[#8B949E] hover:bg-[#161B22]/60 hover:text-[#C9D1D9]"

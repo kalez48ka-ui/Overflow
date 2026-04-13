@@ -12,7 +12,7 @@ import {
 // WireFluid Testnet chain definition
 // ---------------------------------------------------------------------------
 export const wireFluid = defineChain({
-  id: 7777,
+  id: 92533,
   name: "WireFluid Testnet",
   nativeCurrency: {
     decimals: 18,
@@ -21,13 +21,13 @@ export const wireFluid = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://testnet-rpc.wirefluid.com"],
+      http: ["https://evm.wirefluid.com"],
     },
   },
   blockExplorers: {
     default: {
       name: "WireFluid Explorer",
-      url: "https://testnet-explorer.wirefluid.com",
+      url: "https://wirefluidscan.com",
     },
   },
   testnet: true,
@@ -65,7 +65,7 @@ export const wagmiConfig = createConfig({
   connectors,
   chains: [wireFluid],
   transports: {
-    [wireFluid.id]: http("https://testnet-rpc.wirefluid.com"),
+    [wireFluid.id]: http("https://evm.wirefluid.com"),
   },
   storage: createStorage({ storage: cookieStorage }),
   ssr: true,

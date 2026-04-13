@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { PSLTeam } from "@/types";
 import { cn, formatPrice, formatPercent, formatCurrency, hexToRgba } from "@/lib/utils";
+import { useRef } from "react";
 
 interface TeamCardProps {
   team: PSLTeam;
@@ -25,68 +26,131 @@ function Sparkline({
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
-  const width = 80;
-  const height = 32;
+  const width = 120;
+  const height = 48;
   const padX = 2;
+  const padY = 4;
 
   const points = data.map((v, i) => {
     const x = padX + (i / (data.length - 1)) * (width - padX * 2);
-    const y = height - ((v - min) / range) * height;
-    return `${x},${y}`;
+    const y = padY + (height - padY * 2) - ((v - min) / range) * (height - padY * 2);
+    return { x, y };
   });
 
   const lineColor = isPositive ? "#3FB950" : "#F85149";
 
+  // Build SVG path string for the line (M then L segments)
+  const pathD = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+    .join(" ");
+
+  // Area fill: close the polygon at the bottom
+  const areaPoints = [
+    ...points.map((p) => `${p.x},${p.y}`),
+    `${points[points.length - 1].x},${height}`,
+    `${points[0].x},${height}`,
+  ].join(" ");
+
+  const gradId = `sparkGrad-${color.replace("#", "")}-${isPositive ? "up" : "dn"}`;
+
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-20 h-8">
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-28 h-12" preserveAspectRatio="none">
       <defs>
-        <linearGradient id={`grad-${color.replace("#", "")}`} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={lineColor} stopOpacity="0.3" />
+        <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.25" />
           <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polyline
-        points={points.join(" ")}
+      {/* Area fill under the line — fades in after path draws */}
+      <motion.polygon
+        points={areaPoints}
+        fill={`url(#${gradId})`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.0, duration: 0.5 }}
+      />
+      {/* Main line — draws on from left to right */}
+      <motion.path
+        d={pathD}
         fill="none"
         stroke={lineColor}
-        strokeWidth="1.5"
+        strokeWidth="1.8"
         strokeLinejoin="round"
         strokeLinecap="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1.0, ease: "easeOut" }}
       />
+      {/* Dot on last data point — appears after path finishes drawing */}
+      <motion.circle
+        cx={points[points.length - 1].x}
+        cy={points[points.length - 1].y}
+        r="2.5"
+        fill={lineColor}
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1.0, duration: 0.3, ease: "easeOut" }}
+      >
+        <animate
+          attributeName="r"
+          values="2.5;3.5;2.5"
+          dur="2s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          values="1;0.6;1"
+          dur="2s"
+          repeatCount="indefinite"
+        />
+      </motion.circle>
     </svg>
   );
 }
 
 export function TeamCard({ team, index = 0 }: TeamCardProps) {
   const isPositive = team.change24h >= 0;
+  const cardRef = useRef<HTMLDivElement>(null);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.07, duration: 0.35 }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-    >
+    <div>
       <Link href={`/trade/${team.id.toLowerCase()}`} className="block group">
         <div
-          className="relative overflow-hidden rounded-xl border bg-[#161B22] p-5 transition-all duration-300"
+          ref={cardRef}
+          className="card-border-glow relative overflow-hidden rounded-xl bg-[#161B22] p-5 transition-all duration-300"
           style={{
-            borderColor: hexToRgba(team.color, 0.25),
+            border: `1px solid ${hexToRgba(team.color, 0.25)}`,
             boxShadow: "0 0 0 0 transparent",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = hexToRgba(team.color, 0.5);
-            e.currentTarget.style.boxShadow = `0 0 24px ${hexToRgba(team.color, 0.12)}, 0 0 0 1px ${hexToRgba(team.color, 0.1)}`;
+            e.currentTarget.style.border = `1px solid ${hexToRgba(team.color, 0.5)}`;
+            e.currentTarget.style.boxShadow = `0 0 30px ${hexToRgba(team.color, 0.15)}, 0 0 0 1px ${hexToRgba(team.color, 0.1)}, inset 0 0 30px ${hexToRgba(team.color, 0.03)}`;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = hexToRgba(team.color, 0.25);
+            e.currentTarget.style.border = `1px solid ${hexToRgba(team.color, 0.25)}`;
             e.currentTarget.style.boxShadow = "0 0 0 0 transparent";
           }}
         >
-          {/* Accent glow */}
+          {/* Accent glow — stronger on hover */}
           <div
-            className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.04] transition-opacity duration-300 group-hover:opacity-[0.08]"
+            className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.05] transition-opacity duration-300 group-hover:opacity-[0.12]"
             style={{ background: `radial-gradient(circle at top left, ${team.color}, transparent 70%)` }}
+          />
+
+          {/* Animated corner accents */}
+          <div
+            className="pointer-events-none absolute top-0 left-0 h-8 w-8 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            style={{
+              background: `linear-gradient(135deg, ${hexToRgba(team.color, 0.3)} 0%, transparent 50%)`,
+              borderRadius: "0.75rem 0 0 0",
+            }}
+          />
+          <div
+            className="pointer-events-none absolute bottom-0 right-0 h-8 w-8 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            style={{
+              background: `linear-gradient(315deg, ${hexToRgba(team.color, 0.3)} 0%, transparent 50%)`,
+              borderRadius: "0 0 0.75rem 0",
+            }}
           />
 
           {/* Header */}
@@ -94,10 +158,10 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
             <div className="flex items-center gap-3">
               {/* Team logo placeholder */}
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-lg"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-110"
                 style={{
                   backgroundColor: team.color,
-                  boxShadow: `0 4px 12px ${hexToRgba(team.color, 0.3)}`,
+                  boxShadow: `0 4px 16px ${hexToRgba(team.color, 0.4)}`,
                 }}
               >
                 {team.id}
@@ -127,10 +191,23 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
           {/* Price & Chart */}
           <div className="mb-3 flex items-end justify-between">
             <div>
-              <p className="text-2xl font-black tabular-nums tracking-tight text-[#E6EDF3]">
+              <p
+                className={cn(
+                  "text-2xl font-black tabular-nums tracking-tight text-[#E6EDF3]",
+                  isPositive ? "price-tick" : "price-tick-down",
+                )}
+                style={{ animationDelay: `${index * 0.8}s` }}
+              >
                 ${formatPrice(team.price)}
               </p>
-              <div
+              <motion.div
+                initial={{ opacity: 0, x: -8, scale: 1 }}
+                animate={{ opacity: 1, x: 0, scale: [1, 1.1, 1] }}
+                transition={{
+                  opacity: { delay: index * 0.07 + 0.3, duration: 0.3 },
+                  x: { delay: index * 0.07 + 0.3, duration: 0.3 },
+                  scale: { delay: index * 0.07 + 0.5, duration: 0.3, ease: "easeInOut" },
+                }}
                 className={cn(
                   "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold",
                   isPositive
@@ -144,7 +221,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
                   <TrendingDown className="h-3 w-3" />
                 )}
                 {formatPercent(team.change24h)}
-              </div>
+              </motion.div>
             </div>
             <Sparkline
               data={team.sparklineData}
@@ -175,13 +252,16 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
             </div>
           </div>
 
-          {/* Bottom color bar */}
+          {/* Bottom color bar — gradient with glow */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-[2px] transition-opacity duration-300 opacity-60 group-hover:opacity-100"
-            style={{ backgroundColor: team.color }}
+            className="absolute bottom-0 left-0 right-0 h-[2px] transition-all duration-300 opacity-60 group-hover:opacity-100 group-hover:h-[3px]"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${team.color}, transparent)`,
+              boxShadow: `0 0 12px ${hexToRgba(team.color, 0.3)}`,
+            }}
           />
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
