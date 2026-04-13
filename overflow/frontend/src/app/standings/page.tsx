@@ -13,6 +13,7 @@ import {
   Clock,
   ChevronRight,
 } from "lucide-react";
+import { CountUp, StaggerReveal } from "@/components/motion";
 import { PSL_TEAMS } from "@/lib/mockData";
 import { api, type MatchInfo } from "@/lib/api";
 import { cn, formatPrice, formatCurrency } from "@/lib/utils";
@@ -213,7 +214,12 @@ export default function StandingsPage() {
   }, [upcomingMatches]);
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="min-h-screen bg-[#0D1117]"
+    >
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         {/* Header */}
         <div className="mb-8">
@@ -392,15 +398,15 @@ export default function StandingsPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <StaggerReveal className="space-y-2" staggerDelay={0.06} yOffset={20}>
               {displayUpcoming.map((match, i) => (
                 <UpcomingFixtureCard key={match.id} match={match} index={i} />
               ))}
-            </div>
+            </StaggerReveal>
           )}
         </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -581,17 +587,17 @@ function TeamRow({
 
       {/* P */}
       <td className="px-4 py-3.5 text-right tabular-nums text-[#E6EDF3]">
-        {played}
+        <CountUp value={played} duration={0.8} />
       </td>
 
       {/* W */}
       <td className="px-4 py-3.5 text-right tabular-nums text-[#3FB950] font-medium">
-        {team.wins}
+        <CountUp value={team.wins} duration={0.8} />
       </td>
 
       {/* L */}
       <td className="px-4 py-3.5 text-right tabular-nums text-[#F85149] font-medium">
-        {team.losses}
+        <CountUp value={team.losses} duration={0.8} />
       </td>
 
       {/* NRR */}
@@ -601,7 +607,7 @@ function TeamRow({
           team.nrr >= 0 ? "text-[#3FB950]" : "text-[#F85149]",
         )}
       >
-        {formatNRR(team.nrr)}
+        <CountUp value={team.nrr} decimals={3} prefix={team.nrr > 0 ? "+" : ""} duration={1} />
       </td>
 
       {/* Performance Score */}

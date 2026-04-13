@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   TrendingUp,
@@ -16,6 +16,7 @@ import {
 import { TradingChart } from "@/components/TradingChart";
 import { BuySellPanel } from "@/components/BuySellPanel";
 import { AIAnalysis } from "@/components/AIAnalysis";
+import { CountUp, MouseTrackCard } from "@/components/motion";
 import {
   PSL_TEAMS,
   CANDLESTICK_DATA,
@@ -32,6 +33,7 @@ import {
   formatNumber,
   formatTimeAgo,
 } from "@/lib/utils";
+import { GlitchPrice } from "@/components/effects";
 
 interface PageProps {
   params: Promise<{ team: string }>;
@@ -53,7 +55,13 @@ function OrderBookTable({
       </h4>
       <div className="space-y-0.5">
         {entries.slice(0, 6).map((entry, i) => (
-          <div key={i} className="relative flex items-center justify-between text-xs">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: side === "ask" ? -8 : 8 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.04, duration: 0.25 }}
+            className="relative flex items-center justify-between text-xs"
+          >
             <div
               className="absolute right-0 h-full rounded"
               style={{
@@ -73,7 +81,7 @@ function OrderBookTable({
             <span className="relative z-10 text-[#8B949E]">
               {formatNumber(entry.amount)}
             </span>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>
@@ -374,7 +382,12 @@ export default function TradePage({ params }: PageProps) {
   const isPositive = team.change24h >= 0;
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="min-h-screen bg-[#0D1117]"
+    >
       {/* Header */}
       <div className="border-b border-[#30363D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
@@ -389,12 +402,14 @@ export default function TradePage({ params }: PageProps) {
               </Link>
               <div className="h-4 w-px bg-[#30363D] shrink-0" />
               <div className="flex items-center gap-2 min-w-0">
-                <div
+                <motion.div
+                  animate={{ scale: [1, 1.03, 1] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                   style={{ backgroundColor: team.color }}
                 >
                   {team.id}
-                </div>
+                </motion.div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-[#E6EDF3]">{team.symbol}</span>
@@ -408,7 +423,11 @@ export default function TradePage({ params }: PageProps) {
             <div className="flex items-center gap-4 shrink-0">
               <div className="text-right">
                 <p className="text-lg sm:text-xl font-bold tabular-nums text-[#E6EDF3]">
-                  ${formatPrice(team.price)}
+                  <GlitchPrice
+                    value={`$${formatPrice(team.price)}`}
+                    duration={500}
+                    autoScrambleInterval={8000}
+                  />
                 </p>
                 <div
                   className={cn(
@@ -433,24 +452,42 @@ export default function TradePage({ params }: PageProps) {
       <div className="border-b border-[#30363D] bg-[#0D1117]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <div className="flex items-center gap-6 overflow-x-auto py-2 text-xs">
-            {[
-              { label: "24h High", value: `$${formatPrice(team.price * 1.08)}`, color: "#3FB950" },
-              { label: "24h Low", value: `$${formatPrice(team.price * 0.91)}`, color: "#F85149" },
-              { label: "24h Volume", value: formatCurrency(team.volume24h) },
-              { label: "Market Cap", value: formatCurrency(team.marketCap) },
-              { label: "Buy Tax", value: `${team.buyTax}%`, color: "#3FB950" },
-              { label: "Sell Tax", value: `${team.sellTax}%`, color: "#F85149" },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="shrink-0">
-                <span className="text-[#8B949E]">{label}: </span>
-                <span
-                  className="font-semibold"
-                  style={{ color: color || "#E6EDF3" }}
-                >
-                  {value}
-                </span>
-              </div>
-            ))}
+            <div className="shrink-0">
+              <span className="text-[#8B949E]">24h High: </span>
+              <span className="font-semibold" style={{ color: "#3FB950" }}>
+                <CountUp value={team.price * 1.08} prefix="$" decimals={4} duration={1} />
+              </span>
+            </div>
+            <div className="shrink-0">
+              <span className="text-[#8B949E]">24h Low: </span>
+              <span className="font-semibold" style={{ color: "#F85149" }}>
+                <CountUp value={team.price * 0.91} prefix="$" decimals={4} duration={1} />
+              </span>
+            </div>
+            <div className="shrink-0">
+              <span className="text-[#8B949E]">24h Volume: </span>
+              <span className="font-semibold" style={{ color: "#E6EDF3" }}>
+                <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />
+              </span>
+            </div>
+            <div className="shrink-0">
+              <span className="text-[#8B949E]">Market Cap: </span>
+              <span className="font-semibold" style={{ color: "#E6EDF3" }}>
+                <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />
+              </span>
+            </div>
+            <div className="shrink-0">
+              <span className="text-[#8B949E]">Buy Tax: </span>
+              <span className="font-semibold" style={{ color: "#3FB950" }}>
+                <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />
+              </span>
+            </div>
+            <div className="shrink-0">
+              <span className="text-[#8B949E]">Sell Tax: </span>
+              <span className="font-semibold" style={{ color: "#F85149" }}>
+                <CountUp value={team.sellTax} suffix="%" decimals={1} duration={0.8} />
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -462,8 +499,9 @@ export default function TradePage({ params }: PageProps) {
           <div className="space-y-4">
             {/* Chart */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
               className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden"
             >
               <div className="flex items-center justify-between border-b border-[#30363D] px-4 py-3">
@@ -537,9 +575,12 @@ export default function TradePage({ params }: PageProps) {
                     <span className="text-center">Amount</span>
                     <span className="text-right">Time</span>
                   </div>
-                  {recentTrades.slice(0, 12).map((trade) => (
-                    <div
+                  {recentTrades.slice(0, 12).map((trade, tradeIdx) => (
+                    <motion.div
                       key={trade.id}
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: tradeIdx * 0.03, duration: 0.25 }}
                       className="grid grid-cols-3 items-center text-xs"
                     >
                       <span
@@ -558,7 +599,7 @@ export default function TradePage({ params }: PageProps) {
                       <span className="text-right text-[#8B949E]">
                         {formatTimeAgo(trade.timestamp)}
                       </span>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -568,7 +609,9 @@ export default function TradePage({ params }: PageProps) {
           {/* Right column: buy/sell + team stats */}
           <div className="space-y-4">
             {/* Buy/sell panel */}
-            <BuySellPanel team={team} />
+            <MouseTrackCard maxTilt={3} spotlightOpacity={0.06} className="rounded-xl">
+              <BuySellPanel team={team} />
+            </MouseTrackCard>
 
             {/* Team stats */}
             <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
@@ -674,6 +717,6 @@ export default function TradePage({ params }: PageProps) {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

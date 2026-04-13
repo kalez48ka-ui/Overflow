@@ -10,6 +10,7 @@ import { Activity, BarChart2, Shield, Users } from "lucide-react";
 import { GLOBAL_STATS } from "@/lib/mockData";
 import { formatCurrency, formatNumber, formatCountdown } from "@/lib/utils";
 import { CountUp } from "@/components/motion";
+import { TextScramble } from "@/components/effects";
 
 interface StatsBarProps {
   totalVolume?: number;
@@ -122,10 +123,11 @@ export function StatsBar({
           </StatItem>
 
           <StatItem label="Upset Vault" icon={Shield} color="#6A0DAD" isVault>
-            <CountUp
-              value={upsetVaultBalance}
-              formatter={vaultFormatter}
-              duration={1.5}
+            <TextScramble
+              text={vaultFormatter(upsetVaultBalance)}
+              speed={45}
+              scrambleSpeed={25}
+              resolvedColor="#A855F7"
               className="vault-glow"
             />
           </StatItem>

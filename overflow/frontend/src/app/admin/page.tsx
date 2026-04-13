@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   Shield,
@@ -18,6 +19,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { StaggerReveal } from "@/components/motion";
 import { api, adminApi } from "@/lib/api";
 import type {
   TeamData,
@@ -236,9 +238,12 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
           </tr>
         </thead>
         <tbody>
-          {rankings.map((team) => (
-            <tr
+          {rankings.map((team, rankIdx) => (
+            <motion.tr
               key={team.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: rankIdx * 0.04, duration: 0.25 }}
               className="border-b border-[#30363D]/50 last:border-0"
             >
               <td className="px-3 py-2 font-mono font-bold text-[#FDB913]">
@@ -272,7 +277,7 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
               <td className="px-3 py-2 text-[#F85149]">
                 {team.sellTaxRate}%
               </td>
-            </tr>
+            </motion.tr>
           ))}
         </tbody>
       </table>
@@ -765,7 +770,12 @@ function PriceUpdateSection({ teams }: { teams: TeamData[] }) {
         </ActionButton>
 
         {result && (
-          <div className="mt-2 rounded-lg border border-[#30363D] bg-[#0D1117] p-3 text-xs">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="mt-2 rounded-lg border border-[#30363D] bg-[#0D1117] p-3 text-xs"
+          >
             <p className="font-semibold text-[#E6EDF3]">{result.name}</p>
             <div className="mt-1.5 flex items-center gap-3">
               <span className="text-[#8B949E]">
@@ -786,7 +796,7 @@ function PriceUpdateSection({ teams }: { teams: TeamData[] }) {
                 {result.change24h.toFixed(2)}%
               </span>
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </SectionCard>
@@ -838,7 +848,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="mx-auto max-w-7xl px-4 py-8 sm:px-6"
+    >
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -876,13 +891,13 @@ export default function AdminPage() {
           <Loader2 className="h-6 w-6 animate-spin text-[#58A6FF]" />
         </div>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <StaggerReveal className="grid gap-5 lg:grid-cols-2" staggerDelay={0.1} yOffset={20}>
           <MatchResultSection teams={teams} matches={matches} />
           <TriggerUpsetSection teams={teams} matches={matches} />
           <RecalculateSection />
           <PriceUpdateSection teams={teams} />
-        </div>
+        </StaggerReveal>
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
+import { CountUp, StaggerReveal, MouseTrackCard } from "@/components/motion";
+import { Meteors } from "@/components/ui/meteors";
 import { VAULT_DATA } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import type { VaultData, UpsetEvent } from "@/types";
@@ -181,21 +183,37 @@ function MultiplierTable() {
           </tr>
         </thead>
         <tbody className="divide-y divide-[#30363D] bg-[#161B22]">
-          {rows.map((row) => (
-            <tr key={row.upsetScore} className="hover:bg-[#21262D] transition-colors">
+          {rows.map((row, rowIdx) => (
+            <motion.tr
+              key={row.upsetScore}
+              initial={{ opacity: 0, x: -12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: rowIdx * 0.08, duration: 0.3 }}
+              className="hover:bg-[#21262D] transition-colors"
+            >
               <td className="px-4 py-3 text-xs font-mono text-[#58A6FF]">
                 {row.upsetScore}
               </td>
               <td className="px-4 py-3 text-xs text-[#8B949E]">
                 {row.description}
               </td>
-              <td className="px-4 py-3 text-xs font-bold text-[#6A0DAD]">
-                {row.multiplier}
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 w-16 rounded-full bg-[#21262D] overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-[#6A0DAD]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(rowIdx + 1) * 25}%` }}
+                      transition={{ duration: 0.6, delay: rowIdx * 0.1, ease: "easeOut" }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold text-[#6A0DAD]">{row.multiplier}</span>
+                </div>
               </td>
               <td className="hidden px-4 py-3 text-xs text-[#8B949E] sm:table-cell">
                 {row.example}
               </td>
-            </tr>
+            </motion.tr>
           ))}
         </tbody>
       </table>
@@ -273,7 +291,12 @@ export default function VaultPage() {
     vaultData;
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="min-h-screen bg-[#0D1117]"
+    >
       {/* Header */}
       <div className="border-b border-[#6A0DAD]/30 bg-gradient-to-r from-[#2A0050]/50 to-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
@@ -300,54 +323,68 @@ export default function VaultPage() {
         ) : (
           <>
             {/* Top stats */}
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                {
-                  label: "Current Balance",
-                  value: formatCurrency(currentBalance),
-                  icon: Shield,
-                  color: "#6A0DAD",
-                  big: true,
-                },
-                {
-                  label: "All-Time Payouts",
-                  value: formatCurrency(totalPayouts),
-                  icon: TrendingUp,
-                  color: "#3FB950",
-                },
-                {
-                  label: "Total Upsets",
-                  value: upsetEvents.length.toString(),
-                  icon: Trophy,
-                  color: "#FDB913",
-                },
-                {
-                  label: "Current Multiplier",
-                  value: `${currentMultiplier}x`,
-                  icon: Zap,
-                  color: "#F85149",
-                },
-              ].map(({ label, value, icon: Icon, color, big }) => (
-                <motion.div
-                  key={label}
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-xl border bg-[#161B22] p-4"
-                  style={{ borderColor: `${color}30` }}
-                >
+            <StaggerReveal className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4" staggerDelay={0.1} yOffset={20}>
+              {/* Balance card with Meteors */}
+              <div
+                className="relative overflow-hidden rounded-xl border bg-[#161B22] p-4"
+                style={{ borderColor: "#6A0DAD30" }}
+              >
+                <Meteors number={8} />
+                <div className="relative z-[1]">
                   <div className="mb-2 flex items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5" style={{ color }} />
-                    <span className="text-xs text-[#8B949E]">{label}</span>
+                    <Shield className="h-3.5 w-3.5" style={{ color: "#6A0DAD" }} />
+                    <span className="text-xs text-[#8B949E]">Current Balance</span>
                   </div>
-                  <p
-                    className={`font-black tabular-nums ${big ? "text-2xl" : "text-xl"}`}
-                    style={{ color }}
+                  <motion.p
+                    animate={{ textShadow: ["0 0 8px rgba(106,13,173,0)", "0 0 16px rgba(106,13,173,0.4)", "0 0 8px rgba(106,13,173,0)"] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    className="text-2xl font-black tabular-nums"
+                    style={{ color: "#6A0DAD" }}
                   >
-                    {value}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
+                    <CountUp value={currentBalance} prefix="$" decimals={2} duration={1.5} />
+                  </motion.p>
+                </div>
+              </div>
+
+              <div
+                className="rounded-xl border bg-[#161B22] p-4"
+                style={{ borderColor: "#3FB95030" }}
+              >
+                <div className="mb-2 flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5" style={{ color: "#3FB950" }} />
+                  <span className="text-xs text-[#8B949E]">All-Time Payouts</span>
+                </div>
+                <p className="text-xl font-black tabular-nums" style={{ color: "#3FB950" }}>
+                  <CountUp value={totalPayouts} prefix="$" decimals={2} duration={1.5} />
+                </p>
+              </div>
+
+              <div
+                className="rounded-xl border bg-[#161B22] p-4"
+                style={{ borderColor: "#FDB91330" }}
+              >
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Trophy className="h-3.5 w-3.5" style={{ color: "#FDB913" }} />
+                  <span className="text-xs text-[#8B949E]">Total Upsets</span>
+                </div>
+                <p className="text-xl font-black tabular-nums" style={{ color: "#FDB913" }}>
+                  <CountUp value={upsetEvents.length} duration={1} />
+                </p>
+              </div>
+
+              <div
+                className="rounded-xl border bg-[#161B22] p-4"
+                style={{ borderColor: "#F8514930" }}
+              >
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5" style={{ color: "#F85149" }} />
+                  <span className="text-xs text-[#8B949E]">Current Multiplier</span>
+                </div>
+                <p className="text-xl font-black tabular-nums" style={{ color: "#F85149" }}>
+                  <CountUp value={currentMultiplier} suffix="x" decimals={1} duration={1} />
+                </p>
+              </div>
+            </StaggerReveal>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
               {/* Left: history + table */}
@@ -362,11 +399,11 @@ export default function VaultPage() {
                       {upsetEvents.length} events this season
                     </span>
                   </div>
-                  <div className="space-y-3">
+                  <StaggerReveal className="space-y-3" staggerDelay={0.1} yOffset={24}>
                     {upsetEvents.map((event, i) => (
                       <UpsetHistoryCard key={event.id} event={event} index={i} />
                     ))}
-                  </div>
+                  </StaggerReveal>
                 </div>
 
                 {/* Multiplier table */}
@@ -392,7 +429,7 @@ export default function VaultPage() {
                     <Info className="h-4 w-4 text-[#58A6FF]" />
                     <h3 className="text-sm font-bold text-[#E6EDF3]">How It Works</h3>
                   </div>
-                  <div className="space-y-0">
+                  <StaggerReveal className="space-y-0" staggerDelay={0.12} yOffset={20}>
                     <HowItWorksStep
                       number="1"
                       title="Trading fees fund the vault"
@@ -417,7 +454,7 @@ export default function VaultPage() {
                       description="When the underdog wins, the vault pays out to all holders of the winning team's token. Payout = vault balance × upset multiplier × your share."
                       color="#3FB950"
                     />
-                  </div>
+                  </StaggerReveal>
                 </div>
 
                 {/* CTA */}
@@ -442,6 +479,6 @@ export default function VaultPage() {
           </>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

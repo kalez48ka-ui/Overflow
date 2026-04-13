@@ -22,6 +22,7 @@ import {
   Star,
   Activity,
 } from "lucide-react";
+import { StaggerReveal, MouseTrackCard } from "@/components/motion";
 import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
@@ -382,8 +383,15 @@ export default function HowItWorksPage() {
                 { rank: 4, tax: "9.8%", meaning: "Below average", color: "#FDB913" },
                 { rank: 5, tax: "12.4%", meaning: "Struggling team", color: "#FDB913" },
                 { rank: 6, tax: "15.0%", meaning: "Bottom, most expensive exit", color: "#E4002B" },
-              ].map(({ rank, tax, meaning, color }) => (
-                <tr key={rank} className="border-b border-[#30363D]/50 last:border-b-0">
+              ].map(({ rank, tax, meaning, color }, rowIdx) => (
+                <motion.tr
+                  key={rank}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: rowIdx * 0.06, duration: 0.3 }}
+                  className="border-b border-[#30363D]/50 last:border-b-0"
+                >
                   <td className="px-4 py-3">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold" style={{ backgroundColor: `${color}20`, color }}>
                       {rank}
@@ -393,7 +401,7 @@ export default function HowItWorksPage() {
                     {tax}
                   </td>
                   <td className="px-4 py-3 text-xs text-[#8B949E]">{meaning}</td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>
@@ -502,6 +510,9 @@ export default function HowItWorksPage() {
             <motion.div
               key={tier}
               variants={cardVariants}
+            >
+            <MouseTrackCard maxTilt={4} spotlightOpacity={0.1} className="rounded-xl">
+            <div
               className="group relative overflow-hidden rounded-xl border border-[#30363D] bg-[#161B22] p-5 transition-colors hover:border-opacity-70"
             >
               <div
@@ -526,6 +537,8 @@ export default function HowItWorksPage() {
               </div>
 
               <p className="mt-4 text-[10px] leading-relaxed text-[#8B949E]">{desc}</p>
+            </div>
+            </MouseTrackCard>
             </motion.div>
           ))}
         </motion.div>
@@ -641,8 +654,15 @@ export default function HowItWorksPage() {
                 { pos: "4th", share: 12, color: "#8B949E", icon: Award },
                 { pos: "5th", share: 5, color: "#8B949E", icon: Award },
                 { pos: "6th", share: 3, color: "#8B949E", icon: Award },
-              ].map(({ pos, share, color, icon: RowIcon }) => (
-                <tr key={pos} className="border-b border-[#30363D]/50 last:border-b-0">
+              ].map(({ pos, share, color, icon: RowIcon }, rowIdx) => (
+                <motion.tr
+                  key={pos}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: rowIdx * 0.06, duration: 0.3 }}
+                  className="border-b border-[#30363D]/50 last:border-b-0"
+                >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <RowIcon className="h-3.5 w-3.5" style={{ color }} />
@@ -664,7 +684,7 @@ export default function HowItWorksPage() {
                       />
                     </div>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
             </tbody>
           </table>

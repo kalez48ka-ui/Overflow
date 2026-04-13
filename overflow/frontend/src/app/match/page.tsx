@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
   TrendingUp,
@@ -15,6 +15,7 @@ import { BallByBall } from "@/components/BallByBall";
 import { TradingChart } from "@/components/TradingChart";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
 import { AIAnalysis } from "@/components/AIAnalysis";
+import { CountUp, MouseTrackCard, StaggerReveal } from "@/components/motion";
 import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import type { MatchInfo } from "@/lib/api";
@@ -133,7 +134,7 @@ function AiAnalysisPanel() {
           Live Engine
         </span>
       </div>
-      <div className="p-4 space-y-3">
+      <StaggerReveal className="p-4 space-y-3" staggerDelay={0.1} yOffset={16}>
         {signals.map((signal) => (
           <motion.div
             key={signal.type}
@@ -183,7 +184,7 @@ function AiAnalysisPanel() {
             )}
           </p>
         </div>
-      </div>
+      </StaggerReveal>
     </div>
   );
 }
@@ -198,6 +199,7 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
   ];
 
   return (
+    <MouseTrackCard maxTilt={3} spotlightOpacity={0.06} className="rounded-xl">
     <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
       <h3 className="mb-3 text-sm font-semibold text-[#E6EDF3]">Quick Trade</h3>
       <div className="grid grid-cols-2 gap-3">
@@ -243,6 +245,7 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
         ))}
       </div>
     </div>
+    </MouseTrackCard>
   );
 }
 
@@ -269,7 +272,7 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
 
       <div className="mb-3 text-center">
         <p className="text-5xl font-black tabular-nums" style={{ color: levelColor }}>
-          {score}
+          <CountUp value={score} duration={1.5} />
         </p>
         <p className="text-xs text-[#8B949E]">out of 100</p>
       </div>
@@ -545,7 +548,12 @@ export default function MatchPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="min-h-screen bg-[#0D1117]"
+    >
       {/* Match status header */}
       <div className="border-b border-[#30363D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
@@ -672,8 +680,20 @@ export default function MatchPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
             {/* Left column */}
             <div className="space-y-4">
-              {/* Scorecard */}
-              <LiveScorecard match={matchData} />
+              {/* Scorecard — pulsing red border when live */}
+              <motion.div
+                animate={{
+                  boxShadow: [
+                    "0 0 0 0 rgba(248, 81, 73, 0)",
+                    "0 0 0 3px rgba(248, 81, 73, 0.3)",
+                    "0 0 0 0 rgba(248, 81, 73, 0)",
+                  ],
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="rounded-xl"
+              >
+                <LiveScorecard match={matchData} />
+              </motion.div>
 
               {/* Price chart with team switcher */}
               <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
@@ -733,6 +753,6 @@ export default function MatchPage() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

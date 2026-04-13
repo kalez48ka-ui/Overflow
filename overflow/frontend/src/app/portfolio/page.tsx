@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   PieChart,
   Pie,
@@ -27,6 +27,7 @@ import {
 import { useAccount } from "wagmi";
 import { PositionCard } from "@/components/PositionCard";
 import { RewardsPanel } from "@/components/RewardsPanel";
+import { CountUp, MouseTrackCard, StaggerReveal } from "@/components/motion";
 import {
   USER_POSITIONS,
   USER_REWARDS,
@@ -323,7 +324,12 @@ export default function PortfolioPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="min-h-screen bg-[#0D1117]"
+    >
       {/* Header */}
       <div className="border-b border-[#30363D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
@@ -343,51 +349,65 @@ export default function PortfolioPage() {
         ) : (
           <>
             {/* Summary cards */}
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                {
-                  label: "Total Value",
-                  value: formatCurrency(totalValue),
-                  icon: Briefcase,
-                  color: "#58A6FF",
-                },
-                {
-                  label: "Unrealized P&L",
-                  value: `${totalPnl >= 0 ? "+" : ""}${formatCurrency(totalPnl)}`,
-                  sub: formatPercent(totalPnlPercent),
-                  icon: totalPnl >= 0 ? TrendingUp : TrendingDown,
-                  color: totalPnl >= 0 ? "#3FB950" : "#F85149",
-                },
-                {
-                  label: "Claimable Rewards",
-                  value: `${totalClaimable.toFixed(2)} WIRE`,
-                  icon: CheckCircle,
-                  color: "#FDB913",
-                },
-                {
-                  label: "Open Positions",
-                  value: positions.length.toString(),
-                  icon: Briefcase,
-                  color: "#8B949E",
-                },
-              ].map(({ label, value, sub, icon: Icon, color }) => (
-                <motion.div
-                  key={label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
-                >
-                  <div className="mb-2 flex items-center gap-1.5">
-                    <Icon className="h-3.5 w-3.5" style={{ color }} />
-                    <span className="text-xs text-[#8B949E]">{label}</span>
-                  </div>
-                  <p className="text-lg font-bold" style={{ color }}>
-                    {value}
-                  </p>
-                  {sub && <p className="text-xs text-[#8B949E]">{sub}</p>}
-                </motion.div>
-              ))}
-            </div>
+            <StaggerReveal className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4" staggerDelay={0.08} yOffset={16}>
+              <motion.div
+                className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+              >
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Briefcase className="h-3.5 w-3.5" style={{ color: "#58A6FF" }} />
+                  <span className="text-xs text-[#8B949E]">Total Value</span>
+                </div>
+                <p className="text-lg font-bold" style={{ color: "#58A6FF" }}>
+                  <CountUp value={totalValue} prefix="$" decimals={2} duration={1.2} />
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+                style={{
+                  boxShadow: totalPnl >= 0
+                    ? "inset 0 0 30px rgba(63,185,80,0.06)"
+                    : "inset 0 0 30px rgba(248,81,73,0.06)",
+                }}
+              >
+                <div className="mb-2 flex items-center gap-1.5">
+                  {totalPnl >= 0 ? (
+                    <TrendingUp className="h-3.5 w-3.5" style={{ color: "#3FB950" }} />
+                  ) : (
+                    <TrendingDown className="h-3.5 w-3.5" style={{ color: "#F85149" }} />
+                  )}
+                  <span className="text-xs text-[#8B949E]">Unrealized P&L</span>
+                </div>
+                <p className="text-lg font-bold" style={{ color: totalPnl >= 0 ? "#3FB950" : "#F85149" }}>
+                  <CountUp value={totalPnl} prefix={totalPnl >= 0 ? "+$" : "-$"} decimals={2} duration={1.2} formatter={(n) => `${totalPnl >= 0 ? "+" : ""}${formatCurrency(n)}`} />
+                </p>
+                <p className="text-xs text-[#8B949E]">{formatPercent(totalPnlPercent)}</p>
+              </motion.div>
+
+              <motion.div
+                className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+              >
+                <div className="mb-2 flex items-center gap-1.5">
+                  <CheckCircle className="h-3.5 w-3.5" style={{ color: "#FDB913" }} />
+                  <span className="text-xs text-[#8B949E]">Claimable Rewards</span>
+                </div>
+                <p className="text-lg font-bold" style={{ color: "#FDB913" }}>
+                  <CountUp value={totalClaimable} decimals={2} suffix=" WIRE" duration={1.2} />
+                </p>
+              </motion.div>
+
+              <motion.div
+                className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+              >
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Briefcase className="h-3.5 w-3.5" style={{ color: "#8B949E" }} />
+                  <span className="text-xs text-[#8B949E]">Open Positions</span>
+                </div>
+                <p className="text-lg font-bold" style={{ color: "#8B949E" }}>
+                  <CountUp value={positions.length} duration={0.8} />
+                </p>
+              </motion.div>
+            </StaggerReveal>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
               {/* Main content */}
@@ -416,17 +436,26 @@ export default function PortfolioPage() {
                   ))}
                 </div>
 
+                <AnimatePresence mode="wait">
                 {activeTab === "positions" && (
-                  <div className="space-y-3">
+                  <motion.div
+                    key="positions"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-3"
+                  >
                     {positions.map((position, i) => (
-                      <PositionCard
-                        key={position.teamId}
-                        position={position}
-                        index={i}
-                        onTrade={(teamId) => {
-                          router.push(`/trade/${teamId.toLowerCase()}`);
-                        }}
-                      />
+                      <MouseTrackCard key={position.teamId} maxTilt={2} spotlightOpacity={0.04} className="rounded-xl">
+                        <PositionCard
+                          position={position}
+                          index={i}
+                          onTrade={(teamId) => {
+                            router.push(`/trade/${teamId.toLowerCase()}`);
+                          }}
+                        />
+                      </MouseTrackCard>
                     ))}
                     {positions.length === 0 && (
                       <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-12 text-center">
@@ -440,10 +469,17 @@ export default function PortfolioPage() {
                         </Link>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 )}
 
                 {activeTab === "history" && (
+                  <motion.div
+                    key="history"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
                   <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
                     {txLoading ? (
                       <div className="flex items-center justify-center py-8">
@@ -471,18 +507,25 @@ export default function PortfolioPage() {
                       </div>
                     )}
                   </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </div>
 
               {/* Right column */}
               <div className="space-y-4">
                 {/* Pie chart */}
-                <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+                  className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+                >
                   <h3 className="mb-3 text-sm font-semibold text-[#E6EDF3]">
                     Allocation
                   </h3>
                   <PortfolioPieChart positions={positions} />
-                </div>
+                </motion.div>
 
                 {/* Rewards */}
                 <RewardsPanel rewards={USER_REWARDS} />
@@ -527,6 +570,6 @@ export default function PortfolioPage() {
           </>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

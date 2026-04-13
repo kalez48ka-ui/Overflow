@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MapPin, Trophy, Clock, Radio, Loader2 } from "lucide-react";
+import { StaggerReveal } from "@/components/motion";
 import { api } from "@/lib/api";
 import type { MatchInfo } from "@/lib/api";
 import { PSL_TEAMS } from "@/lib/mockData";
@@ -94,13 +95,17 @@ function formatMatchTime(iso: string): string {
 function StatusBadge({ status }: { status: MatchInfo["status"] }) {
   if (status === "live") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F85149]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#F85149]">
+      <motion.span
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        className="inline-flex items-center gap-1.5 rounded-full bg-[#F85149]/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#F85149]"
+      >
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F85149] opacity-75" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-[#F85149]" />
         </span>
         Live
-      </span>
+      </motion.span>
     );
   }
 
@@ -291,7 +296,12 @@ export default function MatchHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="min-h-screen bg-[#0D1117]"
+    >
       {/* Header */}
       <div className="border-b border-[#30363D] bg-[#161B22]">
         <div className="mx-auto max-w-5xl px-4 py-5 sm:px-6">
@@ -363,21 +373,23 @@ export default function MatchHistoryPage() {
 
         {/* Match cards grid */}
         {!loading && !error && matches.length > 0 && (
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 gap-4 md:grid-cols-2"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
             >
-              {matches.map((match) => (
-                <MatchCard key={match.id} match={match} />
-              ))}
+              <StaggerReveal className="grid grid-cols-1 gap-4 md:grid-cols-2" staggerDelay={0.06} yOffset={16}>
+                {matches.map((match) => (
+                  <MatchCard key={match.id} match={match} />
+                ))}
+              </StaggerReveal>
             </motion.div>
           </AnimatePresence>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

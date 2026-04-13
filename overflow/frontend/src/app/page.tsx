@@ -34,6 +34,7 @@ import Link from "next/link";
 import { Spotlight } from "@/components/ui/spotlight";
 import { MovingBorderButton } from "@/components/ui/moving-border";
 import { Meteors } from "@/components/ui/meteors";
+import { TextScramble, LiquidBlobs, MagneticButton, RevealText } from "@/components/effects";
 
 function FeaturePill({
   icon: Icon,
@@ -173,6 +174,9 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0D1117]">
+      {/* Morphing background blobs — fixed, very subtle */}
+      <LiquidBlobs />
+
       {/* Hero */}
       <section ref={heroRef} className="relative overflow-hidden">
         {/* Animated cycling gradient background */}
@@ -236,7 +240,7 @@ export default function LandingPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E4002B] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E4002B]" />
               </span>
-              PSL 2026 — Season Live
+              <TextScramble text="PSL 2026 — Season Live" speed={40} resolvedColor="#E4002B" scrambledColor="#E4002B66" />
             </div>
           </motion.div>
 
@@ -247,13 +251,11 @@ export default function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-center"
           >
-            <h1 className="mx-auto max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl">
-              Your Cricket IQ.{" "}
-              <br className="hidden sm:block" />
-              <span className="text-shimmer">
-                Your Edge.
-              </span>
-            </h1>
+            <RevealText
+              lines={["Your Cricket IQ.", "Your Edge."]}
+              className="mx-auto max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
+              lineClassName="text-shimmer"
+            />
             <p className="mx-auto mt-5 max-w-xl text-base text-[#8B949E] sm:text-lg">
               Trade tokenized PSL teams on-chain. Prices move ball-by-ball.
               Outsmart the market. Profit from upsets.
@@ -267,14 +269,19 @@ export default function LandingPage() {
             transition={{ delay: 0.2 }}
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
-            <MovingBorderButton
-              as="div"
-              containerClassName="cta-pulse rounded-xl"
-              className="px-5 py-3 text-sm font-bold text-[#E6EDF3]"
-              borderRadius="0.75rem"
+            <MagneticButton
+              glowColor="#3FB950"
+              className="rounded-xl"
             >
-              <SafeConnectButton label="Start Trading" showBalance={false} />
-            </MovingBorderButton>
+              <MovingBorderButton
+                as="div"
+                containerClassName="cta-pulse rounded-xl"
+                className="px-5 py-3 text-sm font-bold text-[#E6EDF3]"
+                borderRadius="0.75rem"
+              >
+                <SafeConnectButton label="Start Trading" showBalance={false} />
+              </MovingBorderButton>
+            </MagneticButton>
             <Link
               href="/match"
               className="hover-lift flex items-center gap-2 rounded-xl border border-[#30363D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-300"

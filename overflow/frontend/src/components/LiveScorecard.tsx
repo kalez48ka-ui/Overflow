@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Activity, Target } from "lucide-react";
 import type { MatchData } from "@/types";
 import { hexToRgba } from "@/lib/utils";
+import { TextScramble } from "@/components/effects";
 
 interface LiveScorecardProps {
   match: MatchData;
@@ -72,7 +73,14 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold tabular-nums text-[#E6EDF3]">
-                {battingTeam.runs}
+                <TextScramble
+                  key={`${battingTeam.teamId}-${battingTeam.runs}-${battingTeam.wickets}`}
+                  text={String(battingTeam.runs)}
+                  speed={35}
+                  scrambleSpeed={20}
+                  resolvedColor="#E6EDF3"
+                  scrambledColor="#8B949E"
+                />
                 <span className="text-xl text-[#8B949E]">/{battingTeam.wickets}</span>
               </p>
               <p className="text-xs text-[#8B949E]">{battingTeam.overs} overs</p>

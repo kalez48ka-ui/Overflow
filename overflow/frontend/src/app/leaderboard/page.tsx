@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   Trophy,
@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
+import { CountUp } from "@/components/motion";
 import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api";
 import { cn, formatCurrency, shortenAddress } from "@/lib/utils";
@@ -37,23 +38,38 @@ function teamColor(symbol: string): string {
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FDB913]/20">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.3 }}
+        className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FDB913]/20"
+      >
         <Trophy className="h-4 w-4 text-[#FDB913]" />
-      </div>
+      </motion.div>
     );
   }
   if (rank === 2) {
     return (
-      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C9D1D9]/15">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.4 }}
+        className="flex h-7 w-7 items-center justify-center rounded-full bg-[#C9D1D9]/15"
+      >
         <Medal className="h-4 w-4 text-[#C9D1D9]" />
-      </div>
+      </motion.div>
     );
   }
   if (rank === 3) {
     return (
-      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#CD7F32]/20">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.5 }}
+        className="flex h-7 w-7 items-center justify-center rounded-full bg-[#CD7F32]/20"
+      >
         <Medal className="h-4 w-4 text-[#CD7F32]" />
-      </div>
+      </motion.div>
     );
   }
   return (
@@ -146,7 +162,12 @@ export default function LeaderboardPage() {
   }, [sortKey]);
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      className="min-h-screen bg-[#0D1117]"
+    >
       {/* Header */}
       <div className="border-b border-[#30363D] bg-[#161B22]">
         <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
@@ -198,9 +219,13 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Table */}
+        <AnimatePresence mode="wait">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          key={sortKey}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.25 }}
           className="overflow-hidden rounded-xl border border-[#30363D] bg-[#161B22]"
         >
           <div className="overflow-x-auto">
@@ -297,8 +322,12 @@ export default function LeaderboardPage() {
                               : "text-[#F85149]"
                           )}
                         >
-                          {entry.totalPnl >= 0 ? "+" : ""}
-                          {formatCurrency(Math.abs(entry.totalPnl))}
+                          <CountUp
+                            value={Math.abs(entry.totalPnl)}
+                            prefix={entry.totalPnl >= 0 ? "+$" : "-$"}
+                            decimals={2}
+                            duration={1}
+                          />
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -349,7 +378,8 @@ export default function LeaderboardPage() {
             </table>
           </div>
         </motion.div>
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }
