@@ -561,7 +561,11 @@ export default function LandingPage() {
                 split the pot — with a multiplier that scales with how unlikely
                 the win was.
               </p>
-              <div className="mt-6 space-y-2.5">
+              <StaggerReveal
+                className="mt-6 space-y-2.5"
+                staggerDelay={0.12}
+                yOffset={16}
+              >
                 {[
                   { label: "Minor upset (40% win prob)", multiplier: "1.5x", width: "40%" },
                   { label: "Major upset (25% win prob)", multiplier: "2.8x", width: "65%" },
@@ -585,7 +589,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 ))}
-              </div>
+              </StaggerReveal>
               <Link
                 href="/vault"
                 className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#6A0DAD] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#7B1FA2] transition-all duration-300 shadow-lg shadow-[#6A0DAD]/20 hover-lift"
@@ -600,23 +604,39 @@ export default function LandingPage() {
                   Current Vault Balance
                 </p>
                 <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight vault-glow">
-                  {formatCurrency(vaultState?.balance ?? GLOBAL_STATS.upsetVaultBalance)}
+                  <CountUp
+                    value={vaultBalance}
+                    formatter={(n) => formatCurrency(n)}
+                    duration={2}
+                  />
                 </p>
                 <p className="mt-2 text-sm font-medium text-[#A855F7]">
                   Next payout: IU vs LQ tonight
                 </p>
-                <div className="mt-8 grid grid-cols-3 gap-4 text-center">
+                <StaggerReveal
+                  className="mt-8 grid grid-cols-3 gap-4 text-center"
+                  staggerDelay={0.1}
+                  yOffset={20}
+                >
                   {[
-                    { label: "Paid Out", value: "$249K" },
-                    { label: "Upsets", value: "18" },
-                    { label: "Avg Mult.", value: "2.7x" },
-                  ].map(({ label, value }) => (
+                    { label: "Paid Out", raw: 249, prefix: "$", suffix: "K" },
+                    { label: "Upsets", raw: 18, prefix: "", suffix: "" },
+                    { label: "Avg Mult.", raw: 2.7, prefix: "", suffix: "x" },
+                  ].map(({ label, raw, prefix, suffix }) => (
                     <div key={label} className="rounded-lg bg-[#0D1117]/60 px-3 py-3 border border-[#30363D]/50">
-                      <p className="text-lg font-black tabular-nums text-[#E6EDF3]">{value}</p>
+                      <p className="text-lg font-black tabular-nums text-[#E6EDF3]">
+                        <CountUp
+                          value={raw}
+                          prefix={prefix}
+                          suffix={suffix}
+                          decimals={raw % 1 !== 0 ? 1 : 0}
+                          duration={1.8}
+                        />
+                      </p>
                       <p className="text-[10px] text-[#8B949E] mt-0.5">{label}</p>
                     </div>
                   ))}
-                </div>
+                </StaggerReveal>
               </div>
             </div>
           </div>
