@@ -196,11 +196,11 @@ function MatchCard({ match }: { match: MatchInfo }) {
       className="group rounded-xl border border-[#30363D] bg-[#161B22] p-5 transition-colors hover:border-[#484F58]"
     >
       {/* Header: status + date */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <StatusBadge status={match.status} />
         {match.startTime && (
           <div className="flex items-center gap-1.5 text-xs text-[#8B949E]">
-            <Calendar className="h-3 w-3" />
+            <Calendar className="h-3 w-3 shrink-0" />
             <span>{formatMatchDate(match.startTime)}</span>
             <span className="text-[#484F58]">|</span>
             <span>{formatMatchTime(match.startTime)}</span>
@@ -313,7 +313,7 @@ export default function MatchHistoryPage() {
               key={tab.key}
               onClick={() => handleTabChange(tab.key)}
               className={cn(
-                "rounded-full px-4 py-2 text-sm font-semibold transition-all",
+                "rounded-full px-4 py-2.5 text-sm font-semibold transition-all min-h-[44px]",
                 activeTab === tab.key
                   ? "bg-[#58A6FF] text-white shadow-lg shadow-[#58A6FF]/20"
                   : "bg-[#161B22] text-[#8B949E] border border-[#30363D] hover:border-[#484F58] hover:text-[#E6EDF3]"

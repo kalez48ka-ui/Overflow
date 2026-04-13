@@ -165,6 +165,7 @@ export default function StandingsPage() {
         </div>
 
         {/* Table container */}
+        <p className="mb-2 text-[10px] text-[#8B949E] sm:hidden">Swipe to see all columns</p>
         <div className="overflow-x-auto rounded-xl border border-[#30363D] bg-[#161B22]">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
@@ -173,7 +174,7 @@ export default function StandingsPage() {
                   <th
                     key={col.key}
                     className={cn(
-                      "group cursor-pointer select-none px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#8B949E] transition-colors hover:text-[#E6EDF3]",
+                      "group cursor-pointer select-none px-3 sm:px-4 py-3.5 text-xs font-semibold uppercase tracking-wider text-[#8B949E] transition-colors hover:text-[#E6EDF3]",
                       col.align === "left" ? "text-left" : "text-right",
                       col.key === "name" && "text-left",
                       col.key === "ranking" && "text-center w-16",
@@ -270,10 +271,10 @@ function TeamRow({
       </td>
 
       {/* Team */}
-      <td className="px-4 py-3.5">
+      <td className="px-3 sm:px-4 py-3.5">
         <Link
           href={`/trade/${team.id}`}
-          className="flex items-center gap-3 group/link"
+          className="flex items-center gap-2 sm:gap-3 group/link"
         >
           <div
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-md"
@@ -281,7 +282,7 @@ function TeamRow({
           >
             {team.id}
           </div>
-          <div>
+          <div className="whitespace-nowrap">
             <span className="font-semibold text-[#E6EDF3] transition-colors group-hover/link:text-[#58A6FF]">
               {team.name}
             </span>

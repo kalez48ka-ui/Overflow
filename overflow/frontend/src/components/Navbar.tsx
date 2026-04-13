@@ -17,37 +17,68 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 
-/* ── Logo SVG ────────────────────────────────────────────────── */
+/* ── Logo SVG — Hexagonal crypto mark with rising wave ─────── */
 function OverflowLogo({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 36 36"
+      viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Outer ring */}
-      <circle cx="18" cy="18" r="17" stroke="#E4002B" strokeWidth="2" />
-      {/* Inner wave — represents "overflow" */}
+      <defs>
+        <linearGradient id="hex-fill" x1="0" y1="0" x2="40" y2="40">
+          <stop stopColor="#E4002B" />
+          <stop offset="1" stopColor="#8B0019" />
+        </linearGradient>
+        <linearGradient id="wave-grad" x1="10" y1="20" x2="30" y2="20">
+          <stop stopColor="#FDB913" />
+          <stop offset="1" stopColor="#00A651" />
+        </linearGradient>
+        <filter id="logo-glow">
+          <feGaussianBlur stdDeviation="1.5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Hexagon body */}
       <path
-        d="M8 20c2-4 4-8 6-8s4 8 6 8 4-8 6-8"
-        stroke="url(#logo-grad)"
+        d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z"
+        fill="url(#hex-fill)"
+        stroke="#FF1A3D"
+        strokeWidth="0.5"
+        opacity="0.95"
+      />
+      {/* Inner hexagon outline */}
+      <path
+        d="M20 6 L32.5 13 L32.5 27 L20 34 L7.5 27 L7.5 13 Z"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="0.4"
+        opacity="0.15"
+      />
+      {/* Rising overflow wave — the signature mark */}
+      <path
+        d="M10 24 Q14 16, 17 20 T24 16 T30 13"
+        stroke="url(#wave-grad)"
         strokeWidth="2.5"
         strokeLinecap="round"
         fill="none"
+        filter="url(#logo-glow)"
       />
-      {/* Upward arrow — represents growth */}
+      {/* Small upward arrow tip */}
       <path
-        d="M18 8l4 5h-3v4h-2v-4h-3l4-5z"
-        fill="#E4002B"
+        d="M28 15 L30 11 L32 15"
+        stroke="#FDB913"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
       />
-      <defs>
-        <linearGradient id="logo-grad" x1="8" y1="20" x2="26" y2="20">
-          <stop stopColor="#E4002B" />
-          <stop offset="0.5" stopColor="#FDB913" />
-          <stop offset="1" stopColor="#00A651" />
-        </linearGradient>
-      </defs>
+      {/* Dot accent */}
+      <circle cx="10" cy="24" r="1.5" fill="#00A651" opacity="0.9" />
     </svg>
   );
 }

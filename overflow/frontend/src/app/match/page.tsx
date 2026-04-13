@@ -151,13 +151,13 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
             <div className="grid grid-cols-2 gap-1">
               <Link
                 href={`/trade/${team.id.toLowerCase()}`}
-                className="rounded-md bg-[#238636] py-1.5 text-center text-[10px] font-bold text-white hover:bg-[#2EA043] transition-colors"
+                className="rounded-md bg-[#238636] py-2.5 text-center text-xs font-bold text-white hover:bg-[#2EA043] transition-colors"
               >
                 Buy
               </Link>
               <Link
                 href={`/trade/${team.id.toLowerCase()}`}
-                className="rounded-md bg-[#DA3633] py-1.5 text-center text-[10px] font-bold text-white hover:bg-[#F85149] transition-colors"
+                className="rounded-md bg-[#DA3633] py-2.5 text-center text-xs font-bold text-white hover:bg-[#F85149] transition-colors"
               >
                 Sell
               </Link>

@@ -299,7 +299,7 @@ export default function LandingPage() {
                       setSortDir("asc");
                     }
                   }}
-                  className={`flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`flex items-center gap-1 rounded-full border px-3 py-2 text-xs font-medium transition-colors min-h-[44px] sm:min-h-0 sm:py-1.5 ${
                     isActive
                       ? "border-[#58A6FF] bg-[#161B22] text-[#E6EDF3]"
                       : "border-[#30363D] text-[#8B949E] hover:border-[#58A6FF]/50"

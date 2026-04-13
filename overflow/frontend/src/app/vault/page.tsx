@@ -72,9 +72,9 @@ function UpsetHistoryCard({
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
         <div className="rounded-lg bg-[#0D1117] py-2 px-1">
-          <p className="text-[10px] text-[#8B949E]">Vault Snapshot</p>
+          <p className="text-[10px] text-[#8B949E]">Vault Snap.</p>
           <p className="text-xs font-bold text-[#E6EDF3]">
             {formatCurrency(event.vaultSnapshot)}
           </p>

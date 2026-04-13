@@ -12,3 +12,7 @@ __pycache__/
 venv/
 *.log
 .DS_Store
+agents/
+graphify/
+ui-ux-pro-max-skill/
+.claude/

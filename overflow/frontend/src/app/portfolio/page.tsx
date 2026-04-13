@@ -117,20 +117,20 @@ function TransactionRow({
   }[tx.type];
 
   return (
-    <div className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-      <div className="flex items-center gap-3">
+    <div className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+      <div className="flex items-center gap-3 min-w-0">
         {statusIcon}
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold text-[#E6EDF3]">
             <span className={cn("capitalize font-bold", typeColor)}>{tx.type}</span>
             {" "}{tx.teamSymbol}
           </p>
-          <p className="text-[10px] text-[#8B949E]">
+          <p className="text-[10px] text-[#8B949E] truncate">
             {formatTimestamp(tx.timestamp)} · {tx.txHash}
           </p>
         </div>
       </div>
-      <div className="text-right">
+      <div className="text-right shrink-0">
         <p className="text-xs font-semibold text-[#E6EDF3]">
           {formatCurrency(tx.total)}
         </p>
