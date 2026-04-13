@@ -124,7 +124,7 @@ export class OracleService {
     }
   }
 
-  private async recalculateRankings(): Promise<void> {
+  async recalculateRankings(): Promise<void> {
     const teams = await this.prisma.team.findMany({
       orderBy: [
         { wins: 'desc' },

@@ -260,4 +260,103 @@ export const api = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Admin API types
+// ---------------------------------------------------------------------------
+
+export interface AdminMatchResultResponse {
+  status: string;
+  match: {
+    id: string;
+    winnerId: string;
+    isUpset: boolean;
+    upsetScore: number | null;
+  };
+  rankings: AdminRankingEntry[];
+}
+
+export interface AdminRankingEntry {
+  id: string;
+  name: string;
+  symbol: string;
+  ranking: number;
+  wins: number;
+  losses: number;
+  performanceScore: number;
+  currentPrice: number;
+  sellTaxRate: number;
+}
+
+export interface AdminUpsetResponse {
+  status: string;
+  upset: {
+    matchId: string;
+    winnerSymbol: string;
+    loserSymbol: string;
+    upsetScore: number;
+    multiplier: number;
+    releasePercent: string;
+    vaultBefore: number;
+    vaultAfter: number;
+    released: number;
+  };
+}
+
+export interface AdminRecalculateResponse {
+  status: string;
+  rankings: AdminRankingEntry[];
+}
+
+export interface AdminPriceUpdateResponse {
+  status: string;
+  team: {
+    id: string;
+    name: string;
+    symbol: string;
+    oldPrice: number;
+    newPrice: number;
+    change24h: number;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Admin API client
+// ---------------------------------------------------------------------------
+
+export const adminApi = {
+  submitMatchResult: (
+    matchId: string,
+    winnerId: string,
+  ): Promise<AdminMatchResultResponse> =>
+    fetchJSON(`${API_URL}/api/admin/match-result`, {
+      method: "POST",
+      body: JSON.stringify({ matchId, winnerId }),
+    }),
+
+  triggerUpset: (
+    matchId: string,
+    winnerSymbol: string,
+    loserSymbol: string,
+    upsetScore: number,
+  ): Promise<AdminUpsetResponse> =>
+    fetchJSON(`${API_URL}/api/admin/trigger-upset`, {
+      method: "POST",
+      body: JSON.stringify({ matchId, winnerSymbol, loserSymbol, upsetScore }),
+    }),
+
+  recalculateRankings: (): Promise<AdminRecalculateResponse> =>
+    fetchJSON(`${API_URL}/api/admin/recalculate`, {
+      method: "POST",
+    }),
+
+  updatePrice: (
+    teamSymbol: string,
+    newPrice: number,
+  ): Promise<AdminPriceUpdateResponse> =>
+    fetchJSON(`${API_URL}/api/admin/price-update`, {
+      method: "POST",
+      body: JSON.stringify({ teamSymbol, newPrice }),
+    }),
+};
+
 export default api;

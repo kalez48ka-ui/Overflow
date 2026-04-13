@@ -25,36 +25,110 @@ import Link from "next/link";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const POLL_INTERVAL_MS = 30_000; // 30s — same as backend polling
 
+/** Shape returned by GET /api/ai/signals on the backend (port 3001). */
+interface BackendAiSignal {
+  teamSymbol: string;
+  signal: "BUY" | "SELL" | "HOLD";
+  confidence: number;
+  reason: string;
+  timestamp: string;
+}
+
+/** UI-friendly signal used for rendering cards. */
+interface PanelSignal {
+  type: string;
+  confidence: number;
+  desc: string;
+  color: string;
+  icon: React.ElementType;
+}
+
+const FALLBACK_SIGNALS: PanelSignal[] = [
+  {
+    type: "UPSET_RISK",
+    confidence: 68,
+    desc: "IU's batting surge in overs 15-18 indicates high upset probability",
+    color: "#F85149",
+    icon: AlertTriangle,
+  },
+  {
+    type: "BUY_SIGNAL",
+    confidence: 74,
+    desc: "$IU token underpriced relative to current match situation",
+    color: "#3FB950",
+    icon: TrendingUp,
+  },
+  {
+    type: "VAULT_TRIGGER",
+    confidence: 61,
+    desc: "If IU wins, Upset Vault triggers at 1.8x multiplier",
+    color: "#6A0DAD",
+    icon: Shield,
+  },
+];
+
+function mapBackendSignalToPanel(s: BackendAiSignal): PanelSignal {
+  const signalMap: Record<string, { type: string; color: string; icon: React.ElementType }> = {
+    BUY:  { type: "BUY_SIGNAL",  color: "#3FB950", icon: TrendingUp },
+    SELL: { type: "SELL_SIGNAL", color: "#F85149", icon: AlertTriangle },
+    HOLD: { type: "HOLD",       color: "#58A6FF", icon: Shield },
+  };
+  const mapping = signalMap[s.signal] ?? signalMap["HOLD"]!;
+  return {
+    type: `${mapping.type} · $${s.teamSymbol}`,
+    confidence: Math.round(s.confidence * 100),
+    desc: s.reason,
+    color: mapping.color,
+    icon: mapping.icon,
+  };
+}
+
 function AiAnalysisPanel() {
-  const signals = [
-    {
-      type: "UPSET_RISK",
-      confidence: 68,
-      desc: "IU's batting surge in overs 15-18 indicates high upset probability",
-      color: "#F85149",
-      icon: AlertTriangle,
-    },
-    {
-      type: "BUY_SIGNAL",
-      confidence: 74,
-      desc: "$IU token underpriced relative to current match situation",
-      color: "#3FB950",
-      icon: TrendingUp,
-    },
-    {
-      type: "VAULT_TRIGGER",
-      confidence: 61,
-      desc: "If IU wins, Upset Vault triggers at 1.8x multiplier",
-      color: "#6A0DAD",
-      icon: Shield,
-    },
-  ];
+  const [signals, setSignals] = useState<PanelSignal[]>(FALLBACK_SIGNALS);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchSignals = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch(`${API_URL}/api/ai/signals`, {
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json() as { success: boolean; data?: BackendAiSignal[] };
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        setSignals(json.data.map(mapBackendSignalToPanel));
+        setLastUpdated(new Date());
+      }
+      // If API returns empty data, keep existing signals
+    } catch {
+      // Graceful degradation — keep whatever signals are already loaded
+      if (signals === FALLBACK_SIGNALS) {
+        // First load failed — fallback already in place, nothing to do
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchSignals();
+    const interval = setInterval(fetchSignals, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchSignals]);
 
   return (
     <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
       <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
         <Brain className="h-4 w-4 text-[#58A6FF]" />
         <h3 className="text-sm font-semibold text-[#E6EDF3]">AI Analysis</h3>
+        {refreshing && (
+          <span className="flex items-center gap-1 text-[10px] text-[#8B949E]">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#58A6FF]" />
+            Refreshing…
+          </span>
+        )}
         <span className="ml-auto rounded-full bg-[#58A6FF]/10 border border-[#58A6FF]/30 px-2 py-0.5 text-[10px] font-medium text-[#58A6FF]">
           Live Engine
         </span>
@@ -103,7 +177,10 @@ function AiAnalysisPanel() {
         <div className="rounded-lg bg-[#0D1117] px-3 py-2">
           <p className="text-[10px] text-[#8B949E]">
             AI engine powered by LightGBM + GNN models trained on PSL historical data.
-            Signals update every 6 balls.
+            Signals update every 30s.
+            {lastUpdated && (
+              <> Last update: {lastUpdated.toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</>
+            )}
           </p>
         </div>
       </div>
