@@ -16,7 +16,6 @@ import { io } from "socket.io-client";
 import { FanWarCard } from "@/components/FanWarCard";
 import { CountUp, StaggerReveal, MouseTrackCard } from "@/components/motion";
 import { TextScramble, GlitchPrice } from "@/components/effects";
-import { Meteors } from "@/components/ui/meteors";
 import { fanWarsApi } from "@/lib/api";
 import type { FanWarStatus, FanWarLock } from "@/lib/api";
 import {
@@ -121,7 +120,6 @@ export default function FanWarsPage() {
         <div className="pointer-events-none absolute -left-32 -top-32 h-64 w-64 rounded-full bg-[#F85149]/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-16 -bottom-16 h-48 w-48 rounded-full bg-[#FDB913]/5 blur-3xl" />
 
-        <Meteors number={10} className="before:from-[#F85149]" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
           <div className="flex flex-col items-center text-center sm:items-start sm:text-left">

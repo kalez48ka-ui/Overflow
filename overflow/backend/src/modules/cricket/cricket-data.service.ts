@@ -73,19 +73,53 @@ export class CricketDataService {
   // Polling lifecycle
   // =========================================================================
 
+  private hasLiveMatch = false;
+  private fastPollJob: ReturnType<typeof cron.schedule> | null = null;
+  private slowPollJob: ReturnType<typeof cron.schedule> | null = null;
+
   startPolling(): void {
     if (this.api.isConfigured) {
       console.log('[CricketData] CricAPI key detected — using LIVE data');
-      // Poll every 30s for live match updates
-      this.pollingJob = cron.schedule('*/30 * * * * *', async () => {
+
+      // Fast poll: every 10s — only active when a match is LIVE
+      this.fastPollJob = cron.schedule('*/10 * * * * *', async () => {
+        if (!this.hasLiveMatch) return;
         try {
           await this.pollLiveData();
         } catch (err) {
-          console.error('[CricketData] Polling error:', err);
+          console.error('[CricketData] Fast poll error:', err);
         }
       });
-      // Also do an immediate sync
-      this.syncPSLMatches().catch((err) =>
+
+      // Slow poll: every 5 minutes — checks for new matches, updates state
+      this.slowPollJob = cron.schedule('*/5 * * * *', async () => {
+        try {
+          const liveMatches = await this.prisma.match.findMany({ where: { status: 'LIVE' } });
+          const wasLive = this.hasLiveMatch;
+          this.hasLiveMatch = liveMatches.length > 0;
+
+          if (!wasLive && this.hasLiveMatch) {
+            console.log('[CricketData] Match went LIVE — switching to 10s fast polling');
+          } else if (wasLive && !this.hasLiveMatch) {
+            console.log('[CricketData] No live matches — switching to 5min slow polling');
+          }
+
+          // Also poll data on slow cycle as fallback
+          await this.pollLiveData();
+        } catch (err) {
+          console.error('[CricketData] Slow poll error:', err);
+        }
+      });
+
+      // Initial sync
+      this.syncPSLMatches().then(async () => {
+        // Check if any match is currently live
+        const liveMatches = await this.prisma.match.findMany({ where: { status: 'LIVE' } });
+        this.hasLiveMatch = liveMatches.length > 0;
+        console.log(`[CricketData] ${this.hasLiveMatch ? 'LIVE match detected — fast polling (10s)' : 'No live match — slow polling (5min)'}`);
+        // Immediate first poll
+        await this.pollLiveData();
+      }).catch((err) =>
         console.error('[CricketData] Initial PSL sync failed:', err)
       );
     } else {
@@ -99,10 +133,12 @@ export class CricketDataService {
       });
     }
 
-    console.log('[CricketData] Polling started (every 30s)');
+    console.log('[CricketData] Adaptive polling started');
   }
 
   stopPolling(): void {
+    if (this.fastPollJob) { this.fastPollJob.stop(); this.fastPollJob = null; }
+    if (this.slowPollJob) { this.slowPollJob.stop(); this.slowPollJob = null; }
     if (this.pollingJob) {
       this.pollingJob.stop();
       this.pollingJob = null;

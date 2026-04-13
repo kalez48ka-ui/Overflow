@@ -10,7 +10,7 @@ export function Spotlight({ className, fill }: { className?: string; fill?: stri
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.5 }}>
       <g filter="url(#filter)">
         <ellipse cx="1924.71" cy="273.501" rx="1924.71" ry="273.501" transform="matrix(-0.822377 -0.568943 -0.568943 0.822377 3631.88 2291.09)"
-          fill={fill || "white"} fillOpacity="0.21" />
+          fill={fill || "white"} fillOpacity="0.08" />
       </g>
       <defs>
         <filter id="filter" x="0.860352" y="0.838989" width="3785.16" height="2840.26" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">

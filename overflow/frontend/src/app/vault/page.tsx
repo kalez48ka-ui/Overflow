@@ -15,7 +15,6 @@ import {
 import { toast } from "sonner";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
 import { CountUp, StaggerReveal, MouseTrackCard } from "@/components/motion";
-import { Meteors } from "@/components/ui/meteors";
 import { VAULT_DATA } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import type { VaultData, UpsetEvent } from "@/types";
@@ -324,26 +323,17 @@ export default function VaultPage() {
           <>
             {/* Top stats */}
             <StaggerReveal className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4" staggerDelay={0.1} yOffset={20}>
-              {/* Balance card with Meteors */}
+              {/* Balance card */}
               <div
-                className="relative overflow-hidden rounded-xl border bg-[#161B22] p-4"
-                style={{ borderColor: "#6A0DAD30" }}
+                className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
               >
-                <Meteors number={8} />
-                <div className="relative z-[1]">
-                  <div className="mb-2 flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5" style={{ color: "#6A0DAD" }} />
-                    <span className="text-xs text-[#8B949E]">Current Balance</span>
-                  </div>
-                  <motion.p
-                    animate={{ textShadow: ["0 0 8px rgba(106,13,173,0)", "0 0 16px rgba(106,13,173,0.4)", "0 0 8px rgba(106,13,173,0)"] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="text-2xl font-black tabular-nums"
-                    style={{ color: "#6A0DAD" }}
-                  >
-                    <CountUp value={currentBalance} prefix="$" decimals={2} duration={1.5} />
-                  </motion.p>
+                <div className="mb-2 flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-[#E4002B]" />
+                  <span className="text-xs text-[#8B949E]">Current Balance</span>
                 </div>
+                <p className="text-2xl font-black tabular-nums text-[#E6EDF3]">
+                  <CountUp value={currentBalance} prefix="$" decimals={2} duration={1.5} />
+                </p>
               </div>
 
               <div

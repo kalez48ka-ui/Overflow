@@ -21,9 +21,9 @@ const BLOB_PATHS = [
 ];
 
 const BLOBS = [
-  { color: "#E4002B", opacity: 0.09, scale: 1.1, speed: 22 },
-  { color: "#FDB913", opacity: 0.08, scale: 0.95, speed: 28 },
-  { color: "#3FB950", opacity: 0.1, scale: 1.0, speed: 25 },
+  { color: "#ffffff", opacity: 0.03, scale: 1.1, speed: 22 },
+  { color: "#ffffff", opacity: 0.025, scale: 0.95, speed: 28 },
+  { color: "#ffffff", opacity: 0.03, scale: 1.0, speed: 25 },
 ];
 
 function useIsTouchDevice() {

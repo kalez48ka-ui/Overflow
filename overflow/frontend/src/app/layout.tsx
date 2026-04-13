@@ -5,6 +5,7 @@ import { WalletProvider } from "@/components/WalletProvider";
 import { Navbar } from "@/components/Navbar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/ToastProvider";
+import { AppShell } from "@/components/AppShell";
 import { CheckCircle2 } from "lucide-react";
 
 const inter = Inter({
@@ -111,11 +112,13 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#0D1117] text-[#E6EDF3] antialiased">
         <WalletProvider>
           <ToastProvider />
-          <Navbar />
-          <main>
-            <ErrorBoundary>{children}</ErrorBoundary>
-          </main>
-          <Footer />
+          <AppShell>
+            <Navbar />
+            <main>
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </main>
+            <Footer />
+          </AppShell>
         </WalletProvider>
       </body>
     </html>

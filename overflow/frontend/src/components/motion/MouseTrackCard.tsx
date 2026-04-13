@@ -20,7 +20,7 @@ import {
 
 interface MouseTrackCardProps {
   children: ReactNode;
-  /** Max tilt angle in degrees (default 5) */
+  /** Max tilt angle in degrees (default 2.5) */
   maxTilt?: number;
   /** Spring stiffness (default 260) */
   stiffness?: number;
@@ -33,7 +33,7 @@ interface MouseTrackCardProps {
 
 export function MouseTrackCard({
   children,
-  maxTilt = 5,
+  maxTilt = 2.5,
   stiffness = 260,
   damping = 24,
   spotlightOpacity = 0.08,

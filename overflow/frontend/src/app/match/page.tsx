@@ -28,7 +28,7 @@ import { cn, formatPrice, formatPercent, formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-const POLL_INTERVAL_MS = 30_000; // 30s — same as backend polling
+const POLL_INTERVAL_MS = 10_000; // 10s — matches backend fast polling for live matches
 
 /** Shape returned by GET /api/ai/signals on the backend (port 3001). */
 interface BackendAiSignal {
@@ -793,6 +793,7 @@ export default function MatchPage() {
                 matchContext={matchData.matchType}
                 defaultOpen={false}
               />
+              <FanWarWidget team1Id={team1Id} team2Id={team2Id} />
               <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
             </div>
           </div>
@@ -870,6 +871,7 @@ export default function MatchPage() {
                 matchContext={matchData.matchType}
                 defaultOpen={false}
               />
+              <FanWarWidget team1Id={team1Id} team2Id={team2Id} />
               <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
             </div>
           </div>

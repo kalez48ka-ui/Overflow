@@ -117,40 +117,21 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
       <Link href={`/trade/${team.id.toLowerCase()}`} className="block group">
         <div
           ref={cardRef}
-          className="card-border-glow relative overflow-hidden rounded-xl bg-[#161B22] p-5 transition-all duration-300"
+          className="relative overflow-hidden rounded-xl bg-[#161B22] p-5 transition-all duration-300 hover:translate-y-[-2px]"
           style={{
-            border: `1px solid ${hexToRgba(team.color, 0.25)}`,
-            boxShadow: "0 0 0 0 transparent",
+            border: "1px solid #30363D",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.border = `1px solid ${hexToRgba(team.color, 0.5)}`;
-            e.currentTarget.style.boxShadow = `0 0 30px ${hexToRgba(team.color, 0.15)}, 0 0 0 1px ${hexToRgba(team.color, 0.1)}, inset 0 0 30px ${hexToRgba(team.color, 0.03)}`;
+            e.currentTarget.style.borderColor = "#3D444D";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.border = `1px solid ${hexToRgba(team.color, 0.25)}`;
-            e.currentTarget.style.boxShadow = "0 0 0 0 transparent";
+            e.currentTarget.style.borderColor = "#30363D";
           }}
         >
-          {/* Accent glow — stronger on hover */}
+          {/* Subtle accent */}
           <div
-            className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.05] transition-opacity duration-300 group-hover:opacity-[0.12]"
+            className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.03] transition-opacity duration-300 group-hover:opacity-[0.06]"
             style={{ background: `radial-gradient(circle at top left, ${team.color}, transparent 70%)` }}
-          />
-
-          {/* Animated corner accents */}
-          <div
-            className="pointer-events-none absolute top-0 left-0 h-8 w-8 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            style={{
-              background: `linear-gradient(135deg, ${hexToRgba(team.color, 0.3)} 0%, transparent 50%)`,
-              borderRadius: "0.75rem 0 0 0",
-            }}
-          />
-          <div
-            className="pointer-events-none absolute bottom-0 right-0 h-8 w-8 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            style={{
-              background: `linear-gradient(315deg, ${hexToRgba(team.color, 0.3)} 0%, transparent 50%)`,
-              borderRadius: "0 0 0.75rem 0",
-            }}
           />
 
           {/* Header */}
@@ -192,11 +173,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
           <div className="mb-3 flex items-end justify-between">
             <div>
               <p
-                className={cn(
-                  "text-2xl font-black tabular-nums tracking-tight text-[#E6EDF3]",
-                  isPositive ? "price-tick" : "price-tick-down",
-                )}
-                style={{ animationDelay: `${index * 0.8}s` }}
+                className="text-2xl font-black tabular-nums tracking-tight text-[#E6EDF3]"
               >
                 ${formatPrice(team.price)}
               </p>
@@ -252,12 +229,11 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
             </div>
           </div>
 
-          {/* Bottom color bar — gradient with glow */}
+          {/* Bottom accent line */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-[2px] transition-all duration-300 opacity-60 group-hover:opacity-100 group-hover:h-[3px]"
+            className="absolute bottom-0 left-0 right-0 h-[1px] transition-opacity duration-300 opacity-30 group-hover:opacity-60"
             style={{
               background: `linear-gradient(90deg, transparent, ${team.color}, transparent)`,
-              boxShadow: `0 0 12px ${hexToRgba(team.color, 0.3)}`,
             }}
           />
         </div>

@@ -10,7 +10,6 @@ import { Activity, BarChart2, Shield, Users } from "lucide-react";
 import { GLOBAL_STATS } from "@/lib/mockData";
 import { formatCurrency, formatNumber, formatCountdown } from "@/lib/utils";
 import { CountUp } from "@/components/motion";
-import { TextScramble } from "@/components/effects";
 
 interface StatsBarProps {
   totalVolume?: number;
@@ -24,12 +23,11 @@ interface StatItemProps {
   icon: React.ElementType;
   color: string;
   mono?: boolean;
-  isVault?: boolean;
   isLive?: boolean;
   children: React.ReactNode;
 }
 
-function StatItem({ label, icon: Icon, color, mono, isVault, isLive, children }: StatItemProps) {
+function StatItem({ label, icon: Icon, color, mono, isLive, children }: StatItemProps) {
   return (
     <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6 stat-animate">
       <div
@@ -50,7 +48,7 @@ function StatItem({ label, icon: Icon, color, mono, isVault, isLive, children }:
           )}
         </p>
         <p
-          className={`truncate text-sm font-black tracking-tight text-[#E6EDF3] ${mono ? "font-mono" : ""} ${isVault ? "vault-glow" : ""} tabular-nums`}
+          className={`truncate text-sm font-black tracking-tight text-[#E6EDF3] ${mono ? "font-mono" : ""} tabular-nums`}
         >
           {children}
         </p>
@@ -101,8 +99,8 @@ export function StatsBar({
       role="region"
       aria-label="Platform statistics"
     >
-      {/* Subtle top gradient accent */}
-      <div className="gradient-divider absolute top-0 left-0 right-0" />
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-[#21262D]" />
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-2 divide-x divide-[#21262D] md:grid-cols-4">
@@ -122,13 +120,11 @@ export function StatsBar({
             />
           </StatItem>
 
-          <StatItem label="Upset Vault" icon={Shield} color="#6A0DAD" isVault>
-            <TextScramble
-              text={vaultFormatter(upsetVaultBalance)}
-              speed={45}
-              scrambleSpeed={25}
-              resolvedColor="#A855F7"
-              className="vault-glow"
+          <StatItem label="Upset Vault" icon={Shield} color="#E4002B">
+            <CountUp
+              value={upsetVaultBalance}
+              formatter={vaultFormatter}
+              duration={1.5}
             />
           </StatItem>
 
@@ -144,8 +140,8 @@ export function StatsBar({
         </div>
       </div>
 
-      {/* Subtle bottom gradient accent */}
-      <div className="gradient-divider absolute bottom-0 left-0 right-0" />
+      {/* Bottom accent line */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-[#21262D]" />
     </div>
   );
 }

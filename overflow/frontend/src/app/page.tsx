@@ -5,9 +5,6 @@ import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion
 import { SafeConnectButton } from "@/components/WalletProvider";
 import {
   ArrowRight,
-  BarChart2,
-  Shield,
-  TrendingUp,
   Zap,
   Activity,
   Trophy,
@@ -32,9 +29,7 @@ import type { VaultState } from "@/lib/api";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import Link from "next/link";
 import { Spotlight } from "@/components/ui/spotlight";
-import { MovingBorderButton } from "@/components/ui/moving-border";
-import { Meteors } from "@/components/ui/meteors";
-import { TextScramble, LiquidBlobs, MagneticButton, RevealText } from "@/components/effects";
+import { RevealText } from "@/components/effects";
 
 function FeaturePill({
   icon: Icon,
@@ -174,56 +169,21 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0D1117]">
-      {/* Morphing background blobs — fixed, very subtle */}
-      <LiquidBlobs />
-
       {/* Hero */}
       <section ref={heroRef} className="relative overflow-hidden">
         {/* Animated cycling gradient background */}
         <div className="pointer-events-none absolute inset-0 hero-gradient-bg" />
 
-        {/* Radial color splashes */}
+        {/* Subtle background */}
         <div className="pointer-events-none absolute inset-0">
-          <div
-            className="absolute inset-0 opacity-40"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(228,0,43,0.12) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 80% 50%, rgba(106,13,173,0.08) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 20% 60%, rgba(0,82,155,0.08) 0%, transparent 50%)",
-            }}
-          />
-
-          {/* Animated grid overlay */}
+          {/* Grid overlay */}
           <div className="absolute inset-0 hero-grid" />
-
-          {/* Floating particles (CSS-only) */}
-          {[
-            { left: "15%", top: "20%", delay: "0s", dur: "12s", color: "#E4002B" },
-            { left: "35%", top: "60%", delay: "2s", dur: "14s", color: "#FDB913" },
-            { left: "55%", top: "30%", delay: "4s", dur: "10s", color: "#00A651" },
-            { left: "75%", top: "70%", delay: "1s", dur: "16s", color: "#6A0DAD" },
-            { left: "85%", top: "25%", delay: "3s", dur: "11s", color: "#58A6FF" },
-            { left: "25%", top: "80%", delay: "5s", dur: "13s", color: "#E4002B" },
-            { left: "65%", top: "50%", delay: "6s", dur: "15s", color: "#FDB913" },
-            { left: "45%", top: "15%", delay: "7s", dur: "12s", color: "#3FB950" },
-          ].map((p, i) => (
-            <div
-              key={i}
-              className="particle"
-              style={{
-                left: p.left,
-                top: p.top,
-                backgroundColor: p.color,
-                boxShadow: `0 0 6px ${p.color}`,
-                animation: `particleFloat ${p.dur} ease-in-out ${p.delay} infinite`,
-              }}
-            />
-          ))}
 
           {/* Bottom fade to base */}
           <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_40%,#0D1117)]" />
         </div>
 
-        <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="#E4002B" />
+        <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
 
         <motion.div
           className="relative mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pt-24"
@@ -240,7 +200,7 @@ export default function LandingPage() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E4002B] opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E4002B]" />
               </span>
-              <TextScramble text="PSL 2026 — Season Live" speed={40} resolvedColor="#E4002B" scrambledColor="#E4002B66" />
+              PSL 2026 — Season Live
             </div>
           </motion.div>
 
@@ -254,7 +214,6 @@ export default function LandingPage() {
             <RevealText
               lines={["Your Cricket IQ.", "Your Edge."]}
               className="mx-auto max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
-              lineClassName="text-shimmer"
             />
             <p className="mx-auto mt-5 max-w-xl text-base text-[#8B949E] sm:text-lg">
               Trade tokenized PSL teams on-chain. Prices move ball-by-ball.
@@ -269,19 +228,9 @@ export default function LandingPage() {
             transition={{ delay: 0.2 }}
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
-            <MagneticButton
-              glowColor="#3FB950"
-              className="rounded-xl"
-            >
-              <MovingBorderButton
-                as="div"
-                containerClassName="cta-pulse rounded-xl"
-                className="px-5 py-3 text-sm font-bold text-[#E6EDF3]"
-                borderRadius="0.75rem"
-              >
-                <SafeConnectButton label="Start Trading" showBalance={false} />
-              </MovingBorderButton>
-            </MagneticButton>
+            <div className="rounded-xl border border-[#E4002B]/40 bg-[#E4002B]/10 px-5 py-3 text-sm font-bold text-[#E6EDF3] transition-all duration-300 hover:bg-[#E4002B]/20 hover:border-[#E4002B]/60">
+              <SafeConnectButton label="Start Trading" showBalance={false} />
+            </div>
             <Link
               href="/match"
               className="hover-lift flex items-center gap-2 rounded-xl border border-[#30363D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-300"
@@ -308,7 +257,7 @@ export default function LandingPage() {
               </span>
               <span className="text-[#8B949E]">PZ vs MS</span>
               <span className="text-[#30363D]">|</span>
-              <span className="text-[#A855F7] font-semibold vault-glow">
+              <span className="text-[#E6EDF3] font-semibold">
                 <CountUp
                   value={vaultBalance}
                   formatter={(n) => formatCurrency(n)}
@@ -363,7 +312,7 @@ export default function LandingPage() {
           <div className="hidden sm:flex items-center gap-4">
             <Link
               href="/leaderboard"
-              className="flex items-center gap-1.5 text-sm text-[#FDB913] hover:text-[#FDCF5A] transition-colors"
+              className="flex items-center gap-1.5 text-sm text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
             >
               <Trophy className="h-3.5 w-3.5" />
               Leaderboard
@@ -461,7 +410,7 @@ export default function LandingPage() {
 
       {/* How it works */}
       <section className="relative bg-[#161B22]/30">
-        <div className="gradient-divider" />
+        <div className="border-t border-[#21262D]" />
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-black text-[#E6EDF3]">
@@ -500,7 +449,7 @@ export default function LandingPage() {
                 step: "04",
                 title: "Collect",
                 desc: "Underdogs win? The Upset Vault rewards you for calling it right.",
-                color: "#6A0DAD",
+                color: "#E4002B",
               },
             ].map(({ step, title, desc, color }) => (
               <div
@@ -544,23 +493,17 @@ export default function LandingPage() {
 
       {/* Upset Vault explainer */}
       <section className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="relative overflow-hidden rounded-2xl border border-[#6A0DAD]/30 bg-gradient-to-br from-[#2A0050]/40 via-[#161B22] to-[#161B22]">
-          {/* Meteor shower */}
-          <Meteors number={15} className="before:from-[#A855F7]" />
-
-          {/* Decorative glow */}
-          <div className="pointer-events-none absolute -right-32 -top-32 h-64 w-64 rounded-full bg-[#6A0DAD]/10 blur-3xl" />
-          <div className="pointer-events-none absolute -left-16 -bottom-16 h-48 w-48 rounded-full bg-[#6A0DAD]/5 blur-3xl" />
+        <div className="relative overflow-hidden rounded-2xl border border-[#30363D] bg-[#161B22]">
 
           <div className="relative grid grid-cols-1 md:grid-cols-2 gap-0">
             <div className="p-6 sm:p-10">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#6A0DAD]/50 bg-[#6A0DAD]/20 px-3 py-1 text-xs font-semibold text-[#A855F7]">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#E4002B]/40 bg-[#E4002B]/10 px-3 py-1 text-xs font-semibold text-[#E4002B]">
                 <Flame className="h-3 w-3" />
                 Upset Vault
               </div>
               <h2 className="text-2xl font-black text-[#E6EDF3] leading-tight sm:text-3xl">
                 Favorites Lose.{" "}
-                <span className="text-[#A855F7]">You Win.</span>
+                <span className="text-[#E4002B]">You Win.</span>
               </h2>
               <p className="mt-3 text-sm text-[#8B949E] leading-relaxed">
                 2% of every trade fee flows into the Vault. When an underdog
@@ -581,13 +524,13 @@ export default function LandingPage() {
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs text-[#8B949E]">{label}</span>
-                      <span className="text-xs font-black text-[#A855F7]">
+                      <span className="text-xs font-black text-[#E4002B]">
                         {multiplier}
                       </span>
                     </div>
                     <div className="h-1 rounded-full bg-[#21262D] overflow-hidden">
                       <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-[#6A0DAD] to-[#A855F7]"
+                        className="h-full rounded-full bg-[#E4002B]"
                         initial={{ width: 0 }}
                         whileInView={{ width }}
                         viewport={{ once: true }}
@@ -599,25 +542,25 @@ export default function LandingPage() {
               </StaggerReveal>
               <Link
                 href="/vault"
-                className="mt-8 inline-flex items-center gap-2 rounded-xl bg-[#6A0DAD] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#7B1FA2] transition-all duration-300 shadow-lg shadow-[#6A0DAD]/20 hover-lift"
+                className="mt-8 inline-flex items-center gap-2 rounded-xl border border-[#30363D] bg-[#21262D] px-5 py-2.5 text-sm font-bold text-[#E6EDF3] hover:border-[#E4002B]/40 hover:bg-[#E4002B]/10 transition-all duration-300 hover-lift"
               >
                 View Upset Vault
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="flex items-center justify-center border-t border-[#6A0DAD]/20 p-6 sm:p-10 md:border-l md:border-t-0">
+            <div className="flex items-center justify-center border-t border-[#21262D] p-6 sm:p-10 md:border-l md:border-t-0">
               <div className="text-center">
                 <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#8B949E]">
                   Current Vault Balance
                 </p>
-                <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight vault-glow">
+                <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight">
                   <CountUp
                     value={vaultBalance}
                     formatter={(n) => formatCurrency(n)}
                     duration={2}
                   />
                 </p>
-                <p className="mt-2 text-sm font-medium text-[#A855F7]">
+                <p className="mt-2 text-sm font-medium text-[#8B949E]">
                   Next payout: IU vs LQ tonight
                 </p>
                 <StaggerReveal
