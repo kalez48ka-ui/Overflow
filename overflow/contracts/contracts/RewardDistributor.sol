@@ -110,6 +110,10 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         address _liquidityBacking,
         address _devFund
     ) Ownable(msg.sender) {
+        require(_treasury != address(0), "Zero address");
+        require(_upsetVault != address(0), "Zero address");
+        require(_liquidityBacking != address(0), "Zero address");
+        require(_devFund != address(0), "Zero address");
         treasury = _treasury;
         upsetVault = _upsetVault;
         liquidityBacking = _liquidityBacking;
@@ -135,22 +139,27 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
     }
 
     function setTreasury(address _treasury) external onlyOwner {
+        require(_treasury != address(0), "Zero address");
         treasury = _treasury;
     }
 
     function setUpsetVault(address _upsetVault) external onlyOwner {
+        require(_upsetVault != address(0), "Zero address");
         upsetVault = _upsetVault;
     }
 
     function setLiquidityBacking(address _liquidityBacking) external onlyOwner {
+        require(_liquidityBacking != address(0), "Zero address");
         liquidityBacking = _liquidityBacking;
     }
 
     function setDevFund(address _devFund) external onlyOwner {
+        require(_devFund != address(0), "Zero address");
         devFund = _devFund;
     }
 
     function setFanWars(address _fanWars) external onlyOwner {
+        require(_fanWars != address(0), "Zero address");
         fanWars = _fanWars;
     }
 

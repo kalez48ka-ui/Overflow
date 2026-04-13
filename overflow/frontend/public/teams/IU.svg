@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="58" fill="#E4002B"/>
+  <circle cx="60" cy="60" r="54" fill="#1C1C1C"/>
+  <!-- Star -->
+  <path d="M60 22L67.5 44.5H91L72 58.5L79 81L60 67L41 81L48 58.5L29 44.5H52.5Z" fill="#E4002B"/>
+  <!-- U shape -->
+  <path d="M45 70v18c0 8.3 6.7 15 15 15s15-6.7 15-15V70" stroke="#E4002B" stroke-width="5" stroke-linecap="round" fill="none"/>
+</svg>

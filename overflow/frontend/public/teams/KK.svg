@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="58" fill="#00A6DC"/>
+  <circle cx="60" cy="60" r="54" fill="#003D54"/>
+  <!-- Crown outline -->
+  <path d="M35 58l8-22 17 12 17-12 8 22H35z" fill="none" stroke="#00A6DC" stroke-width="3"/>
+  <path d="M35 58h50v6H35z" fill="#00A6DC"/>
+  <!-- K letters -->
+  <text x="60" y="92" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="30" font-weight="900" fill="#00A6DC">KK</text>
+</svg>

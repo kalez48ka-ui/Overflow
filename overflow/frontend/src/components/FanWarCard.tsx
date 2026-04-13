@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { CountUp, MouseTrackCard } from "@/components/motion";
 import { MagneticButton } from "@/components/effects";
+import { TeamLogo } from "@/components/TeamLogo";
 import { formatCountdown } from "@/lib/utils";
 import { fanWarsApi } from "@/lib/api";
 import type { FanWarStatus } from "@/lib/api";
@@ -75,17 +76,9 @@ function TeamBadge({
   color: string;
   size?: "sm" | "md" | "lg";
 }) {
-  const sizes = { sm: "h-8 w-8 text-xs", md: "h-12 w-12 text-sm", lg: "h-16 w-16 text-lg" };
+  const sizeMap = { sm: 32, md: 48, lg: 64 };
   return (
-    <div
-      className={`${sizes[size]} flex items-center justify-center rounded-full font-black text-white shadow-lg`}
-      style={{
-        backgroundColor: color,
-        boxShadow: `0 0 20px ${color}40, 0 0 40px ${color}20`,
-      }}
-    >
-      {teamId}
-    </div>
+    <TeamLogo teamId={teamId} color={color} size={sizeMap[size]} glow />
   );
 }
 

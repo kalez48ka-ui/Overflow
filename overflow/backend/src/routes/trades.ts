@@ -52,20 +52,41 @@ export function createTradesRouter(
       }
 
       // Validate and normalize wallet address
-      if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+      if (typeof wallet !== 'string' || !/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
         res.status(400).json({ error: 'Invalid wallet address format' });
         return;
       }
       wallet = wallet.toLowerCase();
+
+      // Validate teamSymbol format (alphanumeric, max 10 chars)
+      if (typeof teamSymbol !== 'string' || !/^[A-Za-z0-9$]{1,10}$/.test(teamSymbol)) {
+        res.status(400).json({ error: 'Invalid teamSymbol format' });
+        return;
+      }
 
       if (type !== 'BUY' && type !== 'SELL') {
         res.status(400).json({ error: 'side must be buy or sell (or type must be BUY or SELL)' });
         return;
       }
 
-      if (amount <= 0 || price <= 0) {
-        res.status(400).json({ error: 'amount and price must be positive' });
+      // Validate amount: must be a finite positive number within bounds
+      const numAmount = Number(amount);
+      const numPrice = Number(price);
+      if (!Number.isFinite(numAmount) || numAmount <= 0 || numAmount > 1_000_000) {
+        res.status(400).json({ error: 'amount must be a finite positive number (max 1,000,000)' });
         return;
+      }
+      if (!Number.isFinite(numPrice) || numPrice <= 0 || numPrice > 1_000_000) {
+        res.status(400).json({ error: 'price must be a finite positive number (max 1,000,000)' });
+        return;
+      }
+
+      // Validate optional txHash format
+      if (txHash !== undefined && txHash !== null && txHash !== '') {
+        if (typeof txHash !== 'string' || !/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+          res.status(400).json({ error: 'Invalid txHash format' });
+          return;
+        }
       }
 
       // Wrap the entire trade flow in a serializable transaction to prevent race conditions

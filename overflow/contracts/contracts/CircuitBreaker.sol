@@ -84,6 +84,7 @@ contract CircuitBreaker is Ownable {
     // Admin
     // -----------------------------------------------------------------------
     function setReporter(address reporter, bool status) external onlyOwner {
+        require(reporter != address(0), "Zero address");
         isReporter[reporter] = status;
         emit ReporterSet(reporter, status);
     }
@@ -139,20 +140,40 @@ contract CircuitBreaker is Ownable {
     function resume(address tokenAddress) external onlyOwner {
         PauseState storage ps = pauseStates[tokenAddress];
         if (!ps.paused) revert NotPaused();
+        // MEDIUM-05 fix: check if already expired before emitting
+        bool wasActive = block.timestamp < ps.pauseUntil;
         ps.paused = false;
         ps.pauseUntil = 0;
         ps.pauseReason = 0;
-        emit TradingResumed(tokenAddress);
+        if (wasActive) {
+            emit TradingResumed(tokenAddress);
+        }
     }
 
     /**
-     * @notice Returns whether a token is currently paused.
+     * @notice Returns whether a token is currently paused (view-safe).
+     * @dev MEDIUM-05 fix: returns false when auto-expired even if ps.paused is stale.
      */
     function isPaused(address tokenAddress) external view returns (bool) {
         PauseState storage ps = pauseStates[tokenAddress];
         if (!ps.paused) return false;
-        // Auto-expire
+        // Return false when pause has auto-expired
         return block.timestamp < ps.pauseUntil;
+    }
+
+    /**
+     * @notice Clear stale pause state for a token whose pause has auto-expired.
+     * @dev MEDIUM-05 fix: anyone can call this to reset the boolean so getPauseState
+     *      and other reads return clean state. Also emits TradingResumed.
+     */
+    function clearExpiredPause(address tokenAddress) external {
+        PauseState storage ps = pauseStates[tokenAddress];
+        if (!ps.paused) revert NotPaused();
+        if (block.timestamp < ps.pauseUntil) revert StillPaused();
+        ps.paused = false;
+        ps.pauseUntil = 0;
+        ps.pauseReason = 0;
+        emit TradingResumed(tokenAddress);
     }
 
     function getPauseState(address tokenAddress) external view returns (bool active, uint256 until, uint256 reason) {
@@ -186,16 +207,23 @@ contract CircuitBreaker is Ownable {
         }
     }
 
+    // INFO-01 fix: iterate backward from latest snapshot and break early when timestamps
+    // fall outside the window, avoiding scanning all 60 slots every time.
     function _getHighestPriceInWindow(address tokenAddress, uint256 window) internal view returns (uint256 highest) {
         uint256 count = snapshotCount[tokenAddress];
         if (count == 0) return 0;
 
         uint256 cutoff = block.timestamp > window ? block.timestamp - window : 0;
         uint256 total = count < MAX_SNAPSHOTS ? count : MAX_SNAPSHOTS;
+        uint256 idx = snapshotIndex[tokenAddress];
 
         for (uint256 i = 0; i < total; i++) {
-            PriceSnapshot storage snap = priceHistory[tokenAddress][i];
-            if (snap.timestamp >= cutoff && snap.price > highest) {
+            // Walk backward from the most recent snapshot
+            uint256 pos = (idx + MAX_SNAPSHOTS - 1 - i) % MAX_SNAPSHOTS;
+            PriceSnapshot storage snap = priceHistory[tokenAddress][pos];
+            // Once we hit a timestamp older than the window, stop scanning
+            if (snap.timestamp < cutoff) break;
+            if (snap.price > highest) {
                 highest = snap.price;
             }
         }
@@ -203,9 +231,10 @@ contract CircuitBreaker is Ownable {
 
     function _triggerPause(address tokenAddress, uint256 duration, uint256 dropBps, uint256 reason) internal {
         PauseState storage ps = pauseStates[tokenAddress];
-        // Only extend pause, never shorten
+        // Only extend pause, never shorten an active pause
         uint256 newUntil = block.timestamp + duration;
-        if (ps.paused && ps.pauseUntil > newUntil) return;
+        // MEDIUM-05 fix: always set paused=true fresh; only skip if existing pause extends further
+        if (ps.paused && block.timestamp < ps.pauseUntil && ps.pauseUntil > newUntil) return;
 
         ps.paused = true;
         ps.pauseUntil = newUntil;

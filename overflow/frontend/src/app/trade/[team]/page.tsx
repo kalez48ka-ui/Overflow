@@ -27,6 +27,7 @@ import {
   formatNumber,
   formatTimeAgo,
 } from "@/lib/utils";
+import { TeamLogo } from "@/components/TeamLogo";
 
 interface PageProps {
   params: Promise<{ team: string }>;
@@ -284,12 +285,7 @@ export default function TradePage({ params }: PageProps) {
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                 </Link>
-                <div
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: team.color }}
-                >
-                  {team.id}
-                </div>
+                <TeamLogo teamId={team.id} color={team.color} size={28} />
                 <span className="text-sm font-medium text-[#8B949E]">{team.name}</span>
                 <span className="text-xs text-[#484F58]">{team.symbol}</span>
               </div>

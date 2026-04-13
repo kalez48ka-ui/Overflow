@@ -74,6 +74,9 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         address _circuitBreaker,
         address _rewardDistributor
     ) Ownable(msg.sender) {
+        require(_oracle != address(0), "Zero address");
+        require(_circuitBreaker != address(0), "Zero address");
+        require(_rewardDistributor != address(0), "Zero address");
         oracle = PerformanceOracle(_oracle);
         circuitBreaker = CircuitBreaker(_circuitBreaker);
         rewardDistributor = _rewardDistributor;
@@ -83,14 +86,17 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
     // Admin
     // -----------------------------------------------------------------------
     function setOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "Zero address");
         oracle = PerformanceOracle(_oracle);
     }
 
     function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
+        require(_circuitBreaker != address(0), "Zero address");
         circuitBreaker = CircuitBreaker(_circuitBreaker);
     }
 
     function setRewardDistributor(address _rewardDistributor) external onlyOwner {
+        require(_rewardDistributor != address(0), "Zero address");
         rewardDistributor = _rewardDistributor;
     }
 
@@ -381,14 +387,18 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         uint256 iterations = 0;
 
         while (remaining > 0) {
-            // Adaptive step sizing based on remaining tokens to sell
+            // MEDIUM-01 fix: adaptive step sizing mirroring the buy-side logic
             uint256 step;
-            if (remaining > 100e18) {
-                step = 10e18;  // 10 tokens
+            if (remaining > 1000e18) {
+                step = 100e18;  // 100 tokens for very large sells
+            } else if (remaining > 100e18) {
+                step = 10e18;   // 10 tokens
             } else if (remaining > 10e18) {
-                step = 1e18;   // 1 token
+                step = 1e18;    // 1 token
+            } else if (remaining > 1e18) {
+                step = 1e17;    // 0.1 token
             } else {
-                step = 1e17;   // 0.1 token
+                step = 1e16;    // 0.01 token for small remainder precision
             }
 
             uint256 currentStep = remaining >= step ? step : remaining;

@@ -2,6 +2,7 @@
 
 import type { MatchData } from "@/types";
 import { TextScramble } from "@/components/effects";
+import { TeamLogo } from "@/components/TeamLogo";
 
 interface LiveScorecardProps {
   match: MatchData;
@@ -45,12 +46,7 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
         <div className="mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div
-                className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
-                style={{ backgroundColor: battingTeam.color }}
-              >
-                {battingTeam.teamId}
-              </div>
+              <TeamLogo teamId={battingTeam.teamId} color={battingTeam.color} size={32} />
               <div>
                 <p className="text-sm font-semibold text-[#E6EDF3]">{battingTeam.teamName}</p>
               </div>
@@ -101,12 +97,7 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
         {/* Bowling team — subdued */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white opacity-70"
-              style={{ backgroundColor: bowlingTeam.color }}
-            >
-              {bowlingTeam.teamId}
-            </div>
+            <TeamLogo teamId={bowlingTeam.teamId} color={bowlingTeam.color} size={28} className="opacity-70" />
             <p className="text-sm text-[#8B949E]">{bowlingTeam.teamName}</p>
           </div>
           <div className="text-right">

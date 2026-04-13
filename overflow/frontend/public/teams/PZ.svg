@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="58" fill="#FDB913"/>
+  <circle cx="60" cy="60" r="54" fill="#3D2E00"/>
+  <!-- Eagle/hawk wings spread -->
+  <path d="M60 30L30 55l15-5-5 25h40l-5-25 15 5z" fill="#FDB913" opacity="0.9"/>
+  <!-- Z letter -->
+  <text x="60" y="90" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="32" font-weight="900" fill="#FDB913">Z</text>
+</svg>

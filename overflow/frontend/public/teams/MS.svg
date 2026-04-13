@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="58" fill="#00529B"/>
+  <circle cx="60" cy="60" r="54" fill="#001F3F"/>
+  <!-- Crown -->
+  <path d="M32 55l10-25 18 15 18-15 10 25z" fill="#FDB913"/>
+  <rect x="32" y="55" width="56" height="8" rx="2" fill="#FDB913"/>
+  <!-- 3 jewels on crown -->
+  <circle cx="42" cy="48" r="3" fill="#E4002B"/>
+  <circle cx="60" cy="38" r="3" fill="#E4002B"/>
+  <circle cx="78" cy="48" r="3" fill="#E4002B"/>
+  <!-- MS text -->
+  <text x="60" y="90" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="28" font-weight="900" fill="#FDB913">MS</text>
+</svg>

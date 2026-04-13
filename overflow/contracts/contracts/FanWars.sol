@@ -34,6 +34,7 @@ contract FanWars is Ownable, ReentrancyGuard {
     uint256 public constant BASIS_POINTS = 10000;
     uint256 public constant CLAIM_WINDOW = 24 hours;
     uint256 public constant ROLLOVER_BPS = 1000; // 10% always rolls over
+    uint256 public constant EMERGENCY_WINDOW = 7 days; // time after lockDeadline before emergency unlock
 
     // -----------------------------------------------------------------------
     // Structs
@@ -101,6 +102,8 @@ contract FanWars is Ownable, ReentrancyGuard {
     error InvalidWinnerToken();
     error InsufficientBoostPool();
     error TransferFailed();
+    error WarStillActive();
+    error EmergencyWindowNotReached();
 
     // -----------------------------------------------------------------------
     // Modifiers
@@ -121,6 +124,7 @@ contract FanWars is Ownable, ReentrancyGuard {
     // Admin
     // -----------------------------------------------------------------------
     function setKeeper(address keeper, bool status) external onlyOwner {
+        require(keeper != address(0), "Zero address");
         isKeeper[keeper] = status;
         emit KeeperSet(keeper, status);
     }
@@ -353,6 +357,47 @@ contract FanWars is Ownable, ReentrancyGuard {
         if (war.homeTeamToken == address(0)) revert WarDoesNotExist();
         if (war.settled) revert WarAlreadySettled();
         if (war.cancelled) revert WarAlreadySettled();
+
+        war.cancelled = true;
+        emit MatchCancelled(matchId);
+    }
+
+    // -----------------------------------------------------------------------
+    // Emergency: Recover stuck tokens if settle is never called
+    // -----------------------------------------------------------------------
+    /**
+     * @notice Emergency unlock for users when a match war is neither settled nor
+     *         cancelled after EMERGENCY_WINDOW past the lock deadline. Prevents
+     *         tokens from being permanently stuck if the keeper never settles.
+     * @param matchId The match war to emergency-unlock from.
+     */
+    function emergencyUnlock(uint256 matchId) external nonReentrant {
+        MatchWar storage war = matchWars[matchId];
+        if (war.homeTeamToken == address(0)) revert WarDoesNotExist();
+        if (war.settled || war.cancelled) revert WarAlreadySettled();
+        if (block.timestamp < war.lockDeadline + EMERGENCY_WINDOW) revert EmergencyWindowNotReached();
+
+        UserLock storage lock = userLocks[matchId][msg.sender];
+        if (lock.amount == 0) revert NoLockFound();
+        if (lock.claimed) revert AlreadyClaimed();
+
+        lock.claimed = true;
+        uint256 amount = lock.amount;
+
+        IERC20(lock.teamToken).safeTransfer(msg.sender, amount);
+        emit BoostClaimed(matchId, msg.sender, 0, amount);
+    }
+
+    /**
+     * @notice Admin emergency cancellation to allow all users to withdraw.
+     *         Only callable EMERGENCY_WINDOW after lock deadline if war was never settled.
+     * @param matchId The match war to force-cancel.
+     */
+    function emergencyCancel(uint256 matchId) external onlyOwner {
+        MatchWar storage war = matchWars[matchId];
+        if (war.homeTeamToken == address(0)) revert WarDoesNotExist();
+        if (war.settled || war.cancelled) revert WarAlreadySettled();
+        if (block.timestamp < war.lockDeadline + EMERGENCY_WINDOW) revert EmergencyWindowNotReached();
 
         war.cancelled = true;
         emit MatchCancelled(matchId);

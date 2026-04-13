@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="58" fill="#6A0DAD"/>
+  <circle cx="60" cy="60" r="54" fill="#2A0050"/>
+  <!-- Gladiator helmet -->
+  <path d="M40 45c0-11 9-20 20-20s20 9 20 20v10c0 5-4 8-8 8H48c-4 0-8-3-8-8V45z" fill="#6A0DAD" opacity="0.8"/>
+  <path d="M44 52h32" stroke="#FDB913" stroke-width="2.5"/>
+  <path d="M44 46h32" stroke="#FDB913" stroke-width="2.5"/>
+  <!-- Crossed swords -->
+  <path d="M40 72l20-10 20 10" stroke="#6A0DAD" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- QG text -->
+  <text x="60" y="96" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="24" font-weight="900" fill="#FDB913">QG</text>
+</svg>

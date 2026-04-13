@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import http from 'http';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketServer } from 'socket.io';
@@ -35,6 +36,7 @@ const io = new SocketServer(server, {
   cors: {
     origin: allowedOrigins,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
@@ -64,11 +66,16 @@ const adminLimiter = rateLimit({
 });
 
 // Middleware
+app.use(helmet());
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST'],
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'x-admin-token'],
+  maxAge: 600, // preflight cache 10 minutes
 }));
 app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(globalLimiter);
 
 // Services

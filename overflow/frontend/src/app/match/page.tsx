@@ -19,6 +19,7 @@ import { api } from "@/lib/api";
 import type { MatchInfo } from "@/lib/api";
 import type { MatchData, BattingTeamData } from "@/types";
 import { cn, formatPrice, formatPercent, formatCurrency } from "@/lib/utils";
+import { TeamLogo } from "@/components/TeamLogo";
 import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -41,12 +42,7 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
         {teams.map((team) => (
           <div key={team.id}>
             <div className="mb-2 flex items-center gap-2">
-              <div
-                className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                style={{ backgroundColor: team.color }}
-              >
-                {team.id}
-              </div>
+              <TeamLogo teamId={team.id} color={team.color} size={24} />
               <div>
                 <span className="text-xs font-semibold text-[#E6EDF3]">{team.symbol}</span>
                 <span className="ml-1.5 text-[10px] font-mono tabular-nums text-[#8B949E]">${formatPrice(team.price)}</span>
@@ -186,12 +182,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
 
         <div className="mb-3 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5">
-            <div
-              className="flex h-5 w-5 items-center justify-center rounded-full text-[8px] font-bold text-white"
-              style={{ backgroundColor: war.homeTeamColor }}
-            >
-              {war.homeTeamId}
-            </div>
+            <TeamLogo teamId={war.homeTeamId} color={war.homeTeamColor} size={20} />
             <span className="font-mono tabular-nums text-[#E6EDF3]">
               {war.totalHomeLocked.toLocaleString()}
             </span>
@@ -201,12 +192,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
             <span className="font-mono tabular-nums text-[#E6EDF3]">
               {war.totalAwayLocked.toLocaleString()}
             </span>
-            <div
-              className="flex h-5 w-5 items-center justify-center rounded-full text-[8px] font-bold text-white"
-              style={{ backgroundColor: war.awayTeamColor }}
-            >
-              {war.awayTeamId}
-            </div>
+            <TeamLogo teamId={war.awayTeamId} color={war.awayTeamColor} size={20} />
           </div>
         </div>
 

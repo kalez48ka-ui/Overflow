@@ -12,6 +12,7 @@ import { CountUp } from "@/components/motion";
 import { PSL_TEAMS } from "@/lib/mockData";
 import { api, type MatchInfo } from "@/lib/api";
 import { cn, formatPrice } from "@/lib/utils";
+import { TeamLogo } from "@/components/TeamLogo";
 import type { PSLTeam } from "@/types";
 
 type SortKey =
@@ -434,12 +435,7 @@ function TeamRow({
           href={`/trade/${team.id.toLowerCase()}`}
           className="flex items-center gap-2 sm:gap-3 group/link"
         >
-          <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-            style={{ backgroundColor: team.color }}
-          >
-            {team.id}
-          </div>
+          <TeamLogo teamId={team.id} color={team.color} size={28} />
           <div className="whitespace-nowrap">
             <span className="font-semibold text-[#E6EDF3] text-sm transition-colors group-hover/link:text-[#E4002B]">
               {team.name}

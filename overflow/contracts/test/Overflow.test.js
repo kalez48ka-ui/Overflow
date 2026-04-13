@@ -232,7 +232,8 @@ describe("Overflow Platform", function () {
       const scoreBefore = await oracle.getPerformanceScore(team);
       expect(scoreBefore).to.equal(50);
 
-      // Second oracle confirms
+      // Second oracle confirms (MEDIUM-03 fix: wait for MIN_CONFIRM_DELAY)
+      await time.increase(31);
       await oracle.connect(oracle2).updateMatchResult(team, 90, 80, 85, 95);
 
       // Now score should update (2 confirmations met)
@@ -1188,6 +1189,7 @@ describe("Overflow Platform", function () {
       // Upset 2: second upset uses remaining available balance (not earmarked funds)
       // Update MLS to have a different score so we can trigger another upset
       await oracle.connect(deployer).updateMatchResult(teamTokens["MLS"], 20, 20, 20, 20);
+      await time.increase(31); // MEDIUM-03: wait for MIN_CONFIRM_DELAY
       await oracle.connect(oracle2).updateMatchResult(teamTokens["MLS"], 20, 20, 20, 20);
       // MLS composite = (20*40+20*20+20*20+20*20)/100 = 20
 
@@ -1640,8 +1642,10 @@ describe("Overflow Platform", function () {
 
       // Set divergent scores: underdog=20, favourite=90
       await isoOracle.connect(deployer).updateMatchResult(await underdogToken.getAddress(), 20, 20, 20, 20);
+      await time.increase(31); // MEDIUM-03: wait for MIN_CONFIRM_DELAY
       await isoOracle.connect(oracle2).updateMatchResult(await underdogToken.getAddress(), 20, 20, 20, 20);
       await isoOracle.connect(deployer).updateMatchResult(await favToken.getAddress(), 90, 90, 90, 90);
+      await time.increase(31); // MEDIUM-03: wait for MIN_CONFIRM_DELAY
       await isoOracle.connect(oracle2).updateMatchResult(await favToken.getAddress(), 90, 90, 90, 90);
 
       // Mint underdog tokens so claims work
@@ -1800,6 +1804,9 @@ describe("Overflow Platform", function () {
       // First oracle proposes
       const team = teamTokens["PSZ"];
       await oracle.connect(deployer).updateMatchResult(team, 60, 60, 60, 60);
+
+      // Wait for MIN_CONFIRM_DELAY before confirming
+      await time.increase(31);
 
       // Second oracle tries to confirm with different scores
       await expect(
@@ -2000,6 +2007,7 @@ describe("Overflow Platform", function () {
 
       // 2. Oracle updates KRK performance (2 confirmations needed)
       await oracle.connect(deployer).updateMatchResult(teamTokens["KRK"], 85, 75, 80, 90);
+      await time.increase(31); // MEDIUM-03: wait for MIN_CONFIRM_DELAY
       await oracle.connect(oracle2).updateMatchResult(teamTokens["KRK"], 85, 75, 80, 90);
 
       const krkScore = await oracle.getPerformanceScore(teamTokens["KRK"]);

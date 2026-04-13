@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <circle cx="60" cy="60" r="58" fill="#FF6B35"/>
+  <circle cx="60" cy="60" r="54" fill="#2D1200"/>
+  <!-- Cricket ball seam -->
+  <circle cx="60" cy="50" r="18" fill="none" stroke="#FF6B35" stroke-width="2.5"/>
+  <path d="M48 38c8 10 8 20 0 30" stroke="#FF6B35" stroke-width="2" fill="none"/>
+  <path d="M72 38c-8 10-8 20 0 30" stroke="#FF6B35" stroke-width="2" fill="none"/>
+  <!-- RW text -->
+  <text x="60" y="90" text-anchor="middle" font-family="Arial Black,sans-serif" font-size="26" font-weight="900" fill="#FF6B35">RW</text>
+</svg>

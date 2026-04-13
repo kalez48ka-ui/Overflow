@@ -1,17 +1,76 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { OracleService } from '../modules/oracle/oracle.service';
 import { VaultService } from '../modules/vault/vault.service';
 
+// ---------------------------------------------------------------------------
+// Brute-force protection state
+// ---------------------------------------------------------------------------
+const AUTH_MAX_FAILURES = 5;
+const AUTH_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+interface AuthAttempt {
+  failures: number;
+  lockedUntil: number;
+}
+
+const authAttempts = new Map<string, AuthAttempt>();
+
+function getClientIP(req: Request): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
+  return req.ip || 'unknown';
+}
+
+/** Timing-safe token comparison to prevent timing attacks */
+function safeTokenCompare(supplied: string, expected: string): boolean {
+  // Ensure both buffers are the same length for timingSafeEqual
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) {
+    // Compare against a same-length dummy to avoid leaking length info via timing
+    const dummy = Buffer.alloc(a.length);
+    crypto.timingSafeEqual(a, dummy);
+    return false;
+  }
+  return crypto.timingSafeEqual(a, b);
+}
+
 /** Middleware: verify x-admin-token header against ADMIN_SECRET env var */
 export function requireAdminAuth(req: Request, res: Response, next: NextFunction): void {
+  const clientIP = getClientIP(req);
+  const attempt = authAttempts.get(clientIP);
+
+  // Check lockout
+  if (attempt && attempt.lockedUntil > Date.now()) {
+    const remainingSec = Math.ceil((attempt.lockedUntil - Date.now()) / 1000);
+    res.status(429).json({
+      error: `Too many failed attempts. Locked out for ${remainingSec} seconds.`,
+    });
+    return;
+  }
+
   const token = req.headers['x-admin-token'];
   const secret = process.env.ADMIN_SECRET || 'overflow2026';
 
-  if (!token || token !== secret) {
+  if (!token || typeof token !== 'string' || !safeTokenCompare(token, secret)) {
+    // Track failed attempt
+    const current = authAttempts.get(clientIP) || { failures: 0, lockedUntil: 0 };
+    current.failures += 1;
+    if (current.failures >= AUTH_MAX_FAILURES) {
+      current.lockedUntil = Date.now() + AUTH_LOCKOUT_MS;
+      current.failures = 0; // reset counter after lockout
+      console.warn(`[Admin] IP ${clientIP} locked out after ${AUTH_MAX_FAILURES} failed auth attempts`);
+    }
+    authAttempts.set(clientIP, current);
+
     res.status(401).json({ error: 'Unauthorized: invalid or missing admin token' });
     return;
   }
+
+  // Successful auth -- clear any failure tracking
+  authAttempts.delete(clientIP);
   next();
 }
 
@@ -35,6 +94,16 @@ export function createAdminRouter(
 
       if (!matchId || !winnerId) {
         res.status(400).json({ error: 'matchId and winnerId are required' });
+        return;
+      }
+
+      // Validate string types and length limits
+      if (typeof matchId !== 'string' || matchId.length > 128) {
+        res.status(400).json({ error: 'Invalid matchId format' });
+        return;
+      }
+      if (typeof winnerId !== 'string' || winnerId.length > 128) {
+        res.status(400).json({ error: 'Invalid winnerId format' });
         return;
       }
 
@@ -100,9 +169,23 @@ export function createAdminRouter(
         return;
       }
 
+      // Validate string types and lengths
+      if (typeof matchId !== 'string' || matchId.length > 128) {
+        res.status(400).json({ error: 'Invalid matchId format' });
+        return;
+      }
+      if (typeof winnerSymbol !== 'string' || !/^[A-Za-z0-9$]{1,10}$/.test(winnerSymbol)) {
+        res.status(400).json({ error: 'Invalid winnerSymbol format' });
+        return;
+      }
+      if (typeof loserSymbol !== 'string' || !/^[A-Za-z0-9$]{1,10}$/.test(loserSymbol)) {
+        res.status(400).json({ error: 'Invalid loserSymbol format' });
+        return;
+      }
+
       const score = Number(upsetScore);
-      if (isNaN(score) || score < 0 || score > 130) {
-        res.status(400).json({ error: 'upsetScore must be between 0 and 130' });
+      if (!Number.isFinite(score) || score < 0 || score > 130) {
+        res.status(400).json({ error: 'upsetScore must be a finite number between 0 and 130' });
         return;
       }
 
@@ -179,9 +262,14 @@ export function createAdminRouter(
         return;
       }
 
+      if (typeof teamSymbol !== 'string' || !/^[$A-Za-z0-9]{1,10}$/.test(teamSymbol)) {
+        res.status(400).json({ error: 'Invalid teamSymbol format' });
+        return;
+      }
+
       const price = Number(newPrice);
-      if (isNaN(price) || price <= 0) {
-        res.status(400).json({ error: 'newPrice must be a positive number' });
+      if (!Number.isFinite(price) || price <= 0 || price > 1_000_000) {
+        res.status(400).json({ error: 'newPrice must be a finite positive number (max 1,000,000)' });
         return;
       }
 

@@ -98,8 +98,14 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
       }
 
       const numAmount = Number(amount);
-      if (isNaN(numAmount) || numAmount <= 0) {
-        res.status(400).json({ error: 'Amount must be a positive number' });
+      if (!Number.isFinite(numAmount) || numAmount <= 0 || numAmount > 1_000_000) {
+        res.status(400).json({ error: 'Amount must be a finite positive number (max 1,000,000)' });
+        return;
+      }
+
+      // Validate teamId format (string, max length)
+      if (typeof teamId !== 'string' || teamId.length === 0 || teamId.length > 128) {
+        res.status(400).json({ error: 'Invalid teamId format' });
         return;
       }
 

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { PSLTeam } from "@/types";
 import { cn, formatPrice, formatPercent, formatCurrency, hexToRgba } from "@/lib/utils";
+import { TeamLogo } from "@/components/TeamLogo";
 import { useRef } from "react";
 
 interface TeamCardProps {
@@ -137,16 +138,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
           {/* Header */}
           <div className="mb-4 flex items-start justify-between">
             <div className="flex items-center gap-3">
-              {/* Team logo placeholder */}
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-lg transition-transform duration-200 group-hover:scale-[1.01]"
-                style={{
-                  backgroundColor: team.color,
-                  boxShadow: `0 4px 16px ${hexToRgba(team.color, 0.4)}`,
-                }}
-              >
-                {team.id}
-              </div>
+              <TeamLogo teamId={team.id} color={team.color} size={40} className="shadow-lg transition-transform duration-200 group-hover:scale-[1.01]" />
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wider text-[#8B949E]">{team.symbol}</p>
                 <h3 className="text-sm font-bold text-[#E6EDF3] leading-tight truncate max-w-[140px]">

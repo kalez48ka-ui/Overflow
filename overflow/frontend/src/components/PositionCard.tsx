@@ -5,6 +5,7 @@ import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Position } from "@/types";
 import { cn, formatPrice, formatCurrency, formatPercent } from "@/lib/utils";
+import { TeamLogo } from "@/components/TeamLogo";
 
 interface PositionCardProps {
   position: Position;
@@ -15,7 +16,7 @@ interface PositionCardProps {
 export function PositionCard({ position, index = 0, onTrade }: PositionCardProps) {
   const isProfit = position.pnlPercent >= 0;
 
-  const handleShare = () => {
+  const handleShare = async () => {
     const pnlSign = position.unrealizedPnl > 0 ? "+" : "";
     const text = [
       `I'm holding ${position.amount.toLocaleString()} ${position.symbol} tokens on Overflow!`,
@@ -23,11 +24,36 @@ export function PositionCard({ position, index = 0, onTrade }: PositionCardProps
       `Trade PSL team tokens: overflow.app`,
     ].join("\n");
 
-    navigator.clipboard.writeText(text).then(() => {
+    // Try Web Share API first (mobile-friendly)
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ text });
+        toast.success("Shared!");
+        return;
+      } catch (e) {
+        // User cancelled or share failed — fall through to clipboard
+        if (e instanceof Error && e.name === "AbortError") return;
+      }
+    }
+
+    // Clipboard fallback with textarea trick for non-HTTPS
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
       toast.success("Copied to clipboard!");
-    }).catch(() => {
+    } catch {
       toast.error("Failed to copy");
-    });
+    }
   };
 
   return (
@@ -40,12 +66,7 @@ export function PositionCard({ position, index = 0, onTrade }: PositionCardProps
       {/* Row 1: Team + P&L */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-            style={{ backgroundColor: position.color }}
-          >
-            {position.teamId}
-          </div>
+          <TeamLogo teamId={position.teamId} color={position.color} size={32} />
           <div>
             <span className="text-sm font-semibold text-[#E6EDF3]">{position.teamName}</span>
             <span className="ml-2 text-xs text-[#484F58]">{position.symbol}</span>

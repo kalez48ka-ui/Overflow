@@ -11,37 +11,37 @@ Built for **WireFluid 2026 Hackathon** (48-hour build).
 ## Architecture
 
 ```
-┌─────────────────────┐   ┌──────────────────────┐   ┌──────────────────┐
-│   Frontend          │   │   Backend            │   │   AI Engine      │
-│   Next.js 16        │──>│   Express 5 +        │──>│   Flask 3.1 +    │
-│   React 19          │   │   Prisma 6           │   │   ChromaDB 0.5   │
-│   Port 3000         │   │   PostgreSQL 16      │   │   LangChain 0.3  │
-│   wagmi + viem      │   │   Port 3001          │   │   Port 5001      │
-└────────┬────────────┘   └──────────┬───────────┘   └──────────────────┘
-         │                           │
-         └───────────┬───────────────┘
-                     │
-              ┌──────▼───────────────┐
-              │  WireFluid Testnet    │
-              │  Chain ID: 92533     │
-              │  7 Contracts +       │
-              │  8 Team Tokens       │
-              └──────────────────────┘
++-----------------------+   +------------------------+   +--------------------+
+|   Frontend            |   |   Backend              |   |   AI Engine         |
+|   Next.js 16          |-->|   Express 5 +          |-->|   Flask 3.1 +       |
+|   React 19            |   |   Prisma 6             |   |   ChromaDB 0.5      |
+|   Port 3000           |   |   PostgreSQL 16        |   |   LangChain 0.3     |
+|   wagmi + viem        |   |   Port 3001            |   |   Port 5001         |
++---------+-------------+   +-----------+------------+   +--------------------+
+          |                             |
+          +-------------+---------------+
+                        |
+                 +------v------------------+
+                 |  WireFluid Testnet       |
+                 |  Chain ID: 92533        |
+                 |  7 Contracts +          |
+                 |  8 Team Tokens          |
+                 +-------------------------+
 ```
 
 | Layer | Tech | Source Files | Lines |
 |-------|------|:------------:|------:|
-| Smart Contracts | Solidity 0.8.24, OpenZeppelin 5.6, Hardhat | 12 | ~2,257 |
-| Backend | TypeScript, Express 5, Prisma 6, Socket.io, ethers.js | 18 | ~3,700 |
-| Frontend | Next.js 16, React 19, Tailwind 4, wagmi 2, Framer Motion | 53 | ~18,091 |
+| Smart Contracts | Solidity 0.8.24, OpenZeppelin 5.6, Hardhat | 12 | ~5,088 |
+| Backend | TypeScript, Express 5, Prisma 6, Socket.io, ethers.js | 19 | ~3,813 |
+| Frontend | Next.js 16, React 19, Tailwind 4, wagmi 2, Framer Motion | 54 | ~16,421 |
 | AI Engine | Python 3.12, Flask, LangChain, ChromaDB, scikit-learn | 11 | ~3,354 |
-| **Total** | | **94** | **~27,402** |
+| **Total** | | **97** | **~28,744** |
 
 ---
 
 ## Pages
 
-Overflow ships with **13 pages** across trading, analytics, engagement, and administration.
+Overflow ships with **11 pages** across trading, analytics, engagement, and administration.
 
 | Route | Page | Description |
 |-------|------|-------------|
@@ -115,7 +115,7 @@ Fan Wars is a **non-betting** engagement system. It is NOT gambling -- locked to
 - **Win Probability** -- Logistic regression model trained on historical PSL data
 - **Free-Form Q&A** -- Ask anything about teams, matchups, or strategy
 
-### UI/UX & Animation System
+### UI/UX and Animation System
 - **Loading Screen** -- Cricket ball SVG animation with blockchain pulse network, fades out after 2.5s
 - **Framer Motion Components** -- MouseTrackCard, CountUp, StaggerReveal, LayoutGrid
 - **Aceternity UI** -- 3D Card, Moving Border, Spotlight, Meteors
@@ -124,6 +124,32 @@ Fan Wars is a **non-betting** engagement system. It is NOT gambling -- locked to
 - **Professional Navbar** -- Primary links + "More" dropdown
 - **CSS Custom Properties** -- Full brand theme system with design tokens
 - **Responsive Layout** -- Mobile-first with collapsible navigation
+
+---
+
+## Design System
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `--brand-primary` | `#E4002B` | Buttons, accents, CTAs |
+| `--bg-primary` | `#0D1117` | Page background |
+| `--bg-card` | `#161B22` | Card surfaces |
+| `--bg-elevated` | `#21262D` | Elevated panels, modals |
+| `--border` | `#21262D` | Consistent 1px borders on all cards and panels |
+| `--text-primary` | `#E6EDF3` | Headings, primary content |
+| `--text-secondary` | `#C9D1D9` | Supporting text |
+| `--text-muted` | `#8B949E` | Labels, captions |
+| `--green` | `#3FB950` | Positive/buy indicators |
+| `--red` | `#F85149` | Negative/sell indicators |
+| `--blue` | `#58A6FF` | Info accents |
+| `--yellow` | `#FDB913` | Warning, PSL brand accent |
+| `--purple` | `#6A0DAD` | Special highlights |
+
+**Border Rules:** All cards use `border: 1px solid var(--border)`. No mixed border styles -- consistent `#21262D` everywhere.
+
+**Text Hierarchy:** Headings use `--text-primary`, body uses `--text-secondary`, metadata/labels use `--text-muted`. No raw hex values in components.
+
+**Spacing:** Tailwind utility classes with `p-4`/`p-6` card padding, `gap-4`/`gap-6` grid gaps, `space-y-4` section spacing.
 
 ---
 
@@ -249,6 +275,11 @@ GET  /api/ai/report/:matchId     -> Pre-match report
 GET  /api/ai/health              -> AI engine status
 ```
 
+### Health
+```
+GET  /api/health                 -> Server status + timestamp
+```
+
 ### WebSocket Events (Socket.io)
 ```
 team:{symbol}      -> Live price updates
@@ -278,17 +309,34 @@ fanwar:{matchId}   -> Fan war lock/settle events
 
 ## Testing
 
-**140 passing tests** across two test suites:
+**149 passing tests** across two test suites:
 
 | Suite | Tests | File |
 |-------|------:|------|
-| Overflow (core contracts) | ~115 | `overflow/contracts/test/Overflow.test.js` |
-| FanWars | ~25 | `overflow/contracts/test/FanWars.test.js` |
+| Overflow (core contracts) | 122 | `overflow/contracts/test/Overflow.test.js` |
+| FanWars | 27 | `overflow/contracts/test/FanWars.test.js` |
 
 ```bash
 cd overflow/contracts
 npx hardhat test
 ```
+
+---
+
+## Database Schema
+
+| Table | Purpose |
+|-------|---------|
+| `Team` | 8 PSL teams -- price, sell tax, performance score, ranking |
+| `Match` | Match records -- home/away teams, status, scores |
+| `BallEvent` | Ball-by-ball events -- runs, wickets, commentary |
+| `Trade` | Buy/sell transactions -- wallet, amount, price, fee |
+| `Position` | User holdings -- wallet x team |
+| `PricePoint` | OHLCV candles -- indexed by teamId + timestamp |
+| `UpsetEvent` | Upset triggers -- payout details, claim window |
+| `VaultState` | Global vault balance (singleton) |
+| `FanWar` | Fan War entries -- match link, status, pool sizes, deadlines |
+| `FanWarLock` | Individual token locks -- wallet, team, amount, claim status |
 
 ---
 
@@ -300,7 +348,7 @@ npx hardhat test
 - PostgreSQL 16
 - Docker + Docker Compose (optional)
 
-### 1. Clone & Install
+### 1. Clone and Install
 
 ```bash
 git clone git@github.com:kalez48ka-ui/Overflow.git
@@ -341,7 +389,7 @@ CIRCUIT_BREAKER_ADDRESS=0x5D1E4E0398b9dFF7Ad5b4954755d2478A0CE1b80
 FRONTEND_PORT=3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
 NEXT_PUBLIC_AI_API_URL=http://localhost:5001
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=       # Optional — MetaMask works without it
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=       # Optional -- MetaMask works without it
 
 # AI Engine
 AI_ENGINE_PORT=5001
@@ -365,7 +413,7 @@ Contracts are already deployed to WireFluid Testnet. To redeploy:
 ```bash
 cd overflow/contracts
 npx hardhat compile
-npx hardhat test                                        # 140 tests passing
+npx hardhat test                                        # 149 tests passing
 npx hardhat run scripts/deploy.js --network wirefluid   # Deploy core contracts
 npx hardhat run scripts/deploy-remaining.js --network wirefluid  # Deploy remaining team tokens
 ```
@@ -397,86 +445,69 @@ docker compose up -d
 
 ---
 
-## Database Schema
-
-| Table | Purpose |
-|-------|---------|
-| `Team` | 8 PSL teams -- price, sell tax, performance score, ranking |
-| `Match` | Match records -- home/away teams, status, scores |
-| `BallEvent` | Ball-by-ball events -- runs, wickets, commentary |
-| `Trade` | Buy/sell transactions -- wallet, amount, price, fee |
-| `Position` | User holdings -- wallet x team |
-| `PricePoint` | OHLCV candles -- indexed by teamId + timestamp |
-| `UpsetEvent` | Upset triggers -- payout details, claim window |
-| `VaultState` | Global vault balance (singleton) |
-| `FanWar` | Fan War entries -- match link, status, pool sizes, deadlines |
-| `FanWarLock` | Individual token locks -- wallet, team, amount, claim status |
-
----
-
 ## Project Structure
 
 ```
 Overflow/
-├── overflow/
-│   ├── contracts/                     # Solidity smart contracts
-│   │   ├── contracts/                 # 7 .sol files (including FanWars.sol)
-│   │   ├── test/                      # Hardhat tests (140 passing)
-│   │   └── scripts/                   # Deploy scripts (deploy.js + deploy-remaining.js)
-│   ├── backend/                       # Express + Prisma API
-│   │   ├── src/
-│   │   │   ├── modules/               # price, cricket, oracle, vault, fanwars
-│   │   │   ├── routes/                # teams, trades, matches, portfolio,
-│   │   │   │                          #   vault, ai, admin, leaderboard, fanwars
-│   │   │   ├── common/                # Shared types
-│   │   │   ├── config/                # Environment config
-│   │   │   └── index.ts               # Entry point
-│   │   └── prisma/
-│   │       ├── schema.prisma          # 10 models
-│   │       └── seed.ts                # Seed data (8 teams)
-│   ├── frontend/                      # Next.js 16 app
-│   │   └── src/
-│   │       ├── app/                   # 13 pages
-│   │       │   ├── page.tsx           # Markets (landing)
-│   │       │   ├── trade/[team]/      # Per-team trading
-│   │       │   ├── match/             # Live match
-│   │       │   ├── match/history/     # Match history
-│   │       │   ├── standings/         # Points table
-│   │       │   ├── portfolio/         # Wallet portfolio
-│   │       │   ├── vault/             # Upset Vault
-│   │       │   ├── how-it-works/      # Mechanics guide
-│   │       │   ├── fan-wars/          # Fan Wars dashboard
-│   │       │   ├── leaderboard/       # Top traders
-│   │       │   ├── admin/             # Oracle admin panel
-│   │       │   ├── globals.css        # CSS custom properties theme
-│   │       │   └── layout.tsx         # App shell + navbar + loading screen
-│   │       ├── components/            # 17 UI components + 3 subdirectories
-│   │       │   ├── effects/           # CricketBallLoader, BlockchainPulse,
-│   │       │   │                      #   GlitchPrice, LiquidBlobs, MagneticButton,
-│   │       │   │                      #   RevealText, TextScramble
-│   │       │   ├── motion/            # CountUp, LayoutGrid, MouseTrackCard, StaggerReveal
-│   │       │   ├── ui/                # 3D Card, Moving Border, Spotlight, Meteors
-│   │       │   ├── FanWarCard.tsx     # Fan War engagement card
-│   │       │   ├── LoadingScreen.tsx  # Cricket ball + blockchain pulse animation
-│   │       │   ├── Navbar.tsx         # Primary links + "More" dropdown
-│   │       │   └── ...               # 14 more components
-│   │       ├── hooks/                 # wagmi contract hooks
-│   │       ├── lib/                   # API client, mock data, utils
-│   │       ├── types/                 # TypeScript type definitions
-│   │       ├── config/                # wagmi config (WireFluid chain definition)
-│   │       └── contracts/             # ABIs
-│   ├── ai-engine/                     # Python AI service
-│   │   ├── rag/                       # RAG pipeline, signals, vector store
-│   │   ├── models/                    # ML models (win probability)
-│   │   ├── data/                      # Data ingestion (Cricsheet)
-│   │   ├── config.py                  # Team metadata, Flask config
-│   │   └── server.py                  # Flask API entry point
-│   ├── docker-compose.yml             # Production deployment
-│   ├── ecosystem.config.js            # PM2 process manager
-│   └── .env.example                   # Environment template
-├── OVERFLOW_BUILD_PLAN.md             # Technical build roadmap
-├── WHITEPAPER.md                      # Whitepaper (markdown)
-└── README.md                          # This file
++-- overflow/
+|   +-- contracts/                     # Solidity smart contracts
+|   |   +-- contracts/                 # 7 .sol files (including FanWars.sol)
+|   |   +-- test/                      # Hardhat tests (149 passing)
+|   |   +-- scripts/                   # Deploy scripts (deploy.js + deploy-remaining.js)
+|   +-- backend/                       # Express + Prisma API
+|   |   +-- src/
+|   |   |   +-- modules/               # price, cricket, oracle, vault, fanwars
+|   |   |   +-- routes/                # teams, trades, matches, portfolio,
+|   |   |   |                          #   vault, ai, admin, leaderboard, fanwars
+|   |   |   +-- common/                # Shared types
+|   |   |   +-- config/                # Environment config
+|   |   |   +-- index.ts               # Entry point (9 route mounts + health check)
+|   |   +-- prisma/
+|   |       +-- schema.prisma          # 10 models
+|   |       +-- seed.ts                # Seed data (8 teams)
+|   +-- frontend/                      # Next.js 16 app
+|   |   +-- src/
+|   |       +-- app/                   # 11 pages
+|   |       |   +-- page.tsx           # Markets (landing)
+|   |       |   +-- trade/[team]/      # Per-team trading
+|   |       |   +-- match/             # Live match
+|   |       |   +-- match/history/     # Match history
+|   |       |   +-- standings/         # Points table
+|   |       |   +-- portfolio/         # Wallet portfolio
+|   |       |   +-- vault/             # Upset Vault
+|   |       |   +-- how-it-works/      # Mechanics guide
+|   |       |   +-- fan-wars/          # Fan Wars dashboard
+|   |       |   +-- leaderboard/       # Top traders
+|   |       |   +-- admin/             # Oracle admin panel
+|   |       |   +-- globals.css        # CSS custom properties theme
+|   |       |   +-- layout.tsx         # App shell + navbar + loading screen
+|   |       +-- components/            # 35 files across 3 subdirectories
+|   |       |   +-- effects/           # CricketBallLoader, BlockchainPulse,
+|   |       |   |                      #   GlitchPrice, LiquidBlobs, MagneticButton,
+|   |       |   |                      #   RevealText, TextScramble
+|   |       |   +-- motion/            # CountUp, LayoutGrid, MouseTrackCard, StaggerReveal
+|   |       |   +-- ui/                # 3D Card, Moving Border, Spotlight, Meteors
+|   |       |   +-- FanWarCard.tsx     # Fan War engagement card
+|   |       |   +-- LoadingScreen.tsx  # Cricket ball + blockchain pulse animation
+|   |       |   +-- Navbar.tsx         # Primary links + "More" dropdown
+|   |       |   +-- ...               # 15 more components
+|   |       +-- hooks/                 # wagmi contract hooks
+|   |       +-- lib/                   # API client, mock data, utils
+|   |       +-- types/                 # TypeScript type definitions
+|   |       +-- config/                # wagmi config (WireFluid chain definition)
+|   |       +-- contracts/             # ABIs
+|   +-- ai-engine/                     # Python AI service
+|   |   +-- rag/                       # RAG pipeline, signals, vector store
+|   |   +-- models/                    # ML models (win probability)
+|   |   +-- data/                      # Data ingestion (Cricsheet)
+|   |   +-- config.py                  # Team metadata, Flask config
+|   |   +-- server.py                  # Flask API entry point
+|   +-- docker-compose.yml             # Production deployment
+|   +-- ecosystem.config.js            # PM2 process manager
+|   +-- .env.example                   # Environment template
++-- OVERFLOW_BUILD_PLAN.md             # Technical build roadmap
++-- WHITEPAPER.md                      # Whitepaper (markdown)
++-- README.md                          # This file
 ```
 
 ---

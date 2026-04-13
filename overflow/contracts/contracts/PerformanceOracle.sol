@@ -20,6 +20,7 @@ contract PerformanceOracle is Ownable {
     uint256 public constant BASIS_POINTS = 10000;
     uint256 public constant REQUIRED_CONFIRMATIONS = 2;
     uint256 public constant MAX_ORACLES = 3;
+    uint256 public constant MIN_CONFIRM_DELAY = 30 seconds;  // MEDIUM-03 fix: anti-front-running delay
 
     // -----------------------------------------------------------------------
     // Structs
@@ -40,6 +41,7 @@ contract PerformanceOracle is Ownable {
         uint256 availabilityScore;
         uint256 confirmations;
         uint256 createdAt;
+        uint256 proposedAt;       // MEDIUM-03 fix: timestamp of initial proposal
         bool executed;
     }
 
@@ -82,6 +84,7 @@ contract PerformanceOracle is Ownable {
     error UpdateExpired();
     error InvalidOracleIndex();
     error ScoreMismatch();
+    error ConfirmTooSoon();
 
     // -----------------------------------------------------------------------
     // Modifiers
@@ -100,6 +103,9 @@ contract PerformanceOracle is Ownable {
     // Constructor
     // -----------------------------------------------------------------------
     constructor(address _oracle1, address _oracle2, address _oracle3) Ownable(msg.sender) {
+        require(_oracle1 != address(0), "Zero address");
+        require(_oracle2 != address(0), "Zero address");
+        require(_oracle3 != address(0), "Zero address");
         oracles[0] = _oracle1;
         oracles[1] = _oracle2;
         oracles[2] = _oracle3;
@@ -113,6 +119,7 @@ contract PerformanceOracle is Ownable {
     // -----------------------------------------------------------------------
     function setOracle(uint256 index, address newOracle) external onlyOwner {
         if (index >= MAX_ORACLES) revert InvalidOracleIndex();
+        require(newOracle != address(0), "Zero address");
         address old = oracles[index];
         isOracle[old] = false;
         oracles[index] = newOracle;
@@ -167,6 +174,7 @@ contract PerformanceOracle is Ownable {
             pending.availabilityScore = availabilityScore;
             pending.confirmations = 1;
             pending.createdAt = block.timestamp;
+            pending.proposedAt = block.timestamp;  // MEDIUM-03 fix: record proposal time
             oracleConfirmed[teamToken][nonce][msg.sender] = true;
             emit UpdateProposed(teamToken, nonce, msg.sender);
         } else {
@@ -174,6 +182,8 @@ contract PerformanceOracle is Ownable {
             if (pending.executed) revert UpdateAlreadyExecuted();
             if (block.timestamp > pending.createdAt + 1 hours) revert UpdateExpired();
             if (oracleConfirmed[teamToken][nonce][msg.sender]) revert AlreadyConfirmed();
+            // MEDIUM-03 fix: enforce minimum delay between proposal and confirmation
+            if (block.timestamp < pending.proposedAt + MIN_CONFIRM_DELAY) revert ConfirmTooSoon();
 
             // H-1 fix: require confirming oracle to submit matching scores
             if (

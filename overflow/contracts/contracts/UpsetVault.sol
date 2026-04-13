@@ -53,6 +53,8 @@ contract UpsetVault is Ownable, ReentrancyGuard {
         uint256 timestamp;
         uint256 winnerSupplySnapshot;
         uint256 snapshotTimestamp;       // C-1 fix: timestamp when snapshot was taken
+        uint256 claimedAmount;           // HIGH-02 fix: track total claimed from this epoch
+        bool earmarksReleased;           // HIGH-02 fix: whether expired earmarks were reclaimed
         mapping(address => bool) claimed;
     }
 
@@ -75,6 +77,7 @@ contract UpsetVault is Ownable, ReentrancyGuard {
     );
     event UpsetRewardClaimed(uint256 indexed epoch, address indexed user, uint256 amount);
     event KeeperSet(address indexed keeper, bool status);
+    event EarmarksReleased(uint256 indexed epoch, uint256 unclaimedAmount);
 
     // -----------------------------------------------------------------------
     // Errors
@@ -100,6 +103,7 @@ contract UpsetVault is Ownable, ReentrancyGuard {
     // Constructor
     // -----------------------------------------------------------------------
     constructor(address _oracle) Ownable(msg.sender) {
+        require(_oracle != address(0), "Zero address");
         oracle = PerformanceOracle(_oracle);
         isKeeper[msg.sender] = true;
     }
@@ -116,11 +120,13 @@ contract UpsetVault is Ownable, ReentrancyGuard {
     // Admin
     // -----------------------------------------------------------------------
     function setKeeper(address keeper, bool status) external onlyOwner {
+        require(keeper != address(0), "Zero address");
         isKeeper[keeper] = status;
         emit KeeperSet(keeper, status);
     }
 
     function setOracle(address _oracle) external onlyOwner {
+        require(_oracle != address(0), "Zero address");
         oracle = PerformanceOracle(_oracle);
     }
 
@@ -186,11 +192,32 @@ contract UpsetVault is Ownable, ReentrancyGuard {
         if (reward == 0) revert NoReward();
 
         evt.claimed[msg.sender] = true;
+        evt.claimedAmount += reward;   // HIGH-02 fix: track per-epoch claimed total
         totalEarmarked -= reward;  // C-2 fix: release earmarked funds on claim
         (bool success,) = msg.sender.call{value: reward}("");
         if (!success) revert TransferFailed();
 
         emit UpsetRewardClaimed(epoch, msg.sender, reward);
+    }
+
+    // -----------------------------------------------------------------------
+    // HIGH-02 fix: Release expired earmarks so unclaimed rewards do not stay locked forever
+    // -----------------------------------------------------------------------
+    /**
+     * @notice Reclaim earmarked funds for an epoch whose claim window has expired.
+     *         Unclaimed rewards become available for future upset releases.
+     */
+    function releaseExpiredEarmarks(uint256 epoch) external onlyKeeper {
+        UpsetEvent storage evt = upsetEvents[epoch];
+        require(evt.timestamp > 0, "No event");
+        require(block.timestamp > evt.timestamp + CLAIM_WINDOW, "Window still open");
+        require(!evt.earmarksReleased, "Already released");
+
+        uint256 unclaimedAmount = evt.releasedAmount - evt.claimedAmount;
+        totalEarmarked -= unclaimedAmount;
+        evt.earmarksReleased = true;
+
+        emit EarmarksReleased(epoch, unclaimedAmount);
     }
 
     // -----------------------------------------------------------------------
