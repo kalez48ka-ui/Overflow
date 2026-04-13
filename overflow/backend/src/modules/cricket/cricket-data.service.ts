@@ -3,6 +3,7 @@ import { Server as SocketServer } from 'socket.io';
 import * as cron from 'node-cron';
 import { CricApiClient, CricApiMatch, CricApiScore } from './cricapi.client';
 import { BallEventData, MatchStatusUpdate } from '../../common/types';
+import { FanWarsService } from '../fanwars/fanwars.service';
 
 // ---------------------------------------------------------------------------
 // PSL team name → our DB symbol mapping
@@ -49,10 +50,15 @@ export class CricketDataService {
   private pollingJob: ReturnType<typeof cron.schedule> | null = null;
   private pslSeriesId: string | null = null;
   private lastApiHits = 0;
+  private fanWarsService: FanWarsService | null = null;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.api = new CricApiClient();
+  }
+
+  setFanWarsService(service: FanWarsService): void {
+    this.fanWarsService = service;
   }
 
   setSocket(io: SocketServer): void {
@@ -286,8 +292,17 @@ export class CricketDataService {
         data: matchData,
       });
     } else {
-      await this.prisma.match.create({ data: matchData });
+      const created = await this.prisma.match.create({ data: matchData });
       console.log(`[CricketData] Created match: ${apiMatch.name}`);
+
+      // Auto-create a fan war for the new match
+      if (this.fanWarsService) {
+        try {
+          await this.fanWarsService.createFanWar(created.id);
+        } catch (fwErr) {
+          console.error(`[CricketData] Failed to auto-create fan war for match ${created.id}:`, fwErr);
+        }
+      }
     }
   }
 

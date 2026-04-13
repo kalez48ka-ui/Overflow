@@ -3,6 +3,8 @@ import { ethers } from 'ethers';
 import { Server as SocketServer } from 'socket.io';
 import { config } from '../../config';
 import { VaultService } from '../vault/vault.service';
+import { FanWarsService } from '../fanwars/fanwars.service';
+import { MarginType } from '../../common/types';
 
 const PERFORMANCE_ORACLE_ABI = [
   'function updateScore(string symbol, uint256 score) external',
@@ -15,10 +17,12 @@ export class OracleService {
   private provider: ethers.JsonRpcProvider | null = null;
   private wallet: ethers.Wallet | null = null;
   private vaultService: VaultService;
+  private fanWarsService: FanWarsService;
 
-  constructor(prisma: PrismaClient, vaultService: VaultService) {
+  constructor(prisma: PrismaClient, vaultService: VaultService, fanWarsService: FanWarsService) {
     this.prisma = prisma;
     this.vaultService = vaultService;
+    this.fanWarsService = fanWarsService;
 
     if (config.rpcUrl && config.oraclePrivateKey && config.oraclePrivateKey !== '0x...') {
       try {
@@ -100,6 +104,30 @@ export class OracleService {
     }
 
     await this.updateSellTaxes();
+
+    // Auto-settle the corresponding fan war if one exists
+    try {
+      const marginType = this.deriveMarginType(winner, loser);
+      await this.fanWarsService.settleMatch(matchId, winnerId, marginType);
+    } catch (fwErr) {
+      console.error(`[OracleService] Failed to auto-settle fan war for match ${matchId}:`, fwErr);
+    }
+  }
+
+  /**
+   * Derive margin type from score differential between winner and loser.
+   * CLOSE: ranking difference <= 1
+   * DOMINANT: ranking difference >= 4
+   * NORMAL: everything in between
+   */
+  private deriveMarginType(
+    winner: { ranking: number; performanceScore: number },
+    loser: { ranking: number; performanceScore: number }
+  ): MarginType {
+    const scoreDiff = Math.abs(winner.performanceScore - loser.performanceScore);
+    if (scoreDiff <= 5) return 'CLOSE';
+    if (scoreDiff >= 20) return 'DOMINANT';
+    return 'NORMAL';
   }
 
   private calculateUpsetScore(

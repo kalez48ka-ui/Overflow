@@ -28,11 +28,12 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
     uint256 public constant BASIS_POINTS = 10000;
 
     // Fee split percentages (basis points)
-    uint256 public constant TREASURY_SHARE = 3000;     // 30%
+    uint256 public constant TREASURY_SHARE = 2500;     // 25%
     uint256 public constant REWARD_POOL_SHARE = 2500;  // 25%
     uint256 public constant UPSET_VAULT_SHARE = 1500;  // 15%
-    uint256 public constant LIQUIDITY_SHARE = 2000;    // 20%
+    uint256 public constant LIQUIDITY_SHARE = 1500;    // 15%
     uint256 public constant DEV_FUND_SHARE = 1000;     // 10%
+    uint256 public constant FAN_WARS_SHARE = 1000;     // 10%
 
     uint256 public constant CLAIM_WINDOW = 24 hours;
     uint256 public constant MAX_TEAMS = 8;
@@ -47,6 +48,7 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
     address public upsetVault;
     address public liquidityBacking;
     address public devFund;
+    address public fanWars;
 
     uint256 public performanceRewardPool;
     uint256 public totalFeesCollected;
@@ -80,7 +82,8 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         uint256 rewardPoolAmount,
         uint256 upsetVaultAmount,
         uint256 liquidityAmount,
-        uint256 devFundAmount
+        uint256 devFundAmount,
+        uint256 fanWarsAmount
     );
     event MatchRewardsDistributed(uint256 indexed epoch, uint256 totalPool);
     event RewardClaimed(uint256 indexed epoch, address indexed user, address indexed team, uint256 amount);
@@ -147,6 +150,10 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         devFund = _devFund;
     }
 
+    function setFanWars(address _fanWars) external onlyOwner {
+        fanWars = _fanWars;
+    }
+
     // -----------------------------------------------------------------------
     // Core: Fee Distribution
     // -----------------------------------------------------------------------
@@ -165,7 +172,8 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         uint256 rewardPoolAmt = (distributable * REWARD_POOL_SHARE) / BASIS_POINTS;
         uint256 upsetVaultAmt = (distributable * UPSET_VAULT_SHARE) / BASIS_POINTS;
         uint256 liquidityAmt = (distributable * LIQUIDITY_SHARE) / BASIS_POINTS;
-        uint256 devFundAmt = distributable - treasuryAmt - rewardPoolAmt - upsetVaultAmt - liquidityAmt;
+        uint256 fanWarsAmt = (distributable * FAN_WARS_SHARE) / BASIS_POINTS;
+        uint256 devFundAmt = distributable - treasuryAmt - rewardPoolAmt - upsetVaultAmt - liquidityAmt - fanWarsAmt;
 
         performanceRewardPool += rewardPoolAmt;
 
@@ -173,8 +181,9 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         _safeTransfer(upsetVault, upsetVaultAmt);
         _safeTransfer(liquidityBacking, liquidityAmt);
         _safeTransfer(devFund, devFundAmt);
+        _safeTransfer(fanWars, fanWarsAmt);
 
-        emit FeesDistributed(treasuryAmt, rewardPoolAmt, upsetVaultAmt, liquidityAmt, devFundAmt);
+        emit FeesDistributed(treasuryAmt, rewardPoolAmt, upsetVaultAmt, liquidityAmt, devFundAmt, fanWarsAmt);
     }
 
     // -----------------------------------------------------------------------

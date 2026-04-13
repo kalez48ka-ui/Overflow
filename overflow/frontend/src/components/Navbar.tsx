@@ -129,19 +129,32 @@ export function Navbar() {
   const isMoreActive = moreLinks.some((l) => pathname === l.href);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-[#30363D] bg-[#0D1117]/95 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#0D1117]/80 backdrop-blur-2xl backdrop-saturate-150">
+      {/* Subtle gradient line at top */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#E4002B]/40 to-transparent" />
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex h-14 items-center justify-between gap-6">
           {/* ── Logo ── */}
-          <Link href="/" className="flex items-center gap-2 shrink-0 group">
-            <OverflowLogo className="h-8 w-8 transition-transform group-hover:scale-105" />
-            <span className="text-[17px] font-black tracking-tight text-[#E6EDF3]">
-              OVER<span className="text-[#E4002B]">FLOW</span>
-            </span>
+          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+            <motion.div
+              whileHover={{ rotate: [0, -5, 5, 0], scale: 1.08 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            >
+              <OverflowLogo className="h-9 w-9 drop-shadow-[0_0_8px_rgba(228,0,43,0.3)]" />
+            </motion.div>
+            <div className="flex flex-col leading-none">
+              <span className="text-[15px] font-black tracking-tight text-[#E6EDF3]">
+                OVER<span className="text-[#E4002B]">FLOW</span>
+              </span>
+              <span className="text-[8px] font-medium tracking-[0.2em] text-[#8B949E]/60 uppercase">
+                PSL Trading
+              </span>
+            </div>
           </Link>
 
           {/* ── Desktop Nav ── */}
-          <div className="hidden md:flex items-center gap-0.5">
+          <div className="hidden md:flex items-center gap-1 rounded-full border border-white/[0.06] bg-white/[0.02] px-1 py-1">
             {primaryLinks.map(({ href, label, icon: Icon, live }) => {
               const isActive = pathname === href;
               return (
@@ -149,20 +162,29 @@ export function Navbar() {
                   key={href}
                   href={href}
                   className={cn(
-                    "nav-underline flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-all",
+                    "relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200",
                     isActive
-                      ? "bg-[#161B22] text-[#E6EDF3] shadow-sm shadow-black/20"
-                      : "text-[#8B949E] hover:bg-[#161B22]/60 hover:text-[#C9D1D9]"
+                      ? "text-[#E6EDF3]"
+                      : "text-[#8B949E] hover:text-[#C9D1D9]"
                   )}
                 >
-                  <Icon className="h-3.5 w-3.5" />
-                  {label}
-                  {live && (
-                    <span className="relative ml-0.5 flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FB950] opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FB950]" />
-                    </span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-active"
+                      className="absolute inset-0 rounded-full bg-white/[0.08] border border-white/[0.08]"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
                   )}
+                  <span className="relative z-10 flex items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                    {live && (
+                      <span className="relative ml-0.5 flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#3FB950] opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-[#3FB950]" />
+                      </span>
+                    )}
+                  </span>
                 </Link>
               );
             })}
@@ -172,24 +194,33 @@ export function Navbar() {
               <button
                 onClick={() => setMoreOpen(!moreOpen)}
                 className={cn(
-                  "flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-all",
+                  "relative flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium transition-all duration-200",
                   moreOpen || isMoreActive
-                    ? "bg-[#161B22] text-[#E6EDF3]"
-                    : "text-[#8B949E] hover:bg-[#161B22]/60 hover:text-[#C9D1D9]"
+                    ? "text-[#E6EDF3]"
+                    : "text-[#8B949E] hover:text-[#C9D1D9]"
                 )}
               >
-                More
-                <ChevronDown className={cn("h-3 w-3 transition-transform", moreOpen && "rotate-180")} />
+                {(moreOpen || isMoreActive) && (
+                  <motion.div
+                    layoutId="nav-active"
+                    className="absolute inset-0 rounded-full bg-white/[0.08] border border-white/[0.08]"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10 flex items-center gap-1">
+                  More
+                  <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", moreOpen && "rotate-180")} />
+                </span>
               </button>
 
               <AnimatePresence>
                 {moreOpen && (
                   <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.95 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-1.5 w-48 rounded-xl border border-[#30363D] bg-[#161B22] p-1.5 shadow-xl shadow-black/40"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-white/[0.08] bg-[#161B22]/95 backdrop-blur-xl p-1 shadow-2xl shadow-black/60"
                   >
                     {moreLinks.map(({ href, label, icon: Icon }) => {
                       const isActive = pathname === href;
@@ -199,10 +230,10 @@ export function Navbar() {
                           href={href}
                           onClick={() => setMoreOpen(false)}
                           className={cn(
-                            "flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
+                            "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
                             isActive
-                              ? "bg-[#0D1117] text-[#E6EDF3]"
-                              : "text-[#8B949E] hover:bg-[#0D1117]/60 hover:text-[#E6EDF3]"
+                              ? "bg-white/[0.06] text-[#E6EDF3]"
+                              : "text-[#8B949E] hover:bg-white/[0.04] hover:text-[#E6EDF3]"
                           )}
                         >
                           <Icon className="h-3.5 w-3.5" />
@@ -217,9 +248,9 @@ export function Navbar() {
           </div>
 
           {/* ── Right side ── */}
-          <div className="flex items-center gap-2.5">
-            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-[#30363D] px-2.5 py-1 text-[11px] text-[#8B949E]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#3FB950]" />
+          <div className="flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[10px] font-medium tracking-wide text-[#8B949E]/80">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#3FB950] shadow-[0_0_4px_rgba(63,185,80,0.5)]" />
               WireFluid
             </div>
 

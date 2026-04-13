@@ -54,6 +54,7 @@ model Match {
   updatedAt   DateTime  @updatedAt
 
   balls BallEvent[]
+  fanWar FanWar?
 }
 
 model BallEvent {
@@ -141,4 +142,41 @@ model VaultState {
   totalIn   Float    @default(0)
   totalOut  Float    @default(0)
   updatedAt DateTime @updatedAt
+}
+
+model FanWar {
+  id              String       @id @default(uuid())
+  matchId         String       @unique
+  match           Match        @relation(fields: [matchId], references: [id])
+  homeTeamId      String
+  awayTeamId      String
+  totalHomeLocked Float        @default(0)
+  totalAwayLocked Float        @default(0)
+  boostPool       Float        @default(0)
+  status          String       @default("OPEN")
+  winnerTeamId    String?
+  marginType      String?
+  homeBoostShare  Float?
+  awayBoostShare  Float?
+  settledAt       DateTime?
+  lockDeadline    DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  locks           FanWarLock[]
+}
+
+model FanWarLock {
+  id          String    @id @default(uuid())
+  fanWarId    String
+  fanWar      FanWar    @relation(fields: [fanWarId], references: [id])
+  wallet      String
+  teamId      String
+  amount      Float
+  boostReward Float?
+  claimed     Boolean   @default(false)
+  claimedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([fanWarId, wallet])
+  @@index([wallet])
 }

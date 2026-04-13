@@ -17,6 +17,8 @@ import { createVaultRouter } from './routes/vault';
 import { createAiRouter } from './routes/ai';
 import { createAdminRouter } from './routes/admin';
 import { createLeaderboardRouter } from './routes/leaderboard';
+import { FanWarsService } from './modules/fanwars/fanwars.service';
+import { createFanWarsRouter } from './routes/fanwars';
 
 const prisma = new PrismaClient();
 
@@ -78,8 +80,12 @@ vaultService.setSocket(io);
 
 const cricketService = new CricketDataService(prisma);
 cricketService.setSocket(io);
+cricketService.setFanWarsService(fanWarsService);
 
-const oracleService = new OracleService(prisma, vaultService);
+const fanWarsService = new FanWarsService(prisma);
+fanWarsService.setSocket(io);
+
+const oracleService = new OracleService(prisma, vaultService, fanWarsService);
 oracleService.setSocket(io);
 
 // Routes (with per-path rate limiters for sensitive endpoints)
@@ -91,6 +97,7 @@ app.use('/api/vault', createVaultRouter(vaultService));
 app.use('/api/ai', createAiRouter(prisma));
 app.use('/api/admin', adminLimiter, createAdminRouter(prisma, oracleService, vaultService));
 app.use('/api/leaderboard', createLeaderboardRouter(prisma));
+app.use('/api/fanwars', createFanWarsRouter(fanWarsService));
 
 // Health check
 app.get('/api/health', (_req, res) => {

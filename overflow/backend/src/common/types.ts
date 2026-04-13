@@ -101,3 +101,45 @@ export interface AiSignal {
 }
 
 export type Timeframe = '1h' | '24h' | '7d';
+
+export type MarginType = 'CLOSE' | 'NORMAL' | 'DOMINANT';
+
+export interface FanWarStatus {
+  id: string;
+  matchId: string;
+  homeTeamId: string;
+  awayTeamId: string;
+  totalHomeLocked: number;
+  totalAwayLocked: number;
+  boostPool: number;
+  status: string;
+  winnerTeamId: string | null;
+  marginType: string | null;
+  homeBoostShare: number | null;
+  awayBoostShare: number | null;
+  lockDeadline: Date;
+  settledAt: Date | null;
+  locks: FanWarLockInfo[];
+}
+
+export interface FanWarLockInfo {
+  id: string;
+  wallet: string;
+  teamId: string;
+  amount: number;
+  boostReward: number | null;
+  claimed: boolean;
+  createdAt: Date;
+}
+
+export interface LeaderboardEntry {
+  wallet: string;
+  totalLocked: number;
+  totalBoost: number;
+  warCount: number;
+}
+
+export interface FanWarClaimResult {
+  boostReward: number;
+  tokensReturned: number;
+}

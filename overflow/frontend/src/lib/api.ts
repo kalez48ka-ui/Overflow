@@ -419,4 +419,91 @@ export const adminApi = {
     }),
 };
 
+// ---------------------------------------------------------------------------
+// Fan Wars types
+// ---------------------------------------------------------------------------
+
+export interface FanWarStatus {
+  id: string;
+  matchId: string;
+  homeTeamId: string;
+  homeTeamName: string;
+  homeTeamSymbol: string;
+  homeTeamColor: string;
+  awayTeamId: string;
+  awayTeamName: string;
+  awayTeamSymbol: string;
+  awayTeamColor: string;
+  totalHomeLocked: number;
+  totalAwayLocked: number;
+  boostPool: number;
+  status: "OPEN" | "LOCKED" | "SETTLED" | "CANCELLED";
+  winnerTeamId: string | null;
+  marginType: string | null;
+  homeBoostShare: number | null;
+  awayBoostShare: number | null;
+  lockDeadline: string;
+  matchStartTime: string;
+  matchVenue: string;
+  userLock: {
+    teamId: string;
+    amount: number;
+    boostReward: number | null;
+    claimed: boolean;
+  } | null;
+}
+
+export interface FanWarLock {
+  id: string;
+  matchId: string;
+  teamId: string;
+  teamName: string;
+  teamSymbol: string;
+  teamColor: string;
+  amount: number;
+  boostReward: number | null;
+  claimed: boolean;
+  status: string;
+  opponentTeam: string;
+}
+
+// ---------------------------------------------------------------------------
+// Fan Wars API client
+// ---------------------------------------------------------------------------
+
+export const fanWarsApi = {
+  getStatus: (matchId: string): Promise<FanWarStatus> =>
+    fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}`),
+
+  lock: (
+    matchId: string,
+    body: { wallet: string; teamId: string; amount: number },
+  ): Promise<{ success: boolean; lockId: string }> =>
+    fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/lock`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  claim: (
+    matchId: string,
+    body: { wallet: string },
+  ): Promise<{ success: boolean; claimed: number }> =>
+    fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/claim`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  getActive: (): Promise<FanWarStatus[]> =>
+    fetchJSON(`${API_URL}/api/fanwars/active`),
+
+  getUserLocks: (wallet: string): Promise<FanWarLock[]> =>
+    fetchJSON(
+      `${API_URL}/api/fanwars/user/${encodeURIComponent(wallet)}`,
+    ),
+
+  getLeaderboard: (): Promise<
+    { rank: number; wallet: string; totalBoost: number; warsWon: number }[]
+  > => fetchJSON(`${API_URL}/api/fanwars/leaderboard`),
+};
+
 export default api;
