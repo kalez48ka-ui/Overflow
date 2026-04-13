@@ -66,10 +66,17 @@ class VectorStore:
         self._collections: dict[str, chromadb.Collection] = {}
 
         for name in COLLECTION_NAMES:
-            kwargs: dict[str, Any] = {"name": name}
-            if self._ef is not None:
-                kwargs["embedding_function"] = self._ef
-            self._collections[name] = self._client.get_or_create_collection(**kwargs)
+            # Try with custom embedding function first; fall back to no-ef
+            # if the collection was created with a different embedding function
+            try:
+                kwargs: dict[str, Any] = {"name": name}
+                if self._ef is not None:
+                    kwargs["embedding_function"] = self._ef
+                self._collections[name] = self._client.get_or_create_collection(**kwargs)
+            except ValueError:
+                # Embedding function conflict — collection exists with different ef
+                logger.warning("Embedding conflict for %s, opening without custom ef", name)
+                self._collections[name] = self._client.get_or_create_collection(name=name)
 
         logger.info(
             "VectorStore initialised at %s with collections: %s",

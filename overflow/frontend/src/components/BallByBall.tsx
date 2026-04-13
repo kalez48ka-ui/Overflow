@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 interface BallByBallProps {
   events: BallEvent[];
+  simulateLive?: boolean;
 }
 
 function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean; isExtra: boolean }) {
@@ -45,7 +46,7 @@ function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean
   );
 }
 
-export function BallByBall({ events }: BallByBallProps) {
+export function BallByBall({ events, simulateLive = false }: BallByBallProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [localEvents, setLocalEvents] = useState(events);
 
@@ -61,8 +62,9 @@ export function BallByBall({ events }: BallByBallProps) {
     }
   }, [localEvents]);
 
-  // Simulate live updates
+  // Simulate live updates (only when simulateLive is enabled)
   useEffect(() => {
+    if (!simulateLive) return;
     const interval = setInterval(() => {
       const runsOptions = [0, 1, 2, 4, 6];
       const runs = runsOptions[Math.floor(Math.random() * runsOptions.length)];
@@ -103,7 +105,7 @@ export function BallByBall({ events }: BallByBallProps) {
     }, 8000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [simulateLive]);
 
   // Build current-over mini dots from the most recent events
   const currentOverEvents = localEvents

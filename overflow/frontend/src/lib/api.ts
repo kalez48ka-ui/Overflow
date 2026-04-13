@@ -373,8 +373,8 @@ export const adminApi = {
   /** Verify admin token against the backend. Returns true on 200, false on 401. */
   verifyToken: async (): Promise<boolean> => {
     try {
-      await adminFetchJSON(`${API_URL}/api/admin/recalculate`, {
-        method: "POST",
+      await adminFetchJSON(`${API_URL}/api/admin/verify`, {
+        method: "GET",
       });
       return true;
     } catch (err: unknown) {

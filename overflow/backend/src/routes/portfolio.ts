@@ -6,10 +6,9 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
 
   router.get('/:wallet', async (req: Request, res: Response) => {
     try {
-      const wallet = String(req.params.wallet);
-
-      if (!wallet) {
-        res.status(400).json({ error: 'Wallet address required' });
+      const wallet = String(req.params.wallet).toLowerCase();
+      if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+        res.status(400).json({ error: 'Invalid wallet address format' });
         return;
       }
 
@@ -69,13 +68,12 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
 
   router.get('/:wallet/history', async (req: Request, res: Response) => {
     try {
-      const wallet = String(req.params.wallet);
-      const days = Math.min(parseInt(String(req.query.days || '30')) || 30, 365);
-
-      if (!wallet) {
-        res.status(400).json({ error: 'Wallet address required' });
+      const wallet = String(req.params.wallet).toLowerCase();
+      if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+        res.status(400).json({ error: 'Invalid wallet address format' });
         return;
       }
+      const days = Math.min(parseInt(String(req.query.days || '30')) || 30, 365);
 
       // Return portfolio value history as { date, value } array
       // For now, derive from trade history

@@ -64,10 +64,9 @@ export function createLeaderboardRouter(prisma: PrismaClient): Router {
         // For BUY trades, no realized P&L yet
         if (trade.type === 'SELL') {
           // Approximate: the trade was profitable if net proceeds > 0 after fee
-          // We count it as a "win" if the trade price is higher than the average buy price
           // For aggregate P&L we use (totalValue - fee) as a contribution metric
+          // Win counting is handled separately below using buy/sell price comparison
           entry.totalPnl += trade.totalValue - trade.fee;
-          entry.wins += 1; // We'll refine below
         } else {
           // BUY: subtract cost from P&L (will be offset by SELL proceeds)
           entry.totalPnl -= trade.totalValue;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { api } from "@/lib/api";
 import type { MatchInfo } from "@/lib/api";
 import { PSL_TEAMS } from "@/lib/mockData";

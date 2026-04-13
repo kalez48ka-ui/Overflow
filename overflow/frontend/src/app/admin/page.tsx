@@ -36,7 +36,6 @@ function useAdminAuth() {
   useEffect(() => {
     const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (stored) {
-      localStorage.setItem(TOKEN_STORAGE_KEY, stored);
       adminApi
         .verifyToken()
         .then((valid) => {

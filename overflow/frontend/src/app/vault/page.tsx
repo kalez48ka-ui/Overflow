@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Shield,
   ArrowRight,
 } from "lucide-react";
 import { CountUp } from "@/components/motion";

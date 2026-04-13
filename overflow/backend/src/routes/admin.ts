@@ -81,6 +81,11 @@ export function createAdminRouter(
 ): Router {
   const router = Router();
 
+  // Lightweight token verification endpoint (no state mutation)
+  router.get('/verify', requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ status: 'ok' });
+  });
+
   // All admin routes require authentication
   router.use(requireAdminAuth);
 

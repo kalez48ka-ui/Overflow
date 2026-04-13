@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -153,6 +153,7 @@ export default function TradePage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState("24h");
   const [chartLoading, setChartLoading] = useState(false);
+  const initialFetchDone = useRef(false);
 
   // Fetch team data on mount
   useEffect(() => {
@@ -215,6 +216,7 @@ export default function TradePage({ params }: PageProps) {
       }
 
       setLoading(false);
+      initialFetchDone.current = true;
     })();
 
     return () => { cancelled = true; };
@@ -223,7 +225,7 @@ export default function TradePage({ params }: PageProps) {
   // Refetch chart data when timeframe changes (skip initial mount — handled above)
   useEffect(() => {
     // The initial fetch already uses the default timeframe
-    if (loading) return;
+    if (!initialFetchDone.current) return;
 
     let cancelled = false;
     setChartLoading(true);

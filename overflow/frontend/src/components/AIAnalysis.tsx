@@ -361,8 +361,8 @@ export function AIAnalysis({
             ) : report ? (
               <div className="space-y-3 p-4">
                 {/* Signal cards */}
-                {report.signals.map((signal) => (
-                  <SignalCard key={signal.type} signal={signal} />
+                {report.signals.map((signal, idx) => (
+                  <SignalCard key={`${signal.type}-${idx}`} signal={signal} />
                 ))}
 
                 {/* Detailed report */}

@@ -385,7 +385,7 @@ export default function MatchPage() {
       if (!cancelled) setLoading(false);
     })();
 
-    // 2) Poll every 30s as fallback (in case WebSocket drops)
+    // 2) Poll every 10s as fallback (in case WebSocket drops)
     pollTimer = setInterval(() => {
       if (!cancelled) fetchLiveData();
     }, POLL_INTERVAL_MS);
@@ -579,7 +579,7 @@ export default function MatchPage() {
                   />
                 </div>
               </div>
-              <BallByBall events={BALL_BY_BALL} />
+              <BallByBall events={BALL_BY_BALL} simulateLive={!hasLiveMatch} />
             </div>
             <div className="space-y-4">
               <UpsetScoreTracker score={matchData.upsetScore} vaultBalance={matchData.vaultBalance} />
@@ -641,7 +641,7 @@ export default function MatchPage() {
               </div>
 
               {/* Ball by ball */}
-              <BallByBall events={BALL_BY_BALL} />
+              <BallByBall events={BALL_BY_BALL} simulateLive={!hasLiveMatch} />
             </div>
 
             {/* Right column */}
