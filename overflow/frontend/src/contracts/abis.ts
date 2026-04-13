@@ -91,6 +91,21 @@ export const TeamTokenFactoryABI = [
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "InsufficientReserves",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SlippageExceeded",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MaxIterationsExceeded",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
       {
@@ -292,6 +307,11 @@ export const TeamTokenFactoryABI = [
         "internalType": "address",
         "name": "tokenAddress",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minTokensOut",
+        "type": "uint256"
       }
     ],
     "name": "buy",
@@ -529,6 +549,11 @@ export const TeamTokenFactoryABI = [
       {
         "internalType": "uint256",
         "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minProceeds",
         "type": "uint256"
       }
     ],

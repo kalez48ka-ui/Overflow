@@ -36,12 +36,12 @@ export function useBuyTokens() {
     useWriteContract();
 
   const buy = useCallback(
-    (tokenAddress: Address, ethAmount: string) => {
+    (tokenAddress: Address, ethAmount: string, minTokensOut: bigint = BigInt(0)) => {
       writeContract({
         address: CONTRACTS.factory,
         abi: TeamTokenFactoryABI,
         functionName: "buy",
-        args: [tokenAddress],
+        args: [tokenAddress, minTokensOut],
         value: parseEther(ethAmount),
       });
     },
@@ -57,12 +57,12 @@ export function useSellTokens() {
     useWriteContract();
 
   const sell = useCallback(
-    (tokenAddress: Address, tokenAmount: bigint) => {
+    (tokenAddress: Address, tokenAmount: bigint, minProceeds: bigint = BigInt(0)) => {
       writeContract({
         address: CONTRACTS.factory,
         abi: TeamTokenFactoryABI,
-        functionName: "sell" as never,
-        args: [tokenAddress, tokenAmount] as never,
+        functionName: "sell",
+        args: [tokenAddress, tokenAmount, minProceeds],
       });
     },
     [writeContract],

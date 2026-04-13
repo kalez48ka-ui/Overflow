@@ -190,7 +190,7 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         for (uint256 i = 0; i < 8; i++) {
             if (!isTeamToken[rankedTeams[i]]) revert InvalidTeam();
             // Check for duplicates
-            for (uint256 j = i + 1; j < 6; j++) {
+            for (uint256 j = i + 1; j < 8; j++) {
                 if (rankedTeams[i] == rankedTeams[j]) revert InvalidRanking();
             }
         }

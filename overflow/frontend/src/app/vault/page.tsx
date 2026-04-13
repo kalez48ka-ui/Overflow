@@ -10,7 +10,9 @@ import {
   ArrowRight,
   ChevronRight,
   Info,
+  Share2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
 import { VAULT_DATA } from "@/lib/mockData";
 import { api } from "@/lib/api";
@@ -53,23 +55,47 @@ function UpsetHistoryCard({
   event: UpsetEvent;
   index: number;
 }) {
+  const handleShareUpset = () => {
+    const text = [
+      `Upset Alert on Overflow!`,
+      `${event.upsetTeam} beat ${event.favoriteTeam} with a ${event.upsetScore}/100 upset score!`,
+      `${event.multiplier}x multiplier - ${formatCurrency(event.totalPayout)} paid out from the vault.`,
+      `Trade PSL team tokens: overflow.app`,
+    ].join("\n");
+
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success("Copied to clipboard!");
+    }).catch(() => {
+      toast.error("Failed to copy");
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+      className="relative rounded-xl border border-[#30363D] bg-[#161B22] p-4"
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Trophy className="h-4 w-4 text-[#FDB913]" />
           <span className="text-sm font-bold text-[#E6EDF3]">{event.match}</span>
         </div>
-        <span
-          className="rounded-full bg-[#6A0DAD]/20 px-2 py-0.5 text-xs font-black text-[#6A0DAD]"
-        >
-          {event.multiplier}x
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleShareUpset}
+            title="Share upset event"
+            className="flex h-6 w-6 items-center justify-center rounded-md border border-[#30363D] text-[#8B949E] hover:border-[#6A0DAD] hover:text-[#6A0DAD] transition-colors"
+          >
+            <Share2 className="h-3 w-3" />
+          </button>
+          <span
+            className="rounded-full bg-[#6A0DAD]/20 px-2 py-0.5 text-xs font-black text-[#6A0DAD]"
+          >
+            {event.multiplier}x
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">

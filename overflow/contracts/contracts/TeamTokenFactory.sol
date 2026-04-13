@@ -378,24 +378,29 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         uint256 remaining = tokenAmount;
         uint256 totalProceeds = 0;
         uint256 supply = currentSupply;
-
-        // Adaptive step size for sell proceeds calculation
-        uint256 step;
-        if (tokenAmount > 100e18) {
-            step = 10e18;  // 10 tokens
-        } else if (tokenAmount > 10e18) {
-            step = 1e18;   // 1 token
-        } else {
-            step = 1e17;   // 0.1 token
-        }
+        uint256 iterations = 0;
 
         while (remaining > 0) {
+            // Adaptive step sizing based on remaining tokens to sell
+            uint256 step;
+            if (remaining > 100e18) {
+                step = 10e18;  // 10 tokens
+            } else if (remaining > 10e18) {
+                step = 1e18;   // 1 token
+            } else {
+                step = 1e17;   // 0.1 token
+            }
+
             uint256 currentStep = remaining >= step ? step : remaining;
             uint256 price = _sellPriceAtSupply(supply);
             uint256 proceeds = (price * currentStep) / PRECISION;
             totalProceeds += proceeds;
             supply -= currentStep;
             remaining -= currentStep;
+
+            // Bound iterations to prevent unbounded gas consumption
+            iterations++;
+            if (iterations >= MAX_ITERATIONS) revert MaxIterationsExceeded();
         }
 
         return totalProceeds;

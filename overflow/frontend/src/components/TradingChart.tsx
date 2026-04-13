@@ -7,9 +7,11 @@ interface TradingChartProps {
   data: CandlestickData[];
   teamColor: string;
   height?: number;
+  /** Explicit floor price. If omitted, calculated as 50% of the first candle's open. */
+  floorPrice?: number;
 }
 
-export function TradingChart({ data, teamColor, height = 380 }: TradingChartProps) {
+export function TradingChart({ data, teamColor, height = 380, floorPrice }: TradingChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<unknown>(null);
   const seriesRef = useRef<unknown>(null);
@@ -79,6 +81,26 @@ export function TradingChart({ data, teamColor, height = 380 }: TradingChartProp
         }));
 
         candleSeries.setData(formattedData);
+
+        // Floor price indicator — dashed horizontal line
+        const computedFloor =
+          floorPrice != null && floorPrice > 0
+            ? floorPrice
+            : data.length > 0
+              ? data[0].open * 0.5
+              : undefined;
+
+        if (computedFloor != null) {
+          candleSeries.createPriceLine({
+            price: computedFloor,
+            color: "#FDB913",
+            lineWidth: 1,
+            lineStyle: 1, // Dashed
+            axisLabelVisible: true,
+            title: "Floor",
+          });
+        }
+
         chart.timeScale().fitContent();
 
         const handleResize = () => {

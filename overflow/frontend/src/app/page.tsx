@@ -196,14 +196,16 @@ export default function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-center"
           >
-            <h1 className="mx-auto max-w-3xl text-3xl font-black leading-[1.1] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl">
-              Every Ball Moves{" "}
+            <h1 className="mx-auto max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl">
+              Your Cricket IQ.{" "}
+              <br className="hidden sm:block" />
               <span className="bg-gradient-to-r from-[#E4002B] via-[#FDB913] to-[#00A651] bg-clip-text text-transparent">
-                Markets.
+                Your Edge.
               </span>
             </h1>
-            <p className="mx-auto mt-5 max-w-lg text-base text-[#8B949E] sm:text-lg">
-              Trade PSL team tokens. Prices shift with live match performance.
+            <p className="mx-auto mt-5 max-w-xl text-base text-[#8B949E] sm:text-lg">
+              Trade tokenized PSL teams on-chain. Prices move ball-by-ball.
+              Outsmart the market. Profit from upsets.
             </p>
           </motion.div>
 
