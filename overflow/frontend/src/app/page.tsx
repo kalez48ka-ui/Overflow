@@ -255,13 +255,22 @@ export default function LandingPage() {
               {teams.length} teams, {teams.length} tokens — trade the tournament
             </p>
           </div>
-          <Link
-            href="/match"
-            className="hidden sm:flex items-center gap-1.5 text-sm text-[#58A6FF] hover:text-[#79C0FF] transition-colors"
-          >
-            View live match
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <div className="hidden sm:flex items-center gap-4">
+            <Link
+              href="/leaderboard"
+              className="flex items-center gap-1.5 text-sm text-[#FDB913] hover:text-[#FDCF5A] transition-colors"
+            >
+              <Trophy className="h-3.5 w-3.5" />
+              Leaderboard
+            </Link>
+            <Link
+              href="/match"
+              className="flex items-center gap-1.5 text-sm text-[#58A6FF] hover:text-[#79C0FF] transition-colors"
+            >
+              View live match
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
 
         {/* Search & sort controls */}

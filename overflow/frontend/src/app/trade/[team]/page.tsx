@@ -11,6 +11,7 @@ import {
   Trophy,
   Activity,
   BarChart2,
+  Info,
 } from "lucide-react";
 import { TradingChart } from "@/components/TradingChart";
 import { BuySellPanel } from "@/components/BuySellPanel";
@@ -79,6 +80,174 @@ function OrderBookTable({
   );
 }
 
+/** Compute sell tax % from ranking (1-indexed). Formula: 200 + (rank-1)*260 bps, capped at 1500 bps (15%). */
+function computeSellTaxFromRank(rank: number): number {
+  const bps = 200 + (rank - 1) * 260;
+  return Math.min(bps, 1500) / 100;
+}
+
+/** Color for a sell tax value on the 2%-15% spectrum. */
+function sellTaxColor(tax: number): string {
+  const t = Math.min(Math.max((tax - 2) / 13, 0), 1);
+  if (t <= 0.46) {
+    const p = t / 0.46;
+    const r = Math.round(63 + p * (253 - 63));
+    const g = Math.round(185 + p * (185 - 185));
+    const b = Math.round(80 - p * 61);
+    return `rgb(${r},${g},${b})`;
+  }
+  const p = (t - 0.46) / 0.54;
+  const r = Math.round(253 - p * 5);
+  const g = Math.round(185 - p * 104);
+  const b = Math.round(19 + p * 54);
+  return `rgb(${r},${g},${b})`;
+}
+
+function SellTaxExplainer({ team }: { team: PSLTeam }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const taxPercent = team.sellTax;
+  const gaugePosition = Math.min(Math.max((taxPercent - 2) / 13, 0), 1) * 100;
+  const taxColor = sellTaxColor(taxPercent);
+
+  const rankTaxes = Array.from({ length: 8 }, (_, i) => ({
+    rank: i + 1,
+    tax: computeSellTaxFromRank(i + 1),
+  }));
+
+  return (
+    <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#E6EDF3]">
+          Dynamic Sell Tax
+        </h3>
+        <div className="relative">
+          <button
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            onFocus={() => setShowTooltip(true)}
+            onBlur={() => setShowTooltip(false)}
+            className="flex items-center justify-center rounded-full p-0.5 text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
+            aria-label="Sell tax info"
+          >
+            <Info className="h-3.5 w-3.5" />
+          </button>
+          {showTooltip && (
+            <div className="absolute right-0 top-7 z-50 w-56 rounded-lg border border-[#30363D] bg-[#21262D] p-3 shadow-xl">
+              <p className="text-[11px] leading-relaxed text-[#E6EDF3]">
+                Rank 1 = 2% tax, Rank 8 = 15% tax. Better performance = lower exit cost.
+              </p>
+              <p className="mt-1.5 text-[10px] text-[#8B949E]">
+                Tax is calculated as 200 + (rank-1) x 260 basis points, capped at 15%.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Current tax display */}
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold text-white"
+            style={{ backgroundColor: team.color }}
+          >
+            {team.id}
+          </div>
+          <span className="text-xs text-[#8B949E]">{team.name}</span>
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-lg font-black tabular-nums" style={{ color: taxColor }}>
+            {taxPercent}%
+          </span>
+          <span className="text-[10px] text-[#8B949E]">sell tax</span>
+        </div>
+      </div>
+
+      {/* Gauge bar: 2% to 15% */}
+      <div className="mb-1.5">
+        <div className="relative h-3 overflow-hidden rounded-full bg-[#21262D]">
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: "linear-gradient(to right, #3FB950, #FDB913 46%, #F85149)",
+              opacity: 0.2,
+            }}
+          />
+          <motion.div
+            className="absolute left-0 top-0 h-full rounded-full"
+            style={{
+              background: "linear-gradient(to right, #3FB950, #FDB913 46%, #F85149)",
+            }}
+            initial={{ width: 0 }}
+            animate={{ width: `${gaugePosition}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          />
+          <motion.div
+            className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#161B22] shadow-md"
+            style={{ backgroundColor: taxColor }}
+            initial={{ left: "0%" }}
+            animate={{ left: `${gaugePosition}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          />
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[10px] text-[#8B949E]">
+          <span>2% (Rank 1)</span>
+          <span>15% (Rank 6-8)</span>
+        </div>
+      </div>
+
+      {/* Ranking context */}
+      <div className="mt-3 rounded-lg bg-[#0D1117] px-3 py-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[#8B949E]">Tournament Ranking</span>
+          <span className="text-xs font-bold text-[#E6EDF3]">#{team.ranking} of 8</span>
+        </div>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-[#8B949E]">
+          {team.ranking <= 2
+            ? `${team.name} is a top performer. Low sell tax rewards loyal holders with minimal exit costs.`
+            : team.ranking <= 5
+              ? `${team.name} sits mid-table. Sell tax is moderate — strong results could push it lower.`
+              : `${team.name} is in the bottom tier. Higher sell tax stabilizes the token during rough form.`}
+        </p>
+      </div>
+
+      {/* All ranks reference */}
+      <div className="mt-3">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E]">
+          Tax by Ranking
+        </p>
+        <div className="grid grid-cols-4 gap-1">
+          {rankTaxes.map(({ rank, tax }) => {
+            const isCurrentRank = rank === team.ranking;
+            return (
+              <div
+                key={rank}
+                className={cn(
+                  "rounded-md px-1.5 py-1.5 text-center transition-colors",
+                  isCurrentRank
+                    ? "border border-[#58A6FF]/40 bg-[#58A6FF]/10"
+                    : "border border-[#30363D] bg-[#0D1117]",
+                )}
+              >
+                <p className={cn("text-[9px]", isCurrentRank ? "text-[#58A6FF]" : "text-[#8B949E]")}>
+                  #{rank}
+                </p>
+                <p
+                  className="text-[11px] font-bold tabular-nums"
+                  style={{ color: sellTaxColor(tax) }}
+                >
+                  {tax}%
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TradePage({ params }: PageProps) {
   const { team: teamSlug } = use(params);
   const teamId = teamSlug.toUpperCase();
@@ -89,7 +258,10 @@ export default function TradePage({ params }: PageProps) {
   const [chartData, setChartData] = useState<CandlestickData[]>(CANDLESTICK_DATA[teamId] || []);
   const [recentTrades, setRecentTrades] = useState<TradeOrder[]>(RECENT_TRADES[teamId] || []);
   const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState("24h");
+  const [chartLoading, setChartLoading] = useState(false);
 
+  // Fetch team data on mount
   useEffect(() => {
     let cancelled = false;
 
@@ -97,7 +269,7 @@ export default function TradePage({ params }: PageProps) {
       // Fetch team data and price history in parallel
       const [teamResult, priceResult] = await Promise.allSettled([
         api.teams.getBySymbol(teamId),
-        api.teams.getPriceHistory(teamId),
+        api.teams.getPriceHistory(teamId, timeframe),
       ]);
 
       if (cancelled) return;
@@ -154,6 +326,47 @@ export default function TradePage({ params }: PageProps) {
 
     return () => { cancelled = true; };
   }, [teamId]);
+
+  // Refetch chart data when timeframe changes (skip initial mount — handled above)
+  useEffect(() => {
+    // The initial fetch already uses the default timeframe
+    if (loading) return;
+
+    let cancelled = false;
+    setChartLoading(true);
+
+    (async () => {
+      try {
+        const priceData = await api.teams.getPriceHistory(teamId, timeframe);
+        if (cancelled) return;
+
+        if (priceData && priceData.length > 0) {
+          const mapped = priceData.map((p) => ({
+            time: typeof p.time === "number"
+              ? p.time
+              : Math.floor(new Date((p as typeof p & { timestamp?: string }).timestamp ?? 0).getTime() / 1000),
+            open: p.open,
+            high: p.high,
+            low: p.low,
+            close: p.close,
+            volume: p.volume,
+          }));
+          setChartData(mapped);
+        } else {
+          // Fall back to mock data when API returns empty
+          setChartData(CANDLESTICK_DATA[teamId] || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setChartData(CANDLESTICK_DATA[teamId] || []);
+        }
+      } finally {
+        if (!cancelled) setChartLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [teamId, timeframe, loading]);
 
   if (!team) notFound();
 
@@ -253,20 +466,47 @@ export default function TradePage({ params }: PageProps) {
               animate={{ opacity: 1 }}
               className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden"
             >
-              <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
-                <BarChart2 className="h-4 w-4 text-[#8B949E]" />
-                <span className="text-sm font-medium text-[#E6EDF3]">
-                  {team.symbol} / WIRE
-                </span>
-                <span className="text-xs text-[#8B949E]">5m candles</span>
+              <div className="flex items-center justify-between border-b border-[#30363D] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <BarChart2 className="h-4 w-4 text-[#8B949E]" />
+                  <span className="text-sm font-medium text-[#E6EDF3]">
+                    {team.symbol} / WIRE
+                  </span>
+                  <span className="text-xs text-[#8B949E]">
+                    {timeframe === "1h" ? "1m candles" : timeframe === "24h" ? "5m candles" : "1h candles"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {(["1h", "24h", "7d"] as const).map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => setTimeframe(tf)}
+                      className={cn(
+                        "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                        timeframe === tf
+                          ? "border border-[#58A6FF]/40 bg-[#58A6FF]/20 text-[#58A6FF]"
+                          : "text-[#8B949E] hover:text-[#C9D1D9]"
+                      )}
+                    >
+                      {tf.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="p-2">
+              <div className="relative p-2">
                 {loading ? (
                   <div className="flex h-[360px] items-center justify-center">
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#30363D] border-t-[#58A6FF]" />
                   </div>
                 ) : (
-                  <TradingChart data={chartData} teamColor={team.color} height={360} />
+                  <>
+                    {chartLoading && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#161B22]/60 backdrop-blur-[1px]">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#30363D] border-t-[#58A6FF]" />
+                      </div>
+                    )}
+                    <TradingChart data={chartData} teamColor={team.color} height={360} />
+                  </>
                 )}
               </div>
             </motion.div>
@@ -427,34 +667,7 @@ export default function TradePage({ params }: PageProps) {
             />
 
             {/* Sell tax explainer */}
-            <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
-              <h3 className="mb-2 text-sm font-semibold text-[#E6EDF3]">
-                Dynamic Sell Tax
-              </h3>
-              <p className="text-xs text-[#8B949E] leading-relaxed">
-                Sell tax is inversely proportional to team performance. When{" "}
-                {team.name} performs well, the sell tax decreases — rewarding
-                holders who believe in the team. Poor performance increases the
-                tax to stabilize the token.
-              </p>
-              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                {[
-                  { perf: "High (80+)", tax: "2-4%", color: "#3FB950" },
-                  { perf: "Medium (50-80)", tax: "4-6%", color: "#FDB913" },
-                  { perf: "Low (<50)", tax: "7-10%", color: "#F85149" },
-                ].map(({ perf, tax, color }) => (
-                  <div
-                    key={perf}
-                    className="rounded-lg border border-[#30363D] bg-[#0D1117] p-2"
-                  >
-                    <p className="text-[9px] text-[#8B949E]">{perf}</p>
-                    <p className="text-xs font-bold" style={{ color }}>
-                      {tax}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SellTaxExplainer team={team} />
           </div>
         </div>
       </div>

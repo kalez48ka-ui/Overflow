@@ -111,6 +111,16 @@ export interface UpsetRecord {
   timestamp: string;
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  wallet: string;
+  totalPnl: number;
+  tradeCount: number;
+  totalVolume: number;
+  favoriteTeam: string;
+  winRate: number;
+}
+
 export interface AIAnalysis {
   homeTeam: string;
   awayTeam: string;
@@ -233,6 +243,12 @@ export const api = {
 
     getUpsets: (): Promise<UpsetRecord[]> =>
       fetchJSON(`${API_URL}/api/vault/upsets`),
+  },
+
+  // ---- Leaderboard ----
+  leaderboard: {
+    get: (sort: string = 'pnl', limit: number = 50): Promise<LeaderboardEntry[]> =>
+      fetchJSON(`${API_URL}/api/leaderboard?sort=${sort}&limit=${limit}`),
   },
 
   // ---- AI Engine ----

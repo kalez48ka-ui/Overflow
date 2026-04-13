@@ -65,10 +65,11 @@ function Footer() {
         <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
           {/* Brand */}
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-[#E4002B] to-[#8B0019]">
-              <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
-                <path d="M3 10Q6 4,8 7T13 4" stroke="#FDB913" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-                <path d="M11.5 5.5L13 3L14.5 5.5" stroke="#FDB913" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-b from-[#1A1F2E] to-[#0D1117] border border-[#E4002B]/40">
+              <svg viewBox="0 0 14 14" fill="none" className="h-3 w-3">
+                <rect x="1" y="5" width="2.5" height="5" rx="0.5" fill="#F87171" />
+                <rect x="5.75" y="2" width="2.5" height="8" rx="0.5" fill="#4ADE80" />
+                <rect x="10.5" y="3.5" width="2.5" height="6" rx="0.5" fill="#4ADE80" />
               </svg>
             </div>
             <span className="font-black text-[#E6EDF3] text-sm tracking-tight">

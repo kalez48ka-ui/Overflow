@@ -17,7 +17,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 
-/* ── Logo SVG — Hexagonal crypto mark with rising wave ─────── */
+/* ── Logo SVG — Diamond shield with rising candlestick ─────── */
 function OverflowLogo({ className }: { className?: string }) {
   return (
     <svg
@@ -27,58 +27,68 @@ function OverflowLogo({ className }: { className?: string }) {
       className={className}
     >
       <defs>
-        <linearGradient id="hex-fill" x1="0" y1="0" x2="40" y2="40">
+        <linearGradient id="shield-fill" x1="20" y1="2" x2="20" y2="38">
+          <stop stopColor="#1A1F2E" />
+          <stop offset="1" stopColor="#0D1117" />
+        </linearGradient>
+        <linearGradient id="shield-stroke" x1="4" y1="8" x2="36" y2="32">
           <stop stopColor="#E4002B" />
-          <stop offset="1" stopColor="#8B0019" />
+          <stop offset="0.5" stopColor="#FF4D6A" />
+          <stop offset="1" stopColor="#E4002B" />
         </linearGradient>
-        <linearGradient id="wave-grad" x1="10" y1="20" x2="30" y2="20">
-          <stop stopColor="#FDB913" />
-          <stop offset="1" stopColor="#00A651" />
+        <linearGradient id="candle-green" x1="0" y1="0" x2="0" y2="1">
+          <stop stopColor="#4ADE80" />
+          <stop offset="1" stopColor="#22C55E" />
         </linearGradient>
-        <filter id="logo-glow">
-          <feGaussianBlur stdDeviation="1.5" result="blur" />
+        <linearGradient id="candle-red" x1="0" y1="0" x2="0" y2="1">
+          <stop stopColor="#F87171" />
+          <stop offset="1" stopColor="#EF4444" />
+        </linearGradient>
+        <filter id="glow-red">
+          <feGaussianBlur stdDeviation="2" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
-      {/* Hexagon body */}
+      {/* Shield shape */}
       <path
-        d="M20 2 L36 11 L36 29 L20 38 L4 29 L4 11 Z"
-        fill="url(#hex-fill)"
-        stroke="#FF1A3D"
-        strokeWidth="0.5"
-        opacity="0.95"
+        d="M20 3 L35 10 L35 25 Q35 33 20 38 Q5 33 5 25 L5 10 Z"
+        fill="url(#shield-fill)"
+        stroke="url(#shield-stroke)"
+        strokeWidth="1.8"
       />
-      {/* Inner hexagon outline */}
+      {/* Inner shield highlight */}
       <path
-        d="M20 6 L32.5 13 L32.5 27 L20 34 L7.5 27 L7.5 13 Z"
+        d="M20 7 L31 12.5 L31 24.5 Q31 30.5 20 34.5 Q9 30.5 9 24.5 L9 12.5 Z"
         fill="none"
-        stroke="#ffffff"
-        strokeWidth="0.4"
-        opacity="0.15"
+        stroke="#E4002B"
+        strokeWidth="0.3"
+        opacity="0.25"
       />
-      {/* Rising overflow wave — the signature mark */}
+      {/* Candlestick 1 — red (left) */}
+      <rect x="12" y="17" width="3.5" height="8" rx="0.8" fill="url(#candle-red)" />
+      <line x1="13.75" y1="14" x2="13.75" y2="17" stroke="#F87171" strokeWidth="1" strokeLinecap="round" />
+      <line x1="13.75" y1="25" x2="13.75" y2="28" stroke="#F87171" strokeWidth="1" strokeLinecap="round" />
+      {/* Candlestick 2 — green (center, taller = dominant) */}
+      <rect x="18.25" y="11" width="3.5" height="12" rx="0.8" fill="url(#candle-green)" />
+      <line x1="20" y1="8" x2="20" y2="11" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
+      <line x1="20" y1="23" x2="20" y2="26" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
+      {/* Candlestick 3 — green (right, medium) */}
+      <rect x="24.5" y="13" width="3.5" height="9" rx="0.8" fill="url(#candle-green)" />
+      <line x1="26.25" y1="10" x2="26.25" y2="13" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
+      <line x1="26.25" y1="22" x2="26.25" y2="25" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
+      {/* Upward arrow above center candle */}
       <path
-        d="M10 24 Q14 16, 17 20 T24 16 T30 13"
-        stroke="url(#wave-grad)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
-        filter="url(#logo-glow)"
-      />
-      {/* Small upward arrow tip */}
-      <path
-        d="M28 15 L30 11 L32 15"
+        d="M17.5 8.5 L20 5 L22.5 8.5"
         stroke="#FDB913"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
+        filter="url(#glow-red)"
       />
-      {/* Dot accent */}
-      <circle cx="10" cy="24" r="1.5" fill="#00A651" opacity="0.9" />
     </svg>
   );
 }

@@ -3,9 +3,18 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowUpDown, ChevronUp, ChevronDown, Trophy } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  Trophy,
+  Calendar,
+  MapPin,
+  Clock,
+  ChevronRight,
+} from "lucide-react";
 import { PSL_TEAMS } from "@/lib/mockData";
-import { api } from "@/lib/api";
+import { api, type MatchInfo } from "@/lib/api";
 import { cn, formatPrice, formatCurrency } from "@/lib/utils";
 import type { PSLTeam } from "@/types";
 
@@ -46,6 +55,10 @@ export default function StandingsPage() {
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("ranking");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const [allMatches, setAllMatches] = useState<MatchInfo[]>([]);
+  const [upcomingMatches, setUpcomingMatches] = useState<MatchInfo[]>([]);
+  const [matchesLoading, setMatchesLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +104,31 @@ export default function StandingsPage() {
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Fetch all matches (for season progress) and upcoming matches
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.allSettled([api.matches.getAll(), api.matches.getUpcoming()])
+      .then(([allResult, upcomingResult]) => {
+        if (cancelled) return;
+
+        if (allResult.status === "fulfilled" && allResult.value) {
+          setAllMatches(allResult.value);
+        }
+
+        if (upcomingResult.status === "fulfilled" && upcomingResult.value) {
+          setUpcomingMatches(upcomingResult.value);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setMatchesLoading(false);
       });
 
     return () => {
@@ -144,6 +182,36 @@ export default function StandingsPage() {
     [teams],
   );
 
+  // Season progress calculations
+  const totalScheduledMatches = 44; // PSL 2026 group stage: 44 matches
+  const completedMatches = useMemo(
+    () => allMatches.filter((m) => m.status === "completed").length,
+    [allMatches],
+  );
+  const liveMatches = useMemo(
+    () => allMatches.filter((m) => m.status === "live").length,
+    [allMatches],
+  );
+  const seasonProgress = useMemo(() => {
+    if (allMatches.length === 0) return 0;
+    const total = Math.max(allMatches.length, totalScheduledMatches);
+    return Math.round((completedMatches / total) * 100);
+  }, [allMatches, completedMatches]);
+
+  const seasonStage = useMemo(() => {
+    if (completedMatches >= 40) return "Knockout Stage";
+    if (completedMatches >= 30) return "Group Stage (Final Round)";
+    return "Group Stage";
+  }, [completedMatches]);
+
+  // Sort upcoming by startTime, take first 5
+  const displayUpcoming = useMemo(() => {
+    const sorted = [...upcomingMatches].sort(
+      (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
+    return sorted.slice(0, 5);
+  }, [upcomingMatches]);
+
   return (
     <div className="min-h-screen bg-[#0D1117]">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
@@ -163,6 +231,59 @@ export default function StandingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Season Status Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="mb-6 rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#58A6FF]/10 border border-[#58A6FF]/20">
+                <Calendar className="h-4 w-4 text-[#58A6FF]" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-[#E6EDF3]">
+                  PSL 2026 — {seasonStage}
+                </p>
+                <p className="text-xs text-[#8B949E]">
+                  {matchesLoading ? (
+                    "Loading season data..."
+                  ) : (
+                    <>
+                      {completedMatches} of {Math.max(allMatches.length, totalScheduledMatches)} matches completed
+                      {liveMatches > 0 && (
+                        <span className="ml-2 inline-flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#3FB950]" />
+                          <span className="text-[#3FB950] font-medium">
+                            {liveMatches} live
+                          </span>
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="flex items-center gap-3 sm:w-64">
+              <div className="flex-1 h-2.5 rounded-full bg-[#21262D] overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-[#58A6FF] to-[#3FB950]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${seasonProgress}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+              <span className="text-xs font-bold tabular-nums text-[#E6EDF3] w-10 text-right">
+                {seasonProgress}%
+              </span>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Table container */}
         <p className="mb-2 text-[10px] text-[#8B949E] sm:hidden">Swipe to see all columns</p>
@@ -221,8 +342,175 @@ export default function StandingsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Upcoming Fixtures Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.15 }}
+          className="mt-8"
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-[#8B949E]" />
+              <h2 className="text-lg font-bold text-[#E6EDF3]">
+                Upcoming Fixtures
+              </h2>
+            </div>
+            {upcomingMatches.length > 5 && (
+              <Link
+                href="/match/history"
+                className="flex items-center gap-1 text-xs font-medium text-[#58A6FF] hover:text-[#79C0FF] transition-colors"
+              >
+                View all
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            )}
+          </div>
+
+          {matchesLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-xl border border-[#30363D] bg-[#161B22] p-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 animate-pulse rounded-full bg-[#21262D]" />
+                    <div className="h-4 w-8 animate-pulse rounded bg-[#21262D]" />
+                    <div className="h-8 w-8 animate-pulse rounded-full bg-[#21262D]" />
+                  </div>
+                  <div className="h-4 w-32 animate-pulse rounded bg-[#21262D]" />
+                </div>
+              ))}
+            </div>
+          ) : displayUpcoming.length === 0 ? (
+            <div className="rounded-xl border border-[#30363D] bg-[#161B22] px-6 py-10 text-center">
+              <Calendar className="mx-auto mb-3 h-8 w-8 text-[#30363D]" />
+              <p className="text-sm text-[#8B949E]">
+                No upcoming fixtures scheduled
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {displayUpcoming.map((match, i) => (
+                <UpcomingFixtureCard key={match.id} match={match} index={i} />
+              ))}
+            </div>
+          )}
+        </motion.div>
       </div>
     </div>
+  );
+}
+
+function UpcomingFixtureCard({
+  match,
+  index,
+}: {
+  match: MatchInfo;
+  index: number;
+}) {
+  const matchDate = new Date(match.startTime);
+  const isToday =
+    matchDate.toDateString() === new Date().toDateString();
+  const isTomorrow = (() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return matchDate.toDateString() === tomorrow.toDateString();
+  })();
+
+  const dateLabel = isToday
+    ? "Today"
+    : isTomorrow
+      ? "Tomorrow"
+      : matchDate.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        });
+
+  const timeLabel = matchDate.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  // Resolve team colors from mock data when API doesn't provide them
+  const t1Mock = PSL_TEAMS.find(
+    (t) =>
+      t.id === match.team1Id ||
+      t.id === match.team1Symbol?.replace("$", ""),
+  );
+  const t2Mock = PSL_TEAMS.find(
+    (t) =>
+      t.id === match.team2Id ||
+      t.id === match.team2Symbol?.replace("$", ""),
+  );
+  const t1Color = match.team1Color || t1Mock?.color || "#58A6FF";
+  const t2Color = match.team2Color || t2Mock?.color || "#58A6FF";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.25, delay: index * 0.04 }}
+      className="flex flex-col gap-3 rounded-xl border border-[#30363D] bg-[#161B22] p-4 transition-colors hover:bg-[#21262D]/60 sm:flex-row sm:items-center sm:justify-between"
+    >
+      {/* Teams */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-md"
+            style={{ backgroundColor: t1Color }}
+          >
+            {match.team1Symbol?.replace("$", "") || match.team1Id}
+          </div>
+          <span className="text-sm font-semibold text-[#E6EDF3] max-w-[100px] truncate">
+            {match.team1Name}
+          </span>
+        </div>
+
+        <span className="mx-1 text-xs font-bold text-[#8B949E]">vs</span>
+
+        <div className="flex items-center gap-2">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-md"
+            style={{ backgroundColor: t2Color }}
+          >
+            {match.team2Symbol?.replace("$", "") || match.team2Id}
+          </div>
+          <span className="text-sm font-semibold text-[#E6EDF3] max-w-[100px] truncate">
+            {match.team2Name}
+          </span>
+        </div>
+      </div>
+
+      {/* Date / venue */}
+      <div className="flex items-center gap-4 text-xs text-[#8B949E]">
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-3 w-3 shrink-0" />
+          <span>
+            <span
+              className={cn(
+                "font-medium",
+                isToday ? "text-[#3FB950]" : "text-[#E6EDF3]",
+              )}
+            >
+              {dateLabel}
+            </span>
+            {" "}
+            {timeLabel}
+          </span>
+        </div>
+        {match.venue && (
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="max-w-[180px] truncate">{match.venue}</span>
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 }
 

@@ -15,6 +15,7 @@ import { createPortfolioRouter } from './routes/portfolio';
 import { createVaultRouter } from './routes/vault';
 import { createAiRouter } from './routes/ai';
 import { createAdminRouter } from './routes/admin';
+import { createLeaderboardRouter } from './routes/leaderboard';
 
 const prisma = new PrismaClient();
 
@@ -62,6 +63,7 @@ app.use('/api/portfolio', createPortfolioRouter(prisma));
 app.use('/api/vault', createVaultRouter(vaultService));
 app.use('/api/ai', createAiRouter(prisma));
 app.use('/api/admin', createAdminRouter(prisma, oracleService, vaultService));
+app.use('/api/leaderboard', createLeaderboardRouter(prisma));
 
 // Health check
 app.get('/api/health', (_req, res) => {
