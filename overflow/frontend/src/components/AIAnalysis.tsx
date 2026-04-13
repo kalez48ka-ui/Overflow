@@ -158,7 +158,7 @@ function LoadingState() {
     <div className="space-y-4 p-4" aria-label="Generating AI analysis…" role="status">
       {/* Signals skeleton */}
       {[1, 2, 3].map((i) => (
-        <div key={i} className="space-y-2 rounded-lg border border-[#30363D] p-3">
+        <div key={i} className="space-y-2 rounded-lg border border-[#21262D] p-3">
           <div className="flex items-center justify-between">
             <SkeletonLine width="40%" />
             <SkeletonLine width="20%" />
@@ -309,13 +309,13 @@ export function AIAnalysis({
     : null;
 
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Header — always visible */}
       <button
         onClick={handleToggle}
         aria-expanded={open}
         aria-controls="ai-analysis-body"
-        className="flex w-full items-center gap-2 border-b border-[#30363D] px-4 py-3 text-left transition-colors hover:bg-[#1C2128]"
+        className="flex w-full items-center gap-2 border-b border-[#21262D] px-4 py-3 text-left transition-colors hover:bg-[#1C2128]"
       >
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#58A6FF]/10 border border-[#58A6FF]/20">
           <Brain className="h-3.5 w-3.5 text-[#58A6FF]" aria-hidden="true" />
@@ -366,11 +366,11 @@ export function AIAnalysis({
                 ))}
 
                 {/* Detailed report */}
-                <div className="space-y-3 rounded-lg border border-[#30363D] bg-[#0D1117] p-3">
+                <div className="space-y-3 rounded-lg border border-[#21262D] bg-[#0D1117] p-3">
                   <ReportSection title="Match Context" content={report.matchContext} />
-                  <div className="border-t border-[#30363D]" />
+                  <div className="border-t border-[#21262D]" />
                   <ReportSection title="Head to Head" content={report.headToHead} />
-                  <div className="border-t border-[#30363D]" />
+                  <div className="border-t border-[#21262D]" />
                   <ReportSection
                     title="Trading Recommendation"
                     content={report.tradingRecommendation}

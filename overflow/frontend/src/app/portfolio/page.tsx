@@ -113,7 +113,7 @@ function TransactionRow({
           <span
             className="rounded-md px-1.5 py-0.5 text-[10px] font-bold"
             style={{
-              backgroundColor: team ? `${team.color}20` : "#30363D",
+              backgroundColor: team ? `${team.color}20` : "#21262D",
               color: team?.color ?? "#8B949E",
             }}
           >
@@ -122,7 +122,7 @@ function TransactionRow({
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[#8B949E]">
           <span>{formatTimeAgo(tx.timestamp)}</span>
-          <span className="text-[#30363D]">|</span>
+          <span className="text-[#484F58]">|</span>
           <a
             href={`https://wirefluidscan.com/tx/${tx.txHash}`}
             target="_blank"
@@ -318,7 +318,7 @@ export default function PortfolioPage() {
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       className={cn(
-                        "relative pb-3 pr-6 text-sm font-semibold capitalize transition-colors",
+                        "relative min-h-[44px] pb-3 pr-6 text-sm font-semibold capitalize transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
                         activeTab === tab
                           ? "text-[#E6EDF3]"
                           : "text-[#8B949E] hover:text-[#E6EDF3]"
@@ -356,12 +356,11 @@ export default function PortfolioPage() {
                       />
                     ))}
                     {positions.length === 0 && (
-                      <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-12 text-center">
-                        <Briefcase className="mx-auto h-10 w-10 text-[#30363D]" />
-                        <p className="mt-3 text-sm text-[#8B949E]">No open positions</p>
+                      <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
+                        <p className="text-sm text-[#8B949E]">No open positions</p>
                         <Link
                           href="/"
-                          className="mt-4 inline-block rounded-lg bg-[#21262D] px-4 py-2 text-sm font-medium text-[#E6EDF3] hover:bg-[#30363D] transition-colors"
+                          className="mt-4 inline-block rounded-lg bg-[#21262D] px-4 py-2 text-sm font-medium text-[#E6EDF3] hover:bg-[#21262D]/80 transition-colors"
                         >
                           Browse Teams
                         </Link>
@@ -378,21 +377,20 @@ export default function PortfolioPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
                   >
-                  <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+                  <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                     {txLoading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" />
                         <span className="ml-3 text-sm text-[#8B949E]">Loading history...</span>
                       </div>
                     ) : transactions.length === 0 ? (
-                      <div className="py-12 text-center">
-                        <Clock className="mx-auto h-10 w-10 text-[#30363D]" />
-                        <p className="mt-3 text-sm text-[#8B949E]">
+                      <div className="py-16 text-center">
+                        <p className="text-sm text-[#8B949E]">
                           No transactions yet. Start trading to see your history.
                         </p>
                         <Link
                           href="/"
-                          className="mt-4 inline-block rounded-lg bg-[#21262D] px-4 py-2 text-sm font-medium text-[#E6EDF3] hover:bg-[#30363D] transition-colors"
+                          className="mt-4 inline-block rounded-lg bg-[#21262D] px-4 py-2 text-sm font-medium text-[#E6EDF3] hover:bg-[#21262D]/80 transition-colors"
                         >
                           Browse Teams
                         </Link>
@@ -413,7 +411,7 @@ export default function PortfolioPage() {
               {/* Right column */}
               <div className="space-y-4">
                 {/* Allocation list — replaces decorative pie chart */}
-                <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+                <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                   <div className="space-y-0 divide-y divide-[#21262D]">
                     {positions.map((pos) => {
                       const pct = totalValue > 0 ? (pos.value / totalValue) * 100 : 0;

@@ -33,7 +33,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
   };
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2.5">
         <span className="text-xs text-[#8B949E]">Rewards</span>
@@ -47,7 +47,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
         )}
       </div>
 
-      <div className="divide-y divide-[#30363D]">
+      <div className="divide-y divide-[#21262D]">
         {rewards.map((reward) => {
           const isClaimed = claimed.has(reward.id);
           const isClaiming = claiming === reward.id;
@@ -116,10 +116,9 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
         })}
 
         {rewards.length === 0 && (
-          <div className="px-4 py-8 text-center">
-            <Gift className="mx-auto h-8 w-8 text-[#30363D]" />
-            <p className="mt-2 text-sm text-[#8B949E]">No rewards yet</p>
-            <p className="text-xs text-[#8B949E]">Trade team tokens to earn rewards</p>
+          <div className="px-4 py-12 text-center">
+            <p className="text-sm text-[#8B949E]">No rewards yet</p>
+            <p className="mt-1 text-xs text-[#484F58]">Trade team tokens to earn rewards</p>
           </div>
         )}
       </div>

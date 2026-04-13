@@ -35,7 +35,7 @@ export function PositionCard({ position, index = 0, onTrade }: PositionCardProps
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06 }}
-      className="rounded-lg border border-[#21262D] bg-[#161B22] p-4"
+      className="rounded-xl border border-[#21262D] bg-[#161B22] p-4"
     >
       {/* Row 1: Team + P&L */}
       <div className="flex items-center justify-between">

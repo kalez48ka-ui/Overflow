@@ -172,7 +172,7 @@ export default function HowItWorksPage() {
           </p>
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-5">
+            <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
               <BondingCurveSVG />
             </div>
 

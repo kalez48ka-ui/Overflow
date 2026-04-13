@@ -61,7 +61,7 @@ export const viewport: Viewport = {
 
 function Footer() {
   return (
-    <footer className="border-t border-[#30363D] py-6">
+    <footer className="border-t border-[#21262D] py-6">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
           {/* Brand */}
@@ -93,7 +93,7 @@ function Footer() {
           </p>
 
           {/* Right disclaimer */}
-          <p className="text-xs text-[#30363D]">
+          <p className="text-xs text-[#484F58]">
             PSL 2026 · Hackathon Demo
           </p>
         </div>

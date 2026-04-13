@@ -11,7 +11,7 @@ export function ToastProvider() {
       toastOptions={{
         style: {
           background: "#161B22",
-          border: "1px solid #30363D",
+          border: "1px solid #21262D",
           color: "#E6EDF3",
           fontSize: "13px",
         },

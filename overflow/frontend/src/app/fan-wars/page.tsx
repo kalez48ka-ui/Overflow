@@ -151,6 +151,15 @@ export default function FanWarsPage() {
           </div>
         ) : (
           <div className="space-y-10">
+            {/* Empty state when no wars exist */}
+            {activeWars.length === 0 && settledWars.length === 0 && (
+              <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
+                <p className="text-sm text-[#8B949E]">
+                  No fan wars scheduled yet. Check back before the next match.
+                </p>
+              </div>
+            )}
+
             {/* Active Fan Wars */}
             {activeWars.length > 0 && (
               <section>
@@ -262,7 +271,7 @@ export default function FanWarsPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-xs font-mono text-[#E6EDF3]">
-                          {entry.wallet}
+                          {shortenAddress(entry.wallet)}
                         </td>
                         <td className="px-4 py-3 text-right text-xs font-bold tabular-nums text-[#3FB950]">
                           {entry.totalBoost.toLocaleString()} WIRE

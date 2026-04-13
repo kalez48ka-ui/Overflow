@@ -99,7 +99,7 @@ export class ErrorBoundary extends React.Component<
               className="max-w-lg overflow-auto rounded-lg p-3 text-xs"
               style={{
                 backgroundColor: "#161B22",
-                border: "1px solid #30363D",
+                border: "1px solid #21262D",
                 color: "#F85149",
               }}
             >

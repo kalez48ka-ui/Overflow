@@ -247,9 +247,9 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
 
   return (
     <MouseTrackCard maxTilt={3} spotlightOpacity={0.05}>
-      <div className="relative overflow-hidden rounded-xl border border-[#30363D] bg-[#161B22] transition-all duration-300 hover:border-[#30363D]/80">
+      <div className="relative overflow-hidden rounded-xl border border-[#21262D] bg-[#161B22] transition-all duration-200 ease-out hover:border-[#21262D]/80">
         {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-[#30363D] px-4 py-3">
+        <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-3">
           <div className="flex items-center gap-2">
             <Flame className="h-4 w-4 text-[#F85149]" />
             <span className="text-xs font-bold uppercase tracking-wider text-[#F85149]">
@@ -314,8 +314,8 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
 
           {/* VS divider */}
           <div className="flex flex-col items-center gap-1">
-            <Swords className="h-5 w-5 text-[#30363D]" />
-            <span className="text-xs font-black text-[#30363D]">VS</span>
+            <Swords className="h-5 w-5 text-[#484F58]" />
+            <span className="text-xs font-black text-[#484F58]">VS</span>
           </div>
 
           {/* Away Team */}
@@ -357,7 +357,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="border-t border-[#30363D] px-4 py-4"
+              className="border-t border-[#21262D] px-4 py-4"
             >
               <div className="grid grid-cols-2 gap-3">
                 {/* Home side lock */}
@@ -400,7 +400,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
               key="user-lock"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="border-t border-[#30363D] px-4 py-3"
+              className="border-t border-[#21262D] px-4 py-3"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -488,7 +488,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
               key="settled-result"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="border-t border-[#30363D] px-4 py-3"
+              className="border-t border-[#21262D] px-4 py-3"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -642,7 +642,7 @@ function LockSide({
           onChange={(e) => onAmountChange(e.target.value)}
           placeholder="0"
           min={0}
-          className="w-full rounded-md border border-[#30363D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all focus:border-[#58A6FF] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-full rounded-md border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all focus:border-[#58A6FF] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           disabled={disabled}
         />
       </div>
@@ -656,7 +656,7 @@ function LockSide({
               onAmountChange(Math.floor(maxBalance * factor).toString())
             }
             disabled={disabled}
-            className="flex-1 rounded-md border border-[#30363D] py-1 text-[10px] font-semibold text-[#8B949E] transition-colors hover:border-[#58A6FF]/50 hover:text-[#E6EDF3] disabled:opacity-40"
+            className="flex-1 rounded-md border border-[#21262D] py-1 text-[10px] font-semibold text-[#8B949E] transition-colors hover:border-[#58A6FF]/50 hover:text-[#E6EDF3] disabled:opacity-40"
           >
             {label}
           </button>

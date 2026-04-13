@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
-import { Shield, TrendingUp, Zap } from "lucide-react";
+
 import { formatCurrency, formatCountdown } from "@/lib/utils";
 
 interface UpsetVaultDisplayProps {
@@ -59,69 +58,41 @@ export function UpsetVaultDisplay({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-[#6A0DAD]/40 bg-[#6A0DAD]/10 px-4 py-2.5">
-        <Shield className="h-4 w-4 text-[#6A0DAD]" />
+      <div className="flex items-center gap-3 rounded-xl border border-[#21262D] bg-[#161B22] px-4 py-2.5">
         <div>
-          <p className="text-[10px] text-[#8B949E]">Upset Vault</p>
-          <p className="text-sm font-bold text-[#E6EDF3]">{formatCurrency(balance)}</p>
+          <p className="text-[10px] text-[#484F58]">Vault</p>
+          <p className="text-sm font-bold font-mono tabular-nums text-[#E6EDF3]">{formatCurrency(balance)}</p>
         </div>
         <div className="ml-auto text-right">
-          <p className="text-[10px] text-[#8B949E]">Multiplier</p>
-          <p className="text-sm font-bold text-[#6A0DAD]">{multiplier}x</p>
+          <span className="text-xs font-bold font-mono tabular-nums text-[#E4002B]">{multiplier}x</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-[#6A0DAD]/40 bg-gradient-to-br from-[#2A0050]/60 to-[#161B22] overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-[#6A0DAD]/30 px-5 py-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6A0DAD]">
-            <Shield className="h-4 w-4 text-white" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-[#E6EDF3]">Upset Vault</h3>
-            <p className="text-xs text-[#8B949E]">Funds when underdogs win</p>
-          </div>
-        </div>
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2.5">
+        <span className="text-xs text-[#8B949E]">Upset Vault</span>
+        <span className="text-[10px] font-bold font-mono tabular-nums text-[#E4002B]">{multiplier}x</span>
       </div>
 
-      {/* Balance */}
-      <div className="px-5 py-6 text-center">
-        <p className="mb-1 text-xs uppercase tracking-widest text-[#8B949E]">Current Balance</p>
-        <motion.div
-          className="text-4xl font-black tabular-nums text-[#E6EDF3]"
-          animate={{ scale: [1, 1.02, 1] }}
-          transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-        >
-          <AnimatedNumber value={balance} />
-        </motion.div>
-
-        {/* Multiplier badge */}
-        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[#6A0DAD]/50 bg-[#6A0DAD]/20 px-3 py-1">
-          <Zap className="h-3 w-3 text-[#6A0DAD]" />
-          <span className="text-xs font-bold text-[#6A0DAD]">
-            Current Upset Multiplier: {multiplier}x
+      <div className="p-4">
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="text-2xl font-black font-mono tabular-nums text-[#E6EDF3]">
+            <AnimatedNumber value={balance} />
           </span>
+          <span className="text-xs text-[#484F58]">WIRE</span>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-px border-t border-[#30363D]">
-        <div className="bg-[#0D1117]/50 px-4 py-3">
-          <p className="text-xs text-[#8B949E]">Next Match</p>
-          <p className="mt-0.5 font-mono text-lg font-bold tabular-nums text-[#E6EDF3]">
-            {countdown > 0 ? formatCountdown(countdown) : "LIVE NOW"}
-          </p>
-        </div>
-        <div className="bg-[#0D1117]/50 px-4 py-3">
-          <div className="flex items-center gap-1 text-xs text-[#8B949E]">
-            <TrendingUp className="h-3 w-3" />
-            Grows every trade
+        <div className="flex items-center justify-between text-xs">
+          <div>
+            <span className="text-[#484F58]">Next </span>
+            <span className="font-mono tabular-nums text-[#E6EDF3]">
+              {countdown > 0 ? formatCountdown(countdown) : "LIVE"}
+            </span>
           </div>
-          <p className="mt-0.5 text-xs font-semibold text-[#3FB950]">+2% of fees go to vault</p>
+          <span className="text-[#484F58]">+2% of fees</span>
         </div>
       </div>
     </div>

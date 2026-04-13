@@ -264,7 +264,7 @@ export function Navbar() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 text-[#8B949E] hover:text-[#E6EDF3]"
+              className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[#8B949E] hover:text-[#E6EDF3] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50 rounded-lg"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
             >
@@ -285,7 +285,7 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="border-t border-[#30363D] bg-[#0D1117] md:hidden overflow-hidden"
+            className="border-t border-[#21262D] bg-[#0D1117] md:hidden overflow-hidden"
           >
             <div className="flex flex-col gap-0.5 p-3">
               {allLinks.map(({ href, label, icon: Icon }) => {

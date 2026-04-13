@@ -220,9 +220,9 @@ export default function StandingsPage() {
         <div className="mb-6 flex flex-col gap-2 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm">
             <span className="font-bold text-[#E6EDF3]">PSL 2026</span>
-            <span className="text-[#30363D]">&middot;</span>
+            <span className="text-[#484F58]">&middot;</span>
             <span className="text-[#8B949E]">{seasonStage}</span>
-            <span className="text-[#30363D]">&middot;</span>
+            <span className="text-[#484F58]">&middot;</span>
             <span className="tabular-nums text-[#8B949E]">
               {matchesLoading ? "..." : `${completedMatches}/${Math.max(allMatches.length, totalScheduledMatches)} matches`}
             </span>
@@ -385,7 +385,7 @@ function UpcomingFixtureRow({ match }: { match: MatchInfo }) {
         </span>
         {match.venue && (
           <>
-            <span className="text-[#30363D]">&middot;</span>
+            <span className="text-[#484F58]">&middot;</span>
             <span className="max-w-[140px] truncate hidden sm:inline">{match.venue}</span>
           </>
         )}

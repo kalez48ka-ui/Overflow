@@ -95,7 +95,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-5">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
       <div className="mb-4 flex items-center gap-2.5">
         <Icon className="h-4 w-4" style={{ color: iconColor }} />
         <h2 className="text-sm font-semibold text-[#E6EDF3]">{title}</h2>
@@ -316,7 +316,7 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-lg border border-[#21262D] bg-[#161B22] p-6"
+        className="w-full max-w-sm space-y-4 rounded-xl border border-[#21262D] bg-[#161B22] p-6"
       >
         <div>
           <h1 className="text-lg font-semibold text-[#E6EDF3]">

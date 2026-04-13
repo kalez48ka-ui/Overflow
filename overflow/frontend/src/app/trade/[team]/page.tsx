@@ -102,7 +102,7 @@ function SellTaxExplainer({ team }: { team: PSLTeam }) {
   const taxColor = sellTaxColor(taxPercent);
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#8B949E]">Sell Tax</span>
@@ -386,7 +386,7 @@ export default function TradePage({ params }: PageProps) {
             {/* Order book + Recent trades */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Order book */}
-              <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+              <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                 <div className="space-y-3">
                   <OrderBookTable title="Asks" entries={orderBook.asks} side="ask" />
                   <div className="py-1.5 text-center border-y border-[#21262D]">
@@ -400,7 +400,7 @@ export default function TradePage({ params }: PageProps) {
               </div>
 
               {/* Recent trades */}
-              <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+              <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                 <div className="space-y-0">
                   <div className="mb-2 grid grid-cols-3 text-[10px] text-[#484F58] uppercase tracking-wider">
                     <span>Price</span>
@@ -441,7 +441,7 @@ export default function TradePage({ params }: PageProps) {
             <BuySellPanel team={team} />
 
             {/* Team stats */}
-            <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+            <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
               {/* Win/loss bar */}
               <div className="mb-4">
                 <div className="mb-1.5 flex items-center justify-between text-xs font-mono tabular-nums">

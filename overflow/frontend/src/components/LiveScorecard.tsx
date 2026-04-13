@@ -13,7 +13,7 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
   const bowlingTeam = team1.isBatting ? team2 : team1;
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Header strip */}
       <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2">
         <div className="flex items-center gap-2">
@@ -53,7 +53,6 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
               </div>
               <div>
                 <p className="text-sm font-semibold text-[#E6EDF3]">{battingTeam.teamName}</p>
-                <p className="text-[10px] text-[#484F58]">batting</p>
               </div>
             </div>
             <div className="text-right">

@@ -39,7 +39,7 @@ function FeaturePill({
   label: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-[#21262D]/60 bg-[#161B22]/80 px-4 py-1.5 text-xs font-medium text-[#C9D1D9] backdrop-blur-sm transition-all duration-300 hover:border-[#58A6FF]/40 hover:bg-[#161B22]">
+    <div className="flex items-center gap-2 rounded-full border border-[#21262D]/60 bg-[#161B22]/80 px-4 py-1.5 text-xs font-medium text-[#C9D1D9] backdrop-blur-sm transition-all duration-200 ease-out hover:border-[#58A6FF]/40 hover:bg-[#161B22]">
       <Icon className="h-3.5 w-3.5 text-[#58A6FF]" />
       {label}
     </div>
@@ -228,12 +228,12 @@ export default function LandingPage() {
             transition={{ delay: 0.2 }}
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
-            <div className="rounded-xl border border-[#E4002B]/40 bg-[#E4002B]/10 px-5 py-3 text-sm font-bold text-[#E6EDF3] transition-all duration-300 hover:bg-[#E4002B]/20 hover:border-[#E4002B]/60">
+            <div className="rounded-xl border border-[#E4002B]/40 bg-[#E4002B]/10 px-5 py-3 text-sm font-bold text-[#E6EDF3] transition-all duration-200 ease-out hover:bg-[#E4002B]/20 hover:border-[#E4002B]/60">
               <SafeConnectButton label="Start Trading" showBalance={false} />
             </div>
             <Link
               href="/match"
-              className="hover-lift flex items-center gap-2 rounded-xl border border-[#21262D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-300"
+              className="hover-lift flex items-center gap-2 rounded-xl border border-[#21262D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-200 ease-out"
             >
               <Activity className="h-4 w-4 text-[#3FB950]" />
               Watch Live Match
@@ -256,7 +256,7 @@ export default function LandingPage() {
                 LIVE
               </span>
               <span className="text-[#8B949E]">PZ vs MS</span>
-              <span className="text-[#30363D]">|</span>
+              <span className="text-[#484F58]">|</span>
               <span className="text-[#E6EDF3] font-semibold">
                 <CountUp
                   value={vaultBalance}
@@ -265,7 +265,7 @@ export default function LandingPage() {
                 />
                 {" "}in Upset Vault
               </span>
-              <span className="text-[#30363D]">|</span>
+              <span className="text-[#484F58]">|</span>
               <span className="text-[#8B949E]">
                 <span className="text-[#3FB950] font-semibold tabular-nums">
                   <CountUp
@@ -329,7 +329,7 @@ export default function LandingPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search teams..."
-              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all duration-300 focus:border-[#58A6FF] focus:shadow-[0_0_12px_rgba(88,166,255,0.15)] sm:w-56"
+              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all duration-200 ease-out focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 sm:w-56"
             />
           </div>
 
@@ -385,7 +385,6 @@ export default function LandingPage() {
           </div>
         ) : displayTeams.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
-            <Search className="mb-3 h-8 w-8 text-[#30363D]" />
             <p className="text-sm text-[#8B949E]">
               No teams match &quot;{searchQuery}&quot;
             </p>
@@ -453,7 +452,7 @@ export default function LandingPage() {
                 </div>
                 {idx < 3 && (
                   <div className="hidden sm:flex items-center justify-center px-4 pt-4">
-                    <ArrowRight className="h-4 w-4 text-[#30363D]" />
+                    <ArrowRight className="h-4 w-4 text-[#484F58]" />
                   </div>
                 )}
               </div>
@@ -464,7 +463,7 @@ export default function LandingPage() {
 
       {/* Upset Vault explainer */}
       <section className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
-        <div className="relative overflow-hidden rounded-2xl border border-[#21262D] bg-[#161B22]">
+        <div className="relative overflow-hidden rounded-xl border border-[#21262D] bg-[#161B22]">
 
           {/* Vault balance — the hero of this section */}
           <div className="px-6 pt-10 pb-6 sm:px-10 text-center">
@@ -519,7 +518,7 @@ export default function LandingPage() {
               </StaggerReveal>
               <Link
                 href="/vault"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#21262D] bg-[#21262D] px-5 py-2.5 text-sm font-bold text-[#E6EDF3] hover:border-[#E4002B]/40 hover:bg-[#E4002B]/10 transition-all duration-300 hover-lift"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#21262D] bg-[#21262D] px-5 py-2.5 text-sm font-bold text-[#E6EDF3] hover:border-[#E4002B]/40 hover:bg-[#E4002B]/10 transition-all duration-200 ease-out hover-lift"
               >
                 View Upset Vault
                 <ArrowRight className="h-4 w-4" />

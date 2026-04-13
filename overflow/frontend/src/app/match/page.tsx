@@ -3,9 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  TrendingUp,
-  Shield,
-  AlertTriangle,
   ArrowRight,
 } from "lucide-react";
 import { io, Socket } from "socket.io-client";
@@ -14,7 +11,7 @@ import { BallByBall } from "@/components/BallByBall";
 import { TradingChart } from "@/components/TradingChart";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
 import { AIAnalysis } from "@/components/AIAnalysis";
-import { CountUp, StaggerReveal } from "@/components/motion";
+import { CountUp } from "@/components/motion";
 import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA, MOCK_FAN_WARS } from "@/lib/mockData";
 import { fanWarsApi } from "@/lib/api";
 import type { FanWarStatus } from "@/lib/api";
@@ -27,164 +24,7 @@ import Link from "next/link";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 const POLL_INTERVAL_MS = 10_000; // 10s — matches backend fast polling for live matches
 
-/** Shape returned by GET /api/ai/signals on the backend (port 3001). */
-interface BackendAiSignal {
-  teamSymbol: string;
-  signal: "BUY" | "SELL" | "HOLD";
-  confidence: number;
-  reason: string;
-  timestamp: string;
-}
 
-/** UI-friendly signal used for rendering cards. */
-interface PanelSignal {
-  type: string;
-  confidence: number;
-  desc: string;
-  color: string;
-  icon: React.ElementType;
-}
-
-const FALLBACK_SIGNALS: PanelSignal[] = [
-  {
-    type: "UPSET_RISK",
-    confidence: 68,
-    desc: "IU's batting surge in overs 15-18 indicates high upset probability",
-    color: "#F85149",
-    icon: AlertTriangle,
-  },
-  {
-    type: "BUY_SIGNAL",
-    confidence: 74,
-    desc: "$IU token underpriced relative to current match situation",
-    color: "#3FB950",
-    icon: TrendingUp,
-  },
-  {
-    type: "VAULT_TRIGGER",
-    confidence: 61,
-    desc: "If IU wins, Upset Vault triggers at 1.8x multiplier",
-    color: "#6A0DAD",
-    icon: Shield,
-  },
-];
-
-function mapBackendSignalToPanel(s: BackendAiSignal): PanelSignal {
-  const signalMap: Record<string, { type: string; color: string; icon: React.ElementType }> = {
-    BUY:  { type: "BUY_SIGNAL",  color: "#3FB950", icon: TrendingUp },
-    SELL: { type: "SELL_SIGNAL", color: "#F85149", icon: AlertTriangle },
-    HOLD: { type: "HOLD",       color: "#58A6FF", icon: Shield },
-  };
-  const mapping = signalMap[s.signal] ?? signalMap["HOLD"]!;
-  return {
-    type: `${mapping.type} · $${s.teamSymbol}`,
-    confidence: Math.round(s.confidence * 100),
-    desc: s.reason,
-    color: mapping.color,
-    icon: mapping.icon,
-  };
-}
-
-function AiAnalysisPanel() {
-  const [signals, setSignals] = useState<PanelSignal[]>(FALLBACK_SIGNALS);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-
-  const fetchSignals = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      const res = await fetch(`${API_URL}/api/ai/signals`, {
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(12_000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json() as { success: boolean; data?: BackendAiSignal[] };
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-        setSignals(json.data.map(mapBackendSignalToPanel));
-        setLastUpdated(new Date());
-      }
-      // If API returns empty data, keep existing signals
-    } catch {
-      // Graceful degradation — keep whatever signals are already loaded
-      if (signals === FALLBACK_SIGNALS) {
-        // First load failed — fallback already in place, nothing to do
-      }
-    } finally {
-      setRefreshing(false);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    fetchSignals();
-    const interval = setInterval(fetchSignals, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [fetchSignals]);
-
-  return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-[#21262D] px-4 py-2.5">
-        <span className="text-xs text-[#8B949E]">AI Signals</span>
-        {refreshing && (
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#58A6FF]" />
-        )}
-        <span className="ml-auto text-[10px] font-mono text-[#484F58]">
-          live
-        </span>
-      </div>
-      <StaggerReveal className="p-3 space-y-2" staggerDelay={0.1} yOffset={16}>
-        {signals.map((signal) => (
-          <motion.div
-            key={signal.type}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="rounded-lg border p-3"
-            style={{
-              borderColor: `${signal.color}30`,
-              backgroundColor: `${signal.color}08`,
-            }}
-          >
-            <div className="mb-1.5 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <signal.icon className="h-3.5 w-3.5" style={{ color: signal.color }} />
-                <span
-                  className="text-[10px] font-bold uppercase tracking-wider"
-                  style={{ color: signal.color }}
-                >
-                  {signal.type}
-                </span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[#21262D]">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${signal.confidence}%`,
-                      backgroundColor: signal.color,
-                    }}
-                  />
-                </div>
-                <span className="text-[10px] font-mono text-[#8B949E]">
-                  {signal.confidence}%
-                </span>
-              </div>
-            </div>
-            <p className="text-xs text-[#8B949E]">{signal.desc}</p>
-          </motion.div>
-        ))}
-
-        <div className="rounded-lg bg-[#0D1117] px-3 py-2">
-          <p className="text-[10px] text-[#8B949E]">
-            AI engine powered by LightGBM + GNN models trained on PSL historical data.
-            Signals update every 30s.
-            {lastUpdated && (
-              <> Last update: {lastUpdated.toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</>
-            )}
-          </p>
-        </div>
-      </StaggerReveal>
-    </div>
-  );
-}
 
 function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: string }) {
   const t1 = PSL_TEAMS.find((t) => t.id === team1Id);
@@ -196,7 +36,7 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
   ];
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
       <div className="grid grid-cols-2 gap-3">
         {teams.map((team) => (
           <div key={team.id}>
@@ -246,7 +86,7 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
     score >= 75 ? "#F85149" : score >= 50 ? "#FDB913" : score >= 25 ? "#58A6FF" : "#3FB950";
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-[#8B949E]">Upset Score</span>
         <span
@@ -336,7 +176,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
   const homePercent = total > 0 ? ((war.totalHomeLocked / total) * 100).toFixed(0) : "50";
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-xs text-[#8B949E]">Fan War</span>
           <span className="text-[10px] font-bold font-mono text-[#F85149]">
@@ -692,7 +532,7 @@ export default function MatchPage() {
       ) : !hasLiveMatch ? (
         /* No live match — show upcoming match info and trading UI */
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          <div className="mb-6 rounded-lg border border-[#21262D] bg-[#161B22] p-5">
+          <div className="mb-6 rounded-xl border border-[#21262D] bg-[#161B22] p-4">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#484F58]">
               No live match
             </p>

@@ -147,7 +147,7 @@ function MatchRow({ match }: { match: MatchInfo }) {
         )}
         {match.venue && (
           <>
-            <span className="text-[#30363D]">&middot;</span>
+            <span className="text-[#484F58]">&middot;</span>
             <span className="flex items-center gap-1 max-w-[160px] truncate">
               <MapPin className="h-3 w-3 shrink-0" />
               {match.venue}
@@ -210,7 +210,7 @@ export default function MatchHistoryPage() {
               key={tab.key}
               onClick={() => handleTabChange(tab.key)}
               className={cn(
-                "relative pb-3 text-sm font-medium transition-colors",
+                "relative min-h-[44px] pb-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
                 activeTab === tab.key
                   ? "text-[#E6EDF3]"
                   : "text-[#8B949E] hover:text-[#C9D1D9]"
@@ -252,8 +252,7 @@ export default function MatchHistoryPage() {
 
         {/* Empty state */}
         {!loading && !error && matches.length === 0 && (
-          <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-12 text-center">
-            <Calendar className="mx-auto mb-3 h-6 w-6 text-[#484F58]" />
+          <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
             <p className="text-sm text-[#8B949E]">
               No {activeTab === "all" ? "" : activeTab + " "}matches to display.
             </p>

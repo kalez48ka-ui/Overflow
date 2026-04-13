@@ -128,7 +128,7 @@ export default function LeaderboardPage() {
               key={key}
               onClick={() => setSortKey(key)}
               className={cn(
-                "relative pb-3 text-sm font-medium transition-colors",
+                "relative min-h-[44px] pb-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
                 sortKey === key
                   ? "text-[#E6EDF3]"
                   : "text-[#8B949E] hover:text-[#C9D1D9]"
@@ -281,7 +281,7 @@ export default function LeaderboardPage() {
                               {entry.favoriteTeam}
                             </span>
                           ) : (
-                            <span className="text-xs text-[#30363D]">&mdash;</span>
+                            <span className="text-xs text-[#484F58]">&mdash;</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">

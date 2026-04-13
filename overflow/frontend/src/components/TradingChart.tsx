@@ -45,14 +45,14 @@ export function TradingChart({ data, teamColor, height = 380, floorPrice }: Trad
             horzLines: { color: "#21262D" },
           },
           crosshair: {
-            vertLine: { color: "#30363D" },
-            horzLine: { color: "#30363D" },
+            vertLine: { color: "#21262D" },
+            horzLine: { color: "#21262D" },
           },
           rightPriceScale: {
-            borderColor: "#30363D",
+            borderColor: "#21262D",
           },
           timeScale: {
-            borderColor: "#30363D",
+            borderColor: "#21262D",
             timeVisible: true,
             secondsVisible: false,
           },

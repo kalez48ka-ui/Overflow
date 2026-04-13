@@ -154,7 +154,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
   }, [numAmount, isLoading, useRealContracts, isBuy, buy, sell, team.contractAddress]);
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Tabs */}
       <div className="grid grid-cols-2 border-b border-[#21262D]">
         {(["buy", "sell"] as TabType[]).map((t) => (
@@ -229,7 +229,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#30363D] outline-none focus:border-[#58A6FF] transition-colors"
+              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#484F58] outline-none focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 transition-colors duration-150"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <div
@@ -249,7 +249,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
             <button
               key={qa}
               onClick={() => setAmount(qa.toString())}
-              className="rounded-md bg-[#21262D] px-2 py-1.5 text-xs font-medium text-[#8B949E] hover:bg-[#30363D] hover:text-[#E6EDF3] transition-colors"
+              className="rounded-md bg-[#21262D] px-2 py-1.5 text-xs font-medium text-[#8B949E] hover:bg-[#21262D]/80 hover:text-[#E6EDF3] transition-colors"
             >
               {isBuy ? qa : qa >= 1000 ? `${qa / 1000}K` : qa}
             </button>
@@ -303,7 +303,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
           onClick={handleSubmit}
           disabled={!numAmount || isLoading}
           className={cn(
-            "w-full rounded-lg py-3.5 text-sm font-bold transition-all",
+            "w-full rounded-lg py-3.5 text-sm font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
             isBuy
               ? "bg-[#238636] hover:bg-[#2EA043] text-white disabled:bg-[#21262D] disabled:text-[#8B949E]"
               : "bg-[#DA3633] hover:bg-[#F85149] text-white disabled:bg-[#21262D] disabled:text-[#8B949E]",

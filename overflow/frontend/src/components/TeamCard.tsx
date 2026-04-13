@@ -117,12 +117,12 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
       <Link href={`/trade/${team.id.toLowerCase()}`} className="block group">
         <div
           ref={cardRef}
-          className="card-border-glow relative overflow-hidden rounded-xl bg-[#161B22] p-5 transition-all duration-300 hover:translate-y-[-2px]"
+          className="card-border-glow relative overflow-hidden rounded-xl bg-[#161B22] p-4 transition-all duration-200 ease-out hover:translate-y-[-2px]"
           style={{
             border: "1px solid #21262D",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "#30363D";
+            e.currentTarget.style.borderColor = "#58A6FF40";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.borderColor = "#21262D";
@@ -130,7 +130,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
         >
           {/* Subtle accent */}
           <div
-            className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.03] transition-opacity duration-300 group-hover:opacity-[0.06]"
+            className="pointer-events-none absolute inset-0 rounded-xl opacity-[0.03] transition-opacity duration-200 group-hover:opacity-[0.06]"
             style={{ background: `radial-gradient(circle at top left, ${team.color}, transparent 70%)` }}
           />
 
@@ -139,7 +139,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
             <div className="flex items-center gap-3">
               {/* Team logo placeholder */}
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-lg transition-transform duration-300 group-hover:scale-110"
+                className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-lg transition-transform duration-200 group-hover:scale-[1.01]"
                 style={{
                   backgroundColor: team.color,
                   boxShadow: `0 4px 16px ${hexToRgba(team.color, 0.4)}`,
@@ -149,7 +149,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
               </div>
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-wider text-[#8B949E]">{team.symbol}</p>
-                <h3 className="text-sm font-bold text-[#E6EDF3] leading-tight">
+                <h3 className="text-sm font-bold text-[#E6EDF3] leading-tight truncate max-w-[140px]">
                   {team.name}
                 </h3>
               </div>
@@ -231,7 +231,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
 
           {/* Bottom accent line */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-[1px] transition-opacity duration-300 opacity-30 group-hover:opacity-60"
+            className="absolute bottom-0 left-0 right-0 h-[1px] transition-opacity duration-200 opacity-30 group-hover:opacity-60"
             style={{
               background: `linear-gradient(90deg, transparent, ${team.color}, transparent)`,
             }}

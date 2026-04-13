@@ -31,14 +31,14 @@ function StatItem({ label, icon: Icon, color, mono, isLive, children }: StatItem
   return (
     <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6 stat-animate">
       <div
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-300"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors duration-200"
         style={{ backgroundColor: `${color}15` }}
         aria-hidden="true"
       >
         <Icon className="h-3.5 w-3.5" style={{ color }} />
       </div>
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-medium text-[#6E7681]">
+        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-medium text-[#8B949E]">
           {label}
           {isLive && (
             <span

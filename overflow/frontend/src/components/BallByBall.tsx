@@ -112,9 +112,9 @@ export function BallByBall({ events }: BallByBallProps) {
     .reverse();
 
   return (
-    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2.5">
-        <span className="text-xs text-[#8B949E]">Commentary</span>
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2">
+        <span className="text-[10px] text-[#484F58] uppercase tracking-wider">Ball by Ball</span>
         {/* Current over mini-dots */}
         {currentOverEvents.length > 0 && (
           <div className="flex items-center gap-1" aria-label={`Over ${currentOverEvents[0]?.over} balls`}>
@@ -132,7 +132,7 @@ export function BallByBall({ events }: BallByBallProps) {
                 ? "#3FB950"
                 : e.runs === 0
                 ? "#21262D"
-                : "#30363D";
+                : "#21262D";
               return (
                 <span
                   key={e.id + i}
@@ -164,7 +164,7 @@ export function BallByBall({ events }: BallByBallProps) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
               className={cn(
-                "flex items-center gap-2.5 px-4 py-2 border-l-2",
+                "flex items-center gap-2.5 px-4 py-1.5 border-l-2",
                 event.isWicket
                   ? "border-l-[#E4002B] bg-[#E4002B]/05"
                   : event.runs === 6

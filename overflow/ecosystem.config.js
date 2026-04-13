@@ -26,9 +26,9 @@ module.exports = {
       name: "overflow-frontend",
       cwd: "/root/crichd/overflow/frontend",
       script: "node_modules/.bin/next",
-      args: "start -H 0.0.0.0 -p 3000",
+      args: "dev -H 0.0.0.0 -p 3000",
       env: {
-        NODE_ENV: "production",
+        NODE_ENV: "development",
         PORT: 3000,
         NEXT_PUBLIC_API_URL: "http://149.102.129.143:3001",
         NEXT_PUBLIC_AI_API_URL: "http://149.102.129.143:5001",

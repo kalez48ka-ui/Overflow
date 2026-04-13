@@ -67,7 +67,7 @@ function MultiplierTable() {
         </thead>
         <tbody className="divide-y divide-[#21262D]">
           {rows.map((row) => (
-            <tr key={row.score} className="bg-[#161B22]">
+            <tr key={row.score} className="bg-[#161B22] transition-colors hover:bg-white/[0.02]">
               <td className="px-3 py-2 text-[#8B949E]">{row.label}</td>
               <td className="px-3 py-2 font-mono tabular-nums text-[#E6EDF3]">{row.score}</td>
               <td className="px-3 py-2 font-bold tabular-nums text-[#E4002B]">{row.multiplier}</td>
@@ -212,7 +212,7 @@ export default function VaultPage() {
                 </div>
 
                 {/* CTA */}
-                <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+                <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                   <p className="mb-1 text-sm font-semibold text-[#E6EDF3]">
                     Position before the next match
                   </p>
