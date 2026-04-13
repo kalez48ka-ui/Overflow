@@ -1,0 +1,645 @@
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion } from "framer-motion";
+import {
+  Brain,
+  TrendingUp,
+  Shield,
+  Zap,
+  AlertTriangle,
+} from "lucide-react";
+import { io, Socket } from "socket.io-client";
+import { LiveScorecard } from "@/components/LiveScorecard";
+import { BallByBall } from "@/components/BallByBall";
+import { TradingChart } from "@/components/TradingChart";
+import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
+import { AIAnalysis } from "@/components/AIAnalysis";
+import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA } from "@/lib/mockData";
+import { api } from "@/lib/api";
+import type { MatchInfo } from "@/lib/api";
+import type { MatchData, BattingTeamData } from "@/types";
+import { cn, formatPrice, formatPercent, formatCurrency } from "@/lib/utils";
+import Link from "next/link";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const POLL_INTERVAL_MS = 30_000; // 30s — same as backend polling
+
+function AiAnalysisPanel() {
+  const signals = [
+    {
+      type: "UPSET_RISK",
+      confidence: 68,
+      desc: "IU's batting surge in overs 15-18 indicates high upset probability",
+      color: "#F85149",
+      icon: AlertTriangle,
+    },
+    {
+      type: "BUY_SIGNAL",
+      confidence: 74,
+      desc: "$IU token underpriced relative to current match situation",
+      color: "#3FB950",
+      icon: TrendingUp,
+    },
+    {
+      type: "VAULT_TRIGGER",
+      confidence: 61,
+      desc: "If IU wins, Upset Vault triggers at 1.8x multiplier",
+      color: "#6A0DAD",
+      icon: Shield,
+    },
+  ];
+
+  return (
+    <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
+        <Brain className="h-4 w-4 text-[#58A6FF]" />
+        <h3 className="text-sm font-semibold text-[#E6EDF3]">AI Analysis</h3>
+        <span className="ml-auto rounded-full bg-[#58A6FF]/10 border border-[#58A6FF]/30 px-2 py-0.5 text-[10px] font-medium text-[#58A6FF]">
+          Live Engine
+        </span>
+      </div>
+      <div className="p-4 space-y-3">
+        {signals.map((signal) => (
+          <motion.div
+            key={signal.type}
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="rounded-lg border p-3"
+            style={{
+              borderColor: `${signal.color}30`,
+              backgroundColor: `${signal.color}08`,
+            }}
+          >
+            <div className="mb-1.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <signal.icon className="h-3.5 w-3.5" style={{ color: signal.color }} />
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wider"
+                  style={{ color: signal.color }}
+                >
+                  {signal.type}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[#21262D]">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${signal.confidence}%`,
+                      backgroundColor: signal.color,
+                    }}
+                  />
+                </div>
+                <span className="text-[10px] font-mono text-[#8B949E]">
+                  {signal.confidence}%
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-[#8B949E]">{signal.desc}</p>
+          </motion.div>
+        ))}
+
+        <div className="rounded-lg bg-[#0D1117] px-3 py-2">
+          <p className="text-[10px] text-[#8B949E]">
+            AI engine powered by LightGBM + GNN models trained on PSL historical data.
+            Signals update every 6 balls.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MatchTradingButtons() {
+  const teams = [
+    { id: "IU", name: "Islamabad United", symbol: "$IU", color: "#E4002B", price: 0.0842, change: 12.4 },
+    { id: "LQ", name: "Lahore Qalandars", symbol: "$LQ", color: "#00A651", price: 0.0631, change: -3.2 },
+  ];
+
+  return (
+    <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
+      <h3 className="mb-3 text-sm font-semibold text-[#E6EDF3]">Quick Trade</h3>
+      <div className="grid grid-cols-2 gap-3">
+        {teams.map((team) => (
+          <div
+            key={team.id}
+            className="rounded-lg border p-3"
+            style={{ borderColor: `${team.color}30` }}
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
+                style={{ backgroundColor: team.color }}
+              >
+                {team.id}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-[#E6EDF3]">{team.symbol}</p>
+                <p className="text-[10px] text-[#8B949E]">${formatPrice(team.price)}</p>
+              </div>
+            </div>
+            <p className={cn(
+              "mb-2 text-xs font-medium",
+              team.change >= 0 ? "text-[#3FB950]" : "text-[#F85149]"
+            )}>
+              {formatPercent(team.change)}
+            </p>
+            <div className="grid grid-cols-2 gap-1">
+              <Link
+                href={`/trade/${team.id.toLowerCase()}`}
+                className="rounded-md bg-[#238636] py-1.5 text-center text-[10px] font-bold text-white hover:bg-[#2EA043] transition-colors"
+              >
+                Buy
+              </Link>
+              <Link
+                href={`/trade/${team.id.toLowerCase()}`}
+                className="rounded-md bg-[#DA3633] py-1.5 text-center text-[10px] font-bold text-white hover:bg-[#F85149] transition-colors"
+              >
+                Sell
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalance: number }) {
+  const level =
+    score >= 75 ? "CRITICAL" : score >= 50 ? "HIGH" : score >= 25 ? "MEDIUM" : "LOW";
+  const levelColor =
+    score >= 75 ? "#F85149" : score >= 50 ? "#FDB913" : score >= 25 ? "#58A6FF" : "#3FB950";
+
+  return (
+    <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-[#FDB913]" />
+          <h3 className="text-sm font-semibold text-[#E6EDF3]">Upset Score</h3>
+        </div>
+        <span
+          className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+          style={{ color: levelColor, backgroundColor: `${levelColor}15` }}
+        >
+          {level}
+        </span>
+      </div>
+
+      <div className="mb-3 text-center">
+        <p className="text-5xl font-black tabular-nums" style={{ color: levelColor }}>
+          {score}
+        </p>
+        <p className="text-xs text-[#8B949E]">out of 100</p>
+      </div>
+
+      <div className="h-3 overflow-hidden rounded-full bg-[#21262D]">
+        <motion.div
+          className="h-full rounded-full"
+          style={{
+            background: `linear-gradient(to right, #3FB950, #FDB913, #F85149)`,
+            width: `${score}%`,
+          }}
+          initial={{ width: 0 }}
+          animate={{ width: `${score}%` }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+        />
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+        <div className="rounded-lg bg-[#0D1117] py-2">
+          <p className="text-[10px] text-[#8B949E]">Vault Multiplier</p>
+          <p className="text-sm font-bold text-[#6A0DAD]">1.8x</p>
+        </div>
+        <div className="rounded-lg bg-[#0D1117] py-2">
+          <p className="text-[10px] text-[#8B949E]">Potential Payout</p>
+          <p className="text-sm font-bold text-[#E6EDF3]">
+            {formatCurrency(vaultBalance * 1.8)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Score parsing — "187/4 (18.3)" → { runs: 187, wickets: 4, overs: "18.3" }
+// ---------------------------------------------------------------------------
+
+function parseScoreString(
+  score: string | null | undefined,
+): { runs: number; wickets: number; overs: string; runRate: number } | null {
+  if (!score) return null;
+  // Formats: "187/4 (18.3)" or "187-4 (18.3)" or just "187/4"
+  const m = score.match(/^(\d+)[\/\-](\d+)\s*(?:\(([0-9.]+)\))?/);
+  if (!m) return null;
+  const runs = parseInt(m[1]!, 10);
+  const wickets = parseInt(m[2]!, 10);
+  const overs = m[3] ?? "0.0";
+  // Calculate run rate: runs / overs (convert overs to decimal — 18.3 = 18 + 3/6)
+  const overParts = overs.split(".");
+  const decimalOvers =
+    parseInt(overParts[0]!, 10) +
+    (overParts[1] ? parseInt(overParts[1], 10) / 6 : 0);
+  const runRate = decimalOvers > 0 ? runs / decimalOvers : 0;
+  return { runs, wickets, overs, runRate };
+}
+
+/** Map an API MatchInfo to the UI MatchData shape, parsing real scores. */
+function mapApiMatchToMatchData(m: MatchInfo, base: MatchData): MatchData {
+  const team1Mock = PSL_TEAMS.find(
+    (t) => t.id === m.team1Id || t.name === m.team1Name
+  );
+  const team2Mock = PSL_TEAMS.find(
+    (t) => t.id === m.team2Id || t.name === m.team2Name
+  );
+
+  const score1 = parseScoreString(m.score1);
+  const score2 = parseScoreString(m.score2);
+
+  // Determine who is batting — if only score1 exists, team1 batted first.
+  // If score2 exists, team2 is currently batting (2nd innings).
+  const isSecondInnings = !!score2;
+
+  const team1Data: BattingTeamData = {
+    teamId: m.team1Id ?? base.team1.teamId,
+    teamName: m.team1Name ?? base.team1.teamName,
+    symbol: team1Mock?.symbol ?? base.team1.symbol,
+    color: team1Mock?.color ?? base.team1.color,
+    runs: score1?.runs ?? base.team1.runs,
+    wickets: score1?.wickets ?? base.team1.wickets,
+    overs: score1?.overs ?? base.team1.overs,
+    runRate: score1?.runRate ?? base.team1.runRate,
+    isBatting: !isSecondInnings,
+  };
+
+  const team2Data: BattingTeamData = {
+    teamId: m.team2Id ?? base.team2.teamId,
+    teamName: m.team2Name ?? base.team2.teamName,
+    symbol: team2Mock?.symbol ?? base.team2.symbol,
+    color: team2Mock?.color ?? base.team2.color,
+    runs: score2?.runs ?? base.team2.runs,
+    wickets: score2?.wickets ?? base.team2.wickets,
+    overs: score2?.overs ?? base.team2.overs,
+    runRate: score2?.runRate ?? base.team2.runRate,
+    isBatting: isSecondInnings,
+  };
+
+  // If 2nd innings, add target and required run rate
+  if (isSecondInnings && score1) {
+    team2Data.target = score1.runs + 1;
+    const overParts = (score2?.overs ?? "0.0").split(".");
+    const bowled =
+      parseInt(overParts[0]!, 10) +
+      (overParts[1] ? parseInt(overParts[1], 10) / 6 : 0);
+    const remaining = 20 - bowled;
+    const runsNeeded = (score1.runs + 1) - (score2?.runs ?? 0);
+    team2Data.requiredRunRate = remaining > 0 ? runsNeeded / remaining : 99.99;
+  }
+
+  // Current over = the batting team's overs
+  const battingTeam = isSecondInnings ? team2Data : team1Data;
+  const currentOver = battingTeam.overs;
+
+  return {
+    id: m.id,
+    status: m.status,
+    matchType: base.matchType,
+    venue: m.venue || base.venue,
+    currentBowler: base.currentBowler,
+    currentOver,
+    upsetScore: m.upsetScore ?? base.upsetScore,
+    vaultBalance: base.vaultBalance,
+    team1: team1Data,
+    team2: team2Data,
+  };
+}
+
+export default function MatchPage() {
+  const [activeChart, setActiveChart] = useState<"IU" | "LQ">("IU");
+  const [matchData, setMatchData] = useState<MatchData>(LIVE_MATCH);
+  const [upcomingMatch, setUpcomingMatch] = useState<MatchInfo | null>(null);
+  const [hasLiveMatch, setHasLiveMatch] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const socketRef = useRef<Socket | null>(null);
+
+  // Fetch live match data from API
+  const fetchLiveData = useCallback(async () => {
+    try {
+      const liveMatches = await api.matches.getLive();
+      if (liveMatches && liveMatches.length > 0) {
+        setHasLiveMatch(true);
+        setMatchData((prev) => mapApiMatchToMatchData(liveMatches[0], prev));
+        return true;
+      } else {
+        setHasLiveMatch(false);
+        try {
+          const upcoming = await api.matches.getUpcoming();
+          if (upcoming && upcoming.length > 0) {
+            setUpcomingMatch(upcoming[0]);
+          }
+        } catch {
+          // Upcoming fetch failed — non-critical
+        }
+        return false;
+      }
+    } catch {
+      // API down — keep existing state
+      return false;
+    }
+  }, []);
+
+  // Initial fetch + polling interval + WebSocket
+  useEffect(() => {
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    // 1) Initial fetch
+    (async () => {
+      await fetchLiveData();
+      if (!cancelled) setLoading(false);
+    })();
+
+    // 2) Poll every 30s as fallback (in case WebSocket drops)
+    pollTimer = setInterval(() => {
+      if (!cancelled) fetchLiveData();
+    }, POLL_INTERVAL_MS);
+
+    // 3) Connect WebSocket for real-time score pushes
+    const socket = io(API_URL, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionDelay: 2000,
+      reconnectionAttempts: 10,
+    });
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log("[Match] WebSocket connected");
+    });
+
+    // Backend emits this with CricAPI live score data
+    socket.on("match:liveScore", (data: {
+      cricApiId: string;
+      name: string;
+      status: string;
+      teams: string[];
+      score: Array<{ r: number; w: number; o: number; inning: string }>;
+      venue: string;
+      matchType: string;
+    }) => {
+      if (cancelled) return;
+
+      // Parse scores from the raw CricAPI format
+      const score1 = data.score[0]
+        ? `${data.score[0].r}/${data.score[0].w} (${data.score[0].o})`
+        : null;
+      const score2 = data.score[1]
+        ? `${data.score[1].r}/${data.score[1].w} (${data.score[1].o})`
+        : null;
+
+      // Resolve team IDs from team names
+      const team1Mock = PSL_TEAMS.find(
+        (t) => data.teams[0]?.toLowerCase().includes(t.name.toLowerCase())
+      );
+      const team2Mock = PSL_TEAMS.find(
+        (t) => data.teams[1]?.toLowerCase().includes(t.name.toLowerCase())
+      );
+
+      const liveInfo: MatchInfo = {
+        id: data.cricApiId,
+        team1Id: team1Mock?.id ?? data.teams[0] ?? "",
+        team1Name: data.teams[0] ?? "",
+        team2Id: team2Mock?.id ?? data.teams[1] ?? "",
+        team2Name: data.teams[1] ?? "",
+        status: "live",
+        venue: data.venue ?? "",
+        startTime: "",
+        score1: score1 ?? undefined,
+        score2: score2 ?? undefined,
+      };
+
+      setHasLiveMatch(true);
+      setMatchData((prev) => mapApiMatchToMatchData(liveInfo, prev));
+    });
+
+    // Backend emits this for mock ball-by-ball updates
+    socket.on("match:ball", () => {
+      if (!cancelled) fetchLiveData();
+    });
+
+    // Backend emits this when match status changes (LIVE → COMPLETED)
+    socket.on("match:status", () => {
+      if (!cancelled) fetchLiveData();
+    });
+
+    return () => {
+      cancelled = true;
+      if (pollTimer) clearInterval(pollTimer);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [fetchLiveData]);
+
+  const iuTeam = PSL_TEAMS.find((t) => t.id === "IU")!;
+  const lqTeam = PSL_TEAMS.find((t) => t.id === "LQ")!;
+
+  return (
+    <div className="min-h-screen bg-[#0D1117]">
+      {/* Match status header */}
+      <div className="border-b border-[#30363D] bg-[#161B22]">
+        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3">
+            {hasLiveMatch ? (
+              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#F85149]">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F85149] opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#F85149]" />
+                </span>
+                LIVE
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#8B949E]">
+                <span className="relative flex h-2 w-2">
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#8B949E]" />
+                </span>
+                UPCOMING
+              </span>
+            )}
+            <span className="text-sm font-semibold text-[#E6EDF3]">
+              {matchData.matchType}
+            </span>
+            <span className="hidden sm:block text-xs text-[#8B949E]">
+              {matchData.venue}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+          <div className="flex items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#30363D] border-t-[#58A6FF]" />
+            <span className="ml-3 text-sm text-[#8B949E]">Loading match data...</span>
+          </div>
+        </div>
+      ) : !hasLiveMatch ? (
+        /* No live match — show upcoming match info and trading UI */
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+          <div className="mb-6 rounded-xl border border-[#58A6FF]/30 bg-[#58A6FF]/05 p-6">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#58A6FF]">
+              No live match right now
+            </p>
+            {upcomingMatch ? (
+              <>
+                <h2 className="text-lg font-bold text-[#E6EDF3]">
+                  Next match: {upcomingMatch.team1Name} vs {upcomingMatch.team2Name}
+                </h2>
+                <p className="mt-1 text-sm text-[#8B949E]">
+                  {upcomingMatch.venue
+                    ? `${upcomingMatch.venue} — `
+                    : ""}
+                  {new Date(upcomingMatch.startTime).toLocaleString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </>
+            ) : (
+              <h2 className="text-lg font-bold text-[#E6EDF3]">
+                Check back soon for the next PSL match
+              </h2>
+            )}
+          </div>
+
+          {/* Still render the full trading UI with mock data so users can explore */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
+            <div className="space-y-4">
+              <LiveScorecard match={matchData} />
+              <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
+                <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
+                  <span className="text-sm font-medium text-[#E6EDF3]">Price Chart</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    {(["IU", "LQ"] as const).map((id) => {
+                      const team = PSL_TEAMS.find((t) => t.id === id)!;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => setActiveChart(id)}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                            activeChart === id
+                              ? "text-white"
+                              : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
+                          )}
+                          style={activeChart === id ? { backgroundColor: team.color } : {}}
+                        >
+                          {team.symbol}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="p-2">
+                  <TradingChart
+                    data={CANDLESTICK_DATA[activeChart]}
+                    teamColor={PSL_TEAMS.find((t) => t.id === activeChart)!.color}
+                    height={280}
+                  />
+                </div>
+              </div>
+              <BallByBall events={BALL_BY_BALL} />
+            </div>
+            <div className="space-y-4">
+              <UpsetScoreTracker score={matchData.upsetScore} vaultBalance={matchData.vaultBalance} />
+              <UpsetVaultDisplay
+                balance={VAULT_DATA.currentBalance}
+                multiplier={VAULT_DATA.currentMultiplier}
+                nextMatchTime={VAULT_DATA.nextMatchCountdown}
+              />
+              <AIAnalysis
+                teamA={matchData.team1.teamId}
+                teamB={matchData.team2.teamId}
+                matchContext={matchData.matchType}
+                defaultOpen={false}
+              />
+              <MatchTradingButtons />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
+            {/* Left column */}
+            <div className="space-y-4">
+              {/* Scorecard */}
+              <LiveScorecard match={matchData} />
+
+              {/* Price chart with team switcher */}
+              <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
+                <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
+                  <span className="text-sm font-medium text-[#E6EDF3]">Price Chart</span>
+                  <div className="ml-auto flex items-center gap-1">
+                    {[
+                      { id: "IU" as const, team: iuTeam },
+                      { id: "LQ" as const, team: lqTeam },
+                    ].map(({ id, team }) => (
+                      <button
+                        key={id}
+                        onClick={() => setActiveChart(id)}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                          activeChart === id
+                            ? "text-white"
+                            : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
+                        )}
+                        style={
+                          activeChart === id
+                            ? { backgroundColor: team.color }
+                            : {}
+                        }
+                      >
+                        {team.symbol}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="p-2">
+                  <TradingChart
+                    data={CANDLESTICK_DATA[activeChart]}
+                    teamColor={activeChart === "IU" ? iuTeam.color : lqTeam.color}
+                    height={280}
+                  />
+                </div>
+              </div>
+
+              {/* Ball by ball */}
+              <BallByBall events={BALL_BY_BALL} />
+            </div>
+
+            {/* Right column */}
+            <div className="space-y-4">
+              <UpsetScoreTracker score={matchData.upsetScore} vaultBalance={matchData.vaultBalance} />
+              <UpsetVaultDisplay
+                balance={VAULT_DATA.currentBalance}
+                multiplier={VAULT_DATA.currentMultiplier}
+                nextMatchTime={VAULT_DATA.nextMatchCountdown}
+              />
+              <AIAnalysis
+                teamA={matchData.team1.teamId}
+                teamB={matchData.team2.teamId}
+                matchContext={matchData.matchType}
+                defaultOpen={false}
+              />
+              <MatchTradingButtons />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

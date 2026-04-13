@@ -1,0 +1,181 @@
+version: "3.8"
+
+# Overflow — Docker Compose
+#
+# Service dependency order:
+#   postgres (healthy) → backend (healthy) → frontend
+#                      → ai-engine
+#
+# All secret/configurable values are read from .env (see .env.example).
+# Internal service-to-service traffic uses Docker's internal DNS:
+#   backend → postgres:5432
+#   frontend → backend:3001, ai-engine:5001  (build-time via ARG; runtime via env)
+#   ai-engine → postgres:5432
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: overflow-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: overflow
+      POSTGRES_USER: ${POSTGRES_USER:-overflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-overflow_dev}
+    ports:
+      # Expose to host for local debugging / migrations run from host machine.
+      # Lock this down (remove or bind to 127.0.0.1) in production.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-overflow} -d overflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Backend — Node.js / Express / Prisma
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      # Pass build-time args so the image can be pre-baked for different envs
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
+    container_name: overflow-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: "3001"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-overflow}:${POSTGRES_PASSWORD:-overflow_dev}@postgres:5432/overflow
+
+      # External integrations — set real values in .env
+      RPC_URL: ${RPC_URL:-https://testnet-rpc.wirefluid.com}
+      CRICKET_API_KEY: ${CRICKET_API_KEY:-}
+      CRICKET_API_URL: ${CRICKET_API_URL:-https://api.cricapi.com/v1}
+
+      # Smart-contract addresses
+      ORACLE_PRIVATE_KEY: ${ORACLE_PRIVATE_KEY:-}
+      FACTORY_ADDRESS: ${FACTORY_ADDRESS:-}
+      ORACLE_ADDRESS: ${ORACLE_ADDRESS:-}
+      REWARDS_ADDRESS: ${REWARDS_ADDRESS:-}
+      VAULT_ADDRESS: ${VAULT_ADDRESS:-}
+      CIRCUIT_BREAKER_ADDRESS: ${CIRCUIT_BREAKER_ADDRESS:-}
+
+      # AI engine internal URL (backend → ai-engine)
+      AI_ENGINE_URL: http://ai-engine:5001
+    ports:
+      - "${BACKEND_PORT:-3001}:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Frontend — Next.js 16 (standalone output)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # NEXT_PUBLIC_* vars are baked into the JS bundle at build time.
+        # They must be passed as build ARGs — runtime env vars are too late.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_AI_API_URL: ${NEXT_PUBLIC_AI_API_URL:-http://localhost:5001}
+        NEXT_PUBLIC_FACTORY_ADDRESS: ${FACTORY_ADDRESS:-}
+        NEXT_PUBLIC_ORACLE_ADDRESS: ${ORACLE_ADDRESS:-}
+        NEXT_PUBLIC_REWARDS_ADDRESS: ${REWARDS_ADDRESS:-}
+        NEXT_PUBLIC_VAULT_ADDRESS: ${VAULT_ADDRESS:-}
+        NEXT_PUBLIC_CIRCUIT_BREAKER_ADDRESS: ${CIRCUIT_BREAKER_ADDRESS:-}
+        NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${WALLETCONNECT_PROJECT_ID:-}
+    container_name: overflow-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # AI Engine — Python / Flask / ChromaDB / LangChain
+  # ---------------------------------------------------------------------------
+  ai-engine:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile
+      args:
+        PYTHON_ENV: ${PYTHON_ENV:-production}
+    container_name: overflow-ai-engine
+    restart: unless-stopped
+    environment:
+      FLASK_PORT: "5001"
+      FLASK_DEBUG: "false"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # Anthropic / LLM
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-4-20250514}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+
+      # Database (ai-engine may query postgres directly)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-overflow}:${POSTGRES_PASSWORD:-overflow_dev}@postgres:5432/overflow
+
+      # ChromaDB persisted path — mapped to named volume below
+      CHROMADB_PATH: /data/chromadb
+
+      PYTHON_ENV: ${PYTHON_ENV:-production}
+    ports:
+      - "${AI_ENGINE_PORT:-5001}:5001"
+    volumes:
+      # Persist ChromaDB vector data across container restarts
+      - chromadb_data:/data/chromadb
+      # Persist raw data ingested for RAG
+      - ai_raw_data:/app/data/raw
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5001/health || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+      # start_period is generous — sentence-transformers downloads the model
+      # on first boot if not cached in the image
+
+# ---------------------------------------------------------------------------
+# Named volumes
+# ---------------------------------------------------------------------------
+volumes:
+  # PostgreSQL data — survives container removal
+  pgdata:
+    driver: local
+
+  # ChromaDB vector store — survives container removal
+  chromadb_data:
+    driver: local
+
+  # Raw match/stats data files used by the RAG ingest pipeline
+  ai_raw_data:
+    driver: local
