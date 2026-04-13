@@ -33,13 +33,10 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
   };
 
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#30363D] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Gift className="h-4 w-4 text-[#FDB913]" />
-          <h3 className="text-sm font-semibold text-[#E6EDF3]">Claimable Rewards</h3>
-        </div>
+      <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2.5">
+        <span className="text-xs text-[#8B949E]">Rewards</span>
         {totalClaimable > 0 && (
           <button
             onClick={handleClaimAll}
@@ -107,7 +104,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
                   ) : (
                     <span
                       key="pending"
-                      className="rounded-lg border border-[#30363D] px-3 py-1.5 text-[10px] text-[#8B949E]"
+                      className="rounded-lg border border-[#21262D] px-3 py-1.5 text-[10px] text-[#8B949E]"
                     >
                       Pending
                     </span>

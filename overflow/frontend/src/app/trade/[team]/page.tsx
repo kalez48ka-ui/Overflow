@@ -3,20 +3,15 @@
 import { use, useState, useEffect } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
-  TrendingUp,
-  TrendingDown,
-  Trophy,
-  Activity,
-  BarChart2,
   Info,
 } from "lucide-react";
 import { TradingChart } from "@/components/TradingChart";
 import { BuySellPanel } from "@/components/BuySellPanel";
 import { AIAnalysis } from "@/components/AIAnalysis";
-import { CountUp, MouseTrackCard } from "@/components/motion";
+import { CountUp } from "@/components/motion";
 import {
   PSL_TEAMS,
   CANDLESTICK_DATA,
@@ -29,11 +24,9 @@ import {
   cn,
   formatPrice,
   formatPercent,
-  formatCurrency,
   formatNumber,
   formatTimeAgo,
 } from "@/lib/utils";
-import { GlitchPrice } from "@/components/effects";
 
 interface PageProps {
   params: Promise<{ team: string }>;
@@ -50,48 +43,39 @@ function OrderBookTable({
 }) {
   return (
     <div>
-      <h4 className="mb-2 text-xs font-semibold text-[#8B949E] uppercase tracking-wider">
+      <h4 className="mb-1.5 text-[10px] text-[#484F58] uppercase tracking-wider">
         {title}
       </h4>
-      <div className="space-y-0.5">
+      <div className="space-y-px">
         {entries.slice(0, 6).map((entry, i) => (
-          <motion.div
+          <div
             key={i}
-            initial={{ opacity: 0, x: side === "ask" ? -8 : 8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04, duration: 0.25 }}
-            className="relative flex items-center justify-between text-xs"
+            className="relative flex items-center justify-between py-[2px] text-xs"
           >
             <div
-              className="absolute right-0 h-full rounded"
+              className="absolute right-0 h-full"
               style={{
                 width: `${Math.min((entry.total / 500) * 100, 100)}%`,
                 backgroundColor:
-                  side === "bid" ? "rgba(63,185,80,0.08)" : "rgba(248,81,73,0.08)",
+                  side === "bid" ? "rgba(63,185,80,0.06)" : "rgba(248,81,73,0.06)",
               }}
             />
             <span
               className={cn(
-                "relative z-10 font-mono font-medium",
+                "relative z-10 font-mono tabular-nums font-medium",
                 side === "bid" ? "text-[#3FB950]" : "text-[#F85149]"
               )}
             >
               ${formatPrice(entry.price)}
             </span>
-            <span className="relative z-10 text-[#8B949E]">
+            <span className="relative z-10 font-mono tabular-nums text-[#8B949E]">
               {formatNumber(entry.amount)}
             </span>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
   );
-}
-
-/** Compute sell tax % from ranking (1-indexed). Formula: 200 + (rank-1)*260 bps, capped at 1500 bps (15%). */
-function computeSellTaxFromRank(rank: number): number {
-  const bps = 200 + (rank - 1) * 260;
-  return Math.min(bps, 1500) / 100;
 }
 
 /** Color for a sell tax value on the 2%-15% spectrum. */
@@ -115,141 +99,41 @@ function SellTaxExplainer({ team }: { team: PSLTeam }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
   const taxPercent = team.sellTax;
-  const gaugePosition = Math.min(Math.max((taxPercent - 2) / 13, 0), 1) * 100;
   const taxColor = sellTaxColor(taxPercent);
 
-  const rankTaxes = Array.from({ length: 8 }, (_, i) => ({
-    rank: i + 1,
-    tax: computeSellTaxFromRank(i + 1),
-  }));
-
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#E6EDF3]">
-          Dynamic Sell Tax
-        </h3>
-        <div className="relative">
-          <button
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-            onFocus={() => setShowTooltip(true)}
-            onBlur={() => setShowTooltip(false)}
-            className="flex items-center justify-center rounded-full p-0.5 text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
-            aria-label="Sell tax info"
-          >
-            <Info className="h-3.5 w-3.5" />
-          </button>
-          {showTooltip && (
-            <div className="absolute right-0 top-7 z-50 w-56 rounded-lg border border-[#30363D] bg-[#21262D] p-3 shadow-xl">
-              <p className="text-[11px] leading-relaxed text-[#E6EDF3]">
-                Rank 1 = 2% tax, Rank 8 = 15% tax. Better performance = lower exit cost.
-              </p>
-              <p className="mt-1.5 text-[10px] text-[#8B949E]">
-                Tax is calculated as 200 + (rank-1) x 260 basis points, capped at 15%.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Current tax display */}
-      <div className="mb-3 flex items-center justify-between">
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div
-            className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold text-white"
-            style={{ backgroundColor: team.color }}
-          >
-            {team.id}
-          </div>
-          <span className="text-xs text-[#8B949E]">{team.name}</span>
-        </div>
-        <div className="flex items-baseline gap-1">
-          <span className="text-lg font-black tabular-nums" style={{ color: taxColor }}>
-            {taxPercent}%
-          </span>
-          <span className="text-[10px] text-[#8B949E]">sell tax</span>
-        </div>
-      </div>
-
-      {/* Gauge bar: 2% to 15% */}
-      <div className="mb-1.5">
-        <div className="relative h-3 overflow-hidden rounded-full bg-[#21262D]">
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              background: "linear-gradient(to right, #3FB950, #FDB913 46%, #F85149)",
-              opacity: 0.2,
-            }}
-          />
-          <motion.div
-            className="absolute left-0 top-0 h-full rounded-full"
-            style={{
-              background: "linear-gradient(to right, #3FB950, #FDB913 46%, #F85149)",
-            }}
-            initial={{ width: 0 }}
-            animate={{ width: `${gaugePosition}%` }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          />
-          <motion.div
-            className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-[#161B22] shadow-md"
-            style={{ backgroundColor: taxColor }}
-            initial={{ left: "0%" }}
-            animate={{ left: `${gaugePosition}%` }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          />
-        </div>
-        <div className="mt-1 flex items-center justify-between text-[10px] text-[#8B949E]">
-          <span>2% (Rank 1)</span>
-          <span>15% (Rank 6-8)</span>
-        </div>
-      </div>
-
-      {/* Ranking context */}
-      <div className="mt-3 rounded-lg bg-[#0D1117] px-3 py-2.5">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-[#8B949E]">Tournament Ranking</span>
-          <span className="text-xs font-bold text-[#E6EDF3]">#{team.ranking} of 8</span>
-        </div>
-        <p className="mt-1.5 text-[11px] leading-relaxed text-[#8B949E]">
-          {team.ranking <= 2
-            ? `${team.name} is a top performer. Low sell tax rewards loyal holders with minimal exit costs.`
-            : team.ranking <= 5
-              ? `${team.name} sits mid-table. Sell tax is moderate — strong results could push it lower.`
-              : `${team.name} is in the bottom tier. Higher sell tax stabilizes the token during rough form.`}
-        </p>
-      </div>
-
-      {/* All ranks reference */}
-      <div className="mt-3">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E]">
-          Tax by Ranking
-        </p>
-        <div className="grid grid-cols-4 gap-1">
-          {rankTaxes.map(({ rank, tax }) => {
-            const isCurrentRank = rank === team.ranking;
-            return (
-              <div
-                key={rank}
-                className={cn(
-                  "rounded-md px-1.5 py-1.5 text-center transition-colors",
-                  isCurrentRank
-                    ? "border border-[#58A6FF]/40 bg-[#58A6FF]/10"
-                    : "border border-[#30363D] bg-[#0D1117]",
-                )}
-              >
-                <p className={cn("text-[9px]", isCurrentRank ? "text-[#58A6FF]" : "text-[#8B949E]")}>
-                  #{rank}
-                </p>
-                <p
-                  className="text-[11px] font-bold tabular-nums"
-                  style={{ color: sellTaxColor(tax) }}
-                >
-                  {tax}%
+          <span className="text-xs text-[#8B949E]">Sell Tax</span>
+          <div className="relative">
+            <button
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+              onFocus={() => setShowTooltip(true)}
+              onBlur={() => setShowTooltip(false)}
+              className="text-[#484F58] hover:text-[#8B949E] transition-colors"
+              aria-label="Sell tax info"
+            >
+              <Info className="h-3 w-3" />
+            </button>
+            {showTooltip && (
+              <div className="absolute left-0 top-6 z-50 w-48 rounded-lg border border-[#21262D] bg-[#161B22] p-2.5 shadow-xl">
+                <p className="text-[10px] leading-relaxed text-[#8B949E]">
+                  Rank 1 = 2%, Rank 8 = 15%. Better form = lower exit cost.
                 </p>
               </div>
-            );
-          })}
+            )}
+          </div>
+        </div>
+        <div className="flex items-baseline gap-1.5">
+          <span
+            className="text-lg font-black font-mono tabular-nums"
+            style={{ color: taxColor }}
+          >
+            {taxPercent}%
+          </span>
+          <span className="text-[10px] text-[#484F58]">#{team.ranking} of 8</span>
         </div>
       </div>
     </div>
@@ -389,129 +273,79 @@ export default function TradePage({ params }: PageProps) {
       className="min-h-screen bg-[#0D1117]"
     >
       {/* Header */}
-      <div className="border-b border-[#30363D] bg-[#161B22]">
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
+      <div className="border-b border-[#21262D] bg-[#161B22]">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <Link
-                href="/"
-                className="flex items-center gap-1.5 shrink-0 text-xs text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Markets</span>
-              </Link>
-              <div className="h-4 w-px bg-[#30363D] shrink-0" />
-              <div className="flex items-center gap-2 min-w-0">
-                <motion.div
-                  animate={{ scale: [1, 1.03, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 mb-1">
+                <Link
+                  href="/"
+                  className="flex items-center gap-1 shrink-0 text-xs text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                </Link>
+                <div
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
                   style={{ backgroundColor: team.color }}
                 >
                   {team.id}
-                </motion.div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-[#E6EDF3]">{team.symbol}</span>
-                    <span className="hidden sm:inline text-xs text-[#8B949E]">{team.name}</span>
-                  </div>
                 </div>
+                <span className="text-sm font-medium text-[#8B949E]">{team.name}</span>
+                <span className="text-xs text-[#484F58]">{team.symbol}</span>
               </div>
-            </div>
-
-            {/* Price display */}
-            <div className="flex items-center gap-4 shrink-0">
-              <div className="text-right">
-                <p className="text-lg sm:text-xl font-bold tabular-nums text-[#E6EDF3]">
-                  <GlitchPrice
-                    value={`$${formatPrice(team.price)}`}
-                    duration={500}
-                    autoScrambleInterval={8000}
-                  />
-                </p>
-                <div
+              <div className="flex items-baseline gap-3 pl-[52px]">
+                <span className="text-4xl sm:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
+                  ${formatPrice(team.price)}
+                </span>
+                <span
                   className={cn(
-                    "flex items-center justify-end gap-1 text-xs sm:text-sm font-medium",
+                    "text-base sm:text-lg font-semibold tabular-nums",
                     isPositive ? "text-[#3FB950]" : "text-[#F85149]"
                   )}
                 >
-                  {isPositive ? (
-                    <TrendingUp className="h-3.5 w-3.5" />
-                  ) : (
-                    <TrendingDown className="h-3.5 w-3.5" />
-                  )}
-                  {formatPercent(team.change24h)}
-                </div>
+                  {isPositive ? "+" : ""}{formatPercent(team.change24h)}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 24h stats bar */}
-      <div className="border-b border-[#30363D] bg-[#0D1117]">
+      {/* Stats strip */}
+      <div className="border-b border-[#21262D]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex items-center gap-6 overflow-x-auto py-2 text-xs">
-            <div className="shrink-0">
-              <span className="text-[#8B949E]">24h High: </span>
-              <span className="font-semibold" style={{ color: "#3FB950" }}>
-                <CountUp value={team.price * 1.08} prefix="$" decimals={4} duration={1} />
-              </span>
-            </div>
-            <div className="shrink-0">
-              <span className="text-[#8B949E]">24h Low: </span>
-              <span className="font-semibold" style={{ color: "#F85149" }}>
-                <CountUp value={team.price * 0.91} prefix="$" decimals={4} duration={1} />
-              </span>
-            </div>
-            <div className="shrink-0">
-              <span className="text-[#8B949E]">24h Volume: </span>
-              <span className="font-semibold" style={{ color: "#E6EDF3" }}>
-                <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />
-              </span>
-            </div>
-            <div className="shrink-0">
-              <span className="text-[#8B949E]">Market Cap: </span>
-              <span className="font-semibold" style={{ color: "#E6EDF3" }}>
-                <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />
-              </span>
-            </div>
-            <div className="shrink-0">
-              <span className="text-[#8B949E]">Buy Tax: </span>
-              <span className="font-semibold" style={{ color: "#3FB950" }}>
-                <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />
-              </span>
-            </div>
-            <div className="shrink-0">
-              <span className="text-[#8B949E]">Sell Tax: </span>
-              <span className="font-semibold" style={{ color: "#F85149" }}>
-                <CountUp value={team.sellTax} suffix="%" decimals={1} duration={0.8} />
-              </span>
-            </div>
+          <div className="flex items-center divide-x divide-[#21262D] overflow-x-auto py-2.5 text-xs font-mono">
+            {[
+              { label: "High", value: <CountUp value={team.price * 1.08} prefix="$" decimals={4} duration={1} />, color: "#3FB950" },
+              { label: "Low", value: <CountUp value={team.price * 0.91} prefix="$" decimals={4} duration={1} />, color: "#F85149" },
+              { label: "Volume", value: <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
+              { label: "Mkt Cap", value: <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
+              { label: "Buy Tax", value: <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />, color: "#3FB950" },
+              { label: "Sell Tax", value: <CountUp value={team.sellTax} suffix="%" decimals={1} duration={0.8} />, color: "#F85149" },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="shrink-0 px-4 first:pl-0">
+                <span className="text-[#484F58]">{label} </span>
+                <span className="font-semibold tabular-nums" style={{ color }}>{value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
           {/* Left column: chart + order book */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Chart */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden"
-            >
-              <div className="flex items-center justify-between border-b border-[#30363D] px-4 py-3">
+            <div>
+              <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
-                  <BarChart2 className="h-4 w-4 text-[#8B949E]" />
-                  <span className="text-sm font-medium text-[#E6EDF3]">
+                  <span className="text-xs text-[#484F58]">
                     {team.symbol} / WIRE
                   </span>
-                  <span className="text-xs text-[#8B949E]">
-                    {timeframe === "1h" ? "1m candles" : timeframe === "24h" ? "5m candles" : "1h candles"}
+                  <span className="text-[10px] text-[#484F58]">
+                    {timeframe === "1h" ? "1m" : timeframe === "24h" ? "5m" : "1h"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -520,10 +354,10 @@ export default function TradePage({ params }: PageProps) {
                       key={tf}
                       onClick={() => setTimeframe(tf)}
                       className={cn(
-                        "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                        "rounded px-2.5 py-1 text-xs font-medium transition-colors",
                         timeframe === tf
-                          ? "border border-[#58A6FF]/40 bg-[#58A6FF]/20 text-[#58A6FF]"
-                          : "text-[#8B949E] hover:text-[#C9D1D9]"
+                          ? "bg-[#21262D] text-[#E6EDF3]"
+                          : "text-[#484F58] hover:text-[#8B949E]"
                       )}
                     >
                       {tf.toUpperCase()}
@@ -531,61 +365,56 @@ export default function TradePage({ params }: PageProps) {
                   ))}
                 </div>
               </div>
-              <div className="relative p-2">
+              <div className="relative">
                 {loading ? (
-                  <div className="flex h-[360px] items-center justify-center">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#30363D] border-t-[#58A6FF]" />
+                  <div className="flex h-[380px] items-center justify-center">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" />
                   </div>
                 ) : (
                   <>
                     {chartLoading && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#161B22]/60 backdrop-blur-[1px]">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#30363D] border-t-[#58A6FF]" />
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#0D1117]/60">
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" />
                       </div>
                     )}
-                    <TradingChart data={chartData} teamColor={team.color} height={360} />
+                    <TradingChart data={chartData} teamColor={team.color} height={380} />
                   </>
                 )}
               </div>
-            </motion.div>
+            </div>
 
             {/* Order book + Recent trades */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Order book */}
-              <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
-                <h3 className="mb-3 text-sm font-semibold text-[#E6EDF3]">Order Book</h3>
-                <div className="space-y-4">
-                  <OrderBookTable title="Asks (Sell)" entries={orderBook.asks} side="ask" />
-                  <div className="rounded-lg bg-[#0D1117] px-3 py-2 text-center">
-                    <span className="text-sm font-bold tabular-nums text-[#E6EDF3]">
+              <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+                <div className="space-y-3">
+                  <OrderBookTable title="Asks" entries={orderBook.asks} side="ask" />
+                  <div className="py-1.5 text-center border-y border-[#21262D]">
+                    <span className="text-sm font-bold font-mono tabular-nums text-[#E6EDF3]">
                       ${formatPrice(team.price)}
                     </span>
-                    <span className="ml-2 text-xs text-[#8B949E]">Spread</span>
+                    <span className="ml-2 text-[10px] text-[#484F58]">spread</span>
                   </div>
-                  <OrderBookTable title="Bids (Buy)" entries={orderBook.bids} side="bid" />
+                  <OrderBookTable title="Bids" entries={orderBook.bids} side="bid" />
                 </div>
               </div>
 
               {/* Recent trades */}
-              <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
-                <h3 className="mb-3 text-sm font-semibold text-[#E6EDF3]">Recent Trades</h3>
-                <div className="space-y-1">
-                  <div className="mb-2 grid grid-cols-3 text-[10px] text-[#8B949E] uppercase tracking-wider">
+              <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+                <div className="space-y-0">
+                  <div className="mb-2 grid grid-cols-3 text-[10px] text-[#484F58] uppercase tracking-wider">
                     <span>Price</span>
-                    <span className="text-center">Amount</span>
+                    <span className="text-center">Amt</span>
                     <span className="text-right">Time</span>
                   </div>
                   {recentTrades.slice(0, 12).map((trade, tradeIdx) => (
-                    <motion.div
+                    <div
                       key={trade.id}
-                      initial={{ opacity: 0, x: 12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: tradeIdx * 0.03, duration: 0.25 }}
-                      className="grid grid-cols-3 items-center text-xs"
+                      className="grid grid-cols-3 items-center py-[3px] text-xs"
                     >
                       <span
                         className={cn(
-                          "font-mono font-medium",
+                          "font-mono tabular-nums font-medium",
                           trade.side === "buy"
                             ? "text-[#3FB950]"
                             : "text-[#F85149]"
@@ -593,13 +422,13 @@ export default function TradePage({ params }: PageProps) {
                       >
                         ${formatPrice(trade.price)}
                       </span>
-                      <span className="text-center text-[#8B949E]">
+                      <span className="text-center font-mono tabular-nums text-[#8B949E]">
                         {formatNumber(trade.amount)}
                       </span>
-                      <span className="text-right text-[#8B949E]">
+                      <span className="text-right text-[#484F58]">
                         {formatTimeAgo(trade.timestamp)}
                       </span>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -607,24 +436,17 @@ export default function TradePage({ params }: PageProps) {
           </div>
 
           {/* Right column: buy/sell + team stats */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Buy/sell panel */}
-            <MouseTrackCard maxTilt={3} spotlightOpacity={0.06} className="rounded-xl">
-              <BuySellPanel team={team} />
-            </MouseTrackCard>
+            <BuySellPanel team={team} />
 
             {/* Team stats */}
-            <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <Trophy className="h-4 w-4" style={{ color: team.color }} />
-                <h3 className="text-sm font-semibold text-[#E6EDF3]">Team Stats</h3>
-              </div>
-
+            <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
               {/* Win/loss bar */}
               <div className="mb-4">
-                <div className="mb-1.5 flex items-center justify-between text-xs">
+                <div className="mb-1.5 flex items-center justify-between text-xs font-mono tabular-nums">
                   <span className="text-[#3FB950]">{team.wins}W</span>
-                  <span className="text-[#8B949E]">
+                  <span className="text-[#484F58]">
                     {team.wins + team.losses} played
                   </span>
                   <span className="text-[#F85149]">{team.losses}L</span>
@@ -634,7 +456,7 @@ export default function TradePage({ params }: PageProps) {
                   const winPct = totalPlayed > 0 ? (team.wins / totalPlayed) * 100 : 50;
                   const lossPct = totalPlayed > 0 ? (team.losses / totalPlayed) * 100 : 50;
                   return (
-                    <div className="flex h-2 overflow-hidden rounded-full">
+                    <div className="flex h-1.5 overflow-hidden rounded-full">
                       <div
                         className="bg-[#3FB950] transition-all"
                         style={{ width: `${winPct}%` }}
@@ -648,60 +470,29 @@ export default function TradePage({ params }: PageProps) {
                 })()}
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-0 divide-y divide-[#21262D]">
                 {[
+                  { label: "Ranking", value: `#${team.ranking}` },
                   {
-                    label: "Tournament Ranking",
-                    value: `#${team.ranking}`,
-                    icon: Trophy,
-                  },
-                  {
-                    label: "Net Run Rate",
+                    label: "NRR",
                     value: team.nrr > 0 ? `+${team.nrr.toFixed(3)}` : team.nrr.toFixed(3),
                     color: team.nrr >= 0 ? "#3FB950" : "#F85149",
-                    icon: Activity,
                   },
-                  {
-                    label: "Performance Score",
-                    value: `${team.performanceScore}/100`,
-                    icon: BarChart2,
-                  },
-                ].map(({ label, value, color, icon: Icon }) => (
+                  { label: "Performance", value: `${team.performanceScore}/100` },
+                ].map(({ label, value, color }) => (
                   <div
                     key={label}
-                    className="flex items-center justify-between rounded-lg bg-[#0D1117] px-3 py-2"
+                    className="flex items-center justify-between py-2.5 first:pt-0"
                   >
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-3.5 w-3.5 text-[#8B949E]" />
-                      <span className="text-xs text-[#8B949E]">{label}</span>
-                    </div>
+                    <span className="text-xs text-[#8B949E]">{label}</span>
                     <span
-                      className="text-xs font-bold"
+                      className="text-xs font-bold font-mono tabular-nums"
                       style={{ color: color || "#E6EDF3" }}
                     >
                       {value}
                     </span>
                   </div>
                 ))}
-              </div>
-
-              {/* Performance score bar */}
-              <div className="mt-4">
-                <div className="mb-1.5 flex items-center justify-between text-xs">
-                  <span className="text-[#8B949E]">Performance Score</span>
-                  <span className="font-bold text-[#E6EDF3]">
-                    {team.performanceScore}
-                  </span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[#21262D]">
-                  <motion.div
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: team.color }}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${team.performanceScore}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                  />
-                </div>
               </div>
             </div>
 
@@ -712,7 +503,7 @@ export default function TradePage({ params }: PageProps) {
               matchContext="T20 — PSL 2026"
             />
 
-            {/* Sell tax explainer */}
+            {/* Sell tax — simplified */}
             <SellTaxExplainer team={team} />
           </div>
         </div>

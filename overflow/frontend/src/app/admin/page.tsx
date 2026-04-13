@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   Shield,
@@ -10,16 +9,13 @@ import {
   DollarSign,
   RefreshCw,
   AlertTriangle,
-  CheckCircle2,
   Lock,
   Eye,
   EyeOff,
   ChevronDown,
   Loader2,
   ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
-import { StaggerReveal } from "@/components/motion";
 import { api, adminApi } from "@/lib/api";
 import type {
   TeamData,
@@ -40,7 +36,6 @@ function useAdminAuth() {
   useEffect(() => {
     const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (stored) {
-      // Verify stored token against backend
       localStorage.setItem(TOKEN_STORAGE_KEY, stored);
       adminApi
         .verifyToken()
@@ -61,7 +56,6 @@ function useAdminAuth() {
   }, []);
 
   const login = useCallback(async (password: string): Promise<boolean> => {
-    // Store token first so adminHeaders() picks it up for the verification call
     localStorage.setItem(TOKEN_STORAGE_KEY, password);
     try {
       const valid = await adminApi.verifyToken();
@@ -101,15 +95,10 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-5">
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-5">
       <div className="mb-4 flex items-center gap-2.5">
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${iconColor}20` }}
-        >
-          <Icon className="h-4 w-4" style={{ color: iconColor }} />
-        </div>
-        <h2 className="text-sm font-bold text-[#E6EDF3]">{title}</h2>
+        <Icon className="h-4 w-4" style={{ color: iconColor }} />
+        <h2 className="text-sm font-semibold text-[#E6EDF3]">{title}</h2>
       </div>
       {children}
     </div>
@@ -136,7 +125,7 @@ function SelectField({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none rounded-lg border border-[#30363D] bg-[#0D1117] px-3 py-2 pr-8 text-sm text-[#E6EDF3] outline-none transition focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
+          className="w-full appearance-none rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 pr-8 text-sm text-[#E6EDF3] outline-none transition focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
         >
           {placeholder && (
             <option value="" disabled>
@@ -183,7 +172,7 @@ function NumberInput({
         max={max}
         step={step}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-[#30363D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#484F58] focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
+        className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#484F58] focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
       />
     </div>
   );
@@ -208,7 +197,7 @@ function ActionButton({
       disabled={loading || disabled}
       className="flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50"
       style={{
-        backgroundColor: loading || disabled ? "#30363D" : color,
+        backgroundColor: loading || disabled ? "#21262D" : color,
       }}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
@@ -225,10 +214,10 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
   if (rankings.length === 0) return null;
 
   return (
-    <div className="mt-4 overflow-hidden rounded-lg border border-[#30363D]">
+    <div className="mt-4 overflow-hidden rounded-lg border border-[#21262D]">
       <table className="w-full text-left text-xs">
         <thead>
-          <tr className="border-b border-[#30363D] bg-[#0D1117]">
+          <tr className="border-b border-[#21262D] bg-[#0D1117]">
             <th className="px-3 py-2 font-medium text-[#8B949E]">#</th>
             <th className="px-3 py-2 font-medium text-[#8B949E]">Team</th>
             <th className="px-3 py-2 font-medium text-[#8B949E]">W/L</th>
@@ -238,13 +227,10 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
           </tr>
         </thead>
         <tbody>
-          {rankings.map((team, rankIdx) => (
-            <motion.tr
+          {rankings.map((team) => (
+            <tr
               key={team.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: rankIdx * 0.04, duration: 0.25 }}
-              className="border-b border-[#30363D]/50 last:border-0"
+              className="border-b border-[#21262D]/50 last:border-0"
             >
               <td className="px-3 py-2 font-mono font-bold text-[#FDB913]">
                 {team.ranking}
@@ -265,7 +251,7 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
                       ? "text-[#3FB950]"
                       : team.performanceScore >= 50
                         ? "text-[#FDB913]"
-                        : "text-[#F85149]"
+                        : "text-[#E4002B]"
                   }
                 >
                   {team.performanceScore}
@@ -274,10 +260,10 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
               <td className="px-3 py-2 font-mono text-[#E6EDF3]">
                 {team.currentPrice.toFixed(4)}
               </td>
-              <td className="px-3 py-2 text-[#F85149]">
+              <td className="px-3 py-2 text-[#E4002B]">
                 {team.sellTaxRate}%
               </td>
-            </motion.tr>
+            </tr>
           ))}
         </tbody>
       </table>
@@ -330,20 +316,15 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-xl border border-[#30363D] bg-[#161B22] p-6"
+        className="w-full max-w-sm space-y-4 rounded-lg border border-[#21262D] bg-[#161B22] p-6"
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#E4002B]/15">
-            <Lock className="h-4.5 w-4.5 text-[#E4002B]" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-[#E6EDF3]">
-              Admin Panel
-            </h1>
-            <p className="text-xs text-[#8B949E]">
-              Oracle + Vault control for hackathon demo
-            </p>
-          </div>
+        <div>
+          <h1 className="text-lg font-semibold text-[#E6EDF3]">
+            Admin Panel
+          </h1>
+          <p className="text-xs text-[#8B949E]">
+            Oracle + Vault control for hackathon demo
+          </p>
         </div>
 
         <div className="space-y-1.5">
@@ -359,8 +340,8 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
               autoFocus
               className={`w-full rounded-lg border px-3 py-2.5 pr-10 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#484F58] focus:ring-1 ${
                 error
-                  ? "border-[#F85149] bg-[#F85149]/10 focus:ring-[#F85149]/30"
-                  : "border-[#30363D] bg-[#0D1117] focus:border-[#58A6FF] focus:ring-[#58A6FF]/30"
+                  ? "border-[#E4002B] bg-[#E4002B]/10 focus:ring-[#E4002B]/30"
+                  : "border-[#21262D] bg-[#0D1117] focus:border-[#58A6FF] focus:ring-[#58A6FF]/30"
               }`}
             />
             <button
@@ -376,7 +357,7 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
             </button>
           </div>
           {error && (
-            <p className="text-xs text-[#F85149]">Invalid password</p>
+            <p className="text-xs text-[#E4002B]">Invalid password</p>
           )}
         </div>
 
@@ -426,7 +407,6 @@ function MatchResultSection({
     [matches],
   );
 
-  // When match is selected, figure out valid winner options
   const selectedMatch = matches.find((m) => m.id === matchId);
   const winnerOptions = selectedMatch
     ? [
@@ -770,12 +750,7 @@ function PriceUpdateSection({ teams }: { teams: TeamData[] }) {
         </ActionButton>
 
         {result && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 350, damping: 25 }}
-            className="mt-2 rounded-lg border border-[#30363D] bg-[#0D1117] p-3 text-xs"
-          >
+          <div className="mt-2 rounded-lg border border-[#21262D] bg-[#0D1117] p-3 text-xs">
             <p className="font-semibold text-[#E6EDF3]">{result.name}</p>
             <div className="mt-1.5 flex items-center gap-3">
               <span className="text-[#8B949E]">
@@ -789,14 +764,14 @@ function PriceUpdateSection({ teams }: { teams: TeamData[] }) {
                 className={`ml-auto font-mono ${
                   result.change24h >= 0
                     ? "text-[#3FB950]"
-                    : "text-[#F85149]"
+                    : "text-[#E4002B]"
                 }`}
               >
                 {result.change24h >= 0 ? "+" : ""}
                 {result.change24h.toFixed(2)}%
               </span>
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
     </SectionCard>
@@ -848,37 +823,27 @@ export default function AdminPage() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
-      className="mx-auto max-w-7xl px-4 py-8 sm:px-6"
-    >
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#E4002B] to-[#8B0019]">
-            <Shield className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg font-black text-[#E6EDF3]">
-              Oracle Panel
-            </h1>
-            <p className="text-xs text-[#8B949E]">
-              Match results, upsets, rankings, and price control
-            </p>
-          </div>
+        <div>
+          <h1 className="text-lg font-semibold text-[#E6EDF3]">
+            Oracle Panel
+          </h1>
+          <p className="text-xs text-[#8B949E]">
+            Match results, upsets, rankings, and price control
+          </p>
         </div>
         <button
           onClick={logout}
-          className="rounded-lg border border-[#30363D] bg-[#21262D] px-3 py-1.5 text-xs font-medium text-[#8B949E] transition hover:border-[#F85149]/40 hover:text-[#F85149]"
+          className="rounded-lg border border-[#21262D] px-3 py-1.5 text-xs font-medium text-[#8B949E] transition hover:border-[#E4002B]/40 hover:text-[#E4002B]"
         >
           Sign Out
         </button>
       </div>
 
       {/* Warning banner */}
-      <div className="mb-6 flex items-center gap-2 rounded-lg border border-[#FDB913]/30 bg-[#FDB913]/10 px-4 py-2.5">
+      <div className="mb-6 flex items-center gap-2 rounded-lg border border-[#FDB913]/30 bg-[#FDB913]/5 px-4 py-2.5">
         <AlertTriangle className="h-4 w-4 shrink-0 text-[#FDB913]" />
         <p className="text-xs text-[#FDB913]">
           These actions modify live platform state. Use during hackathon demo
@@ -891,13 +856,13 @@ export default function AdminPage() {
           <Loader2 className="h-6 w-6 animate-spin text-[#58A6FF]" />
         </div>
       ) : (
-        <StaggerReveal className="grid gap-5 lg:grid-cols-2" staggerDelay={0.1} yOffset={20}>
+        <div className="grid gap-5 lg:grid-cols-2">
           <MatchResultSection teams={teams} matches={matches} />
           <TriggerUpsetSection teams={teams} matches={matches} />
           <RecalculateSection />
           <PriceUpdateSection teams={teams} />
-        </StaggerReveal>
+        </div>
       )}
-    </motion.div>
+    </div>
   );
 }

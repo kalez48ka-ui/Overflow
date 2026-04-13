@@ -39,7 +39,7 @@ function FeaturePill({
   label: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-[#30363D]/60 bg-[#161B22]/80 px-4 py-1.5 text-xs font-medium text-[#C9D1D9] backdrop-blur-sm transition-all duration-300 hover:border-[#58A6FF]/40 hover:bg-[#161B22]">
+    <div className="flex items-center gap-2 rounded-full border border-[#21262D]/60 bg-[#161B22]/80 px-4 py-1.5 text-xs font-medium text-[#C9D1D9] backdrop-blur-sm transition-all duration-300 hover:border-[#58A6FF]/40 hover:bg-[#161B22]">
       <Icon className="h-3.5 w-3.5 text-[#58A6FF]" />
       {label}
     </div>
@@ -212,12 +212,12 @@ export default function LandingPage() {
             className="text-center"
           >
             <RevealText
-              lines={["Your Cricket IQ.", "Your Edge."]}
+              lines={["From Betting", "to Building Wealth."]}
               className="mx-auto max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
             />
             <p className="mx-auto mt-5 max-w-xl text-base text-[#8B949E] sm:text-lg">
-              Trade tokenized PSL teams on-chain. Prices move ball-by-ball.
-              Outsmart the market. Profit from upsets.
+              Own PSL team tokens. Prices move with every ball.
+              No gambling — real assets, real exits, real rewards.
             </p>
           </motion.div>
 
@@ -233,7 +233,7 @@ export default function LandingPage() {
             </div>
             <Link
               href="/match"
-              className="hover-lift flex items-center gap-2 rounded-xl border border-[#30363D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-300"
+              className="hover-lift flex items-center gap-2 rounded-xl border border-[#21262D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-300"
             >
               <Activity className="h-4 w-4 text-[#3FB950]" />
               Watch Live Match
@@ -247,7 +247,7 @@ export default function LandingPage() {
             transition={{ delay: 0.3 }}
             className="mt-8 flex justify-center"
           >
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#30363D]/60 bg-[#161B22]/60 px-5 py-2 text-xs backdrop-blur-md">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#21262D]/60 bg-[#161B22]/60 px-5 py-2 text-xs backdrop-blur-md">
               <span className="flex items-center gap-1.5 text-[#F85149] font-bold">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F85149] opacity-75" />
@@ -301,10 +301,10 @@ export default function LandingPage() {
       />
 
       {/* Team cards grid */}
-      <section className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6">
+      <section className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-[#E6EDF3]">PSL Team Tokens</h2>
+            <h2 className="text-lg font-bold text-[#E6EDF3]">PSL Team Tokens</h2>
             <p className="text-sm text-[#8B949E]">
               {teams.length} teams, {teams.length} tokens — trade the tournament
             </p>
@@ -316,13 +316,6 @@ export default function LandingPage() {
             >
               <Trophy className="h-3.5 w-3.5" />
               Leaderboard
-            </Link>
-            <Link
-              href="/match"
-              className="flex items-center gap-1.5 text-sm text-[#58A6FF] hover:text-[#79C0FF] transition-colors"
-            >
-              View live match
-              <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
@@ -336,7 +329,7 @@ export default function LandingPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search teams..."
-              className="w-full rounded-lg border border-[#30363D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all duration-300 focus:border-[#58A6FF] focus:shadow-[0_0_12px_rgba(88,166,255,0.15)] sm:w-56"
+              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all duration-300 focus:border-[#58A6FF] focus:shadow-[0_0_12px_rgba(88,166,255,0.15)] sm:w-56"
             />
           </div>
 
@@ -365,7 +358,7 @@ export default function LandingPage() {
                   className={`flex items-center gap-1 rounded-full border px-3 py-2 text-xs font-medium transition-colors min-h-[44px] sm:min-h-0 sm:py-1.5 ${
                     isActive
                       ? "border-[#58A6FF] bg-[#161B22] text-[#E6EDF3]"
-                      : "border-[#30363D] text-[#8B949E] hover:border-[#58A6FF]/50"
+                      : "border-[#21262D] text-[#8B949E] hover:border-[#58A6FF]/50"
                   }`}
                 >
                   {label}
@@ -382,23 +375,23 @@ export default function LandingPage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: PSL_TEAMS.length }).map((_, i) => (
               <div
                 key={i}
-                className="h-48 animate-pulse rounded-xl border border-[#30363D] bg-[#161B22]"
+                className="h-48 animate-pulse rounded-xl border border-[#21262D] bg-[#161B22]"
               />
             ))}
           </div>
         ) : displayTeams.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-[#30363D] bg-[#161B22] py-16 text-center">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
             <Search className="mb-3 h-8 w-8 text-[#30363D]" />
             <p className="text-sm text-[#8B949E]">
               No teams match &quot;{searchQuery}&quot;
             </p>
           </div>
         ) : (
-          <LayoutGrid className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <LayoutGrid className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {displayTeams.map((team) => (
               <MouseTrackCard key={team.id}>
                 <TeamCard team={team} />
@@ -411,108 +404,92 @@ export default function LandingPage() {
       {/* How it works */}
       <section className="relative bg-[#161B22]/30">
         <div className="border-t border-[#21262D]" />
-        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
-          <div className="mb-10 text-center">
-            <h2 className="text-2xl font-black text-[#E6EDF3]">
-              Four Steps. Zero Complexity.
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+          <div className="mb-12 text-center">
+            <h2 className="text-xl font-bold text-[#E6EDF3]">
+              How It Works
             </h2>
             <p className="mt-2 text-sm text-[#8B949E]">
-              From wallet connect to payout in minutes
+              Wallet to payout in four steps
             </p>
           </div>
 
           <StaggerReveal
-            className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
+            className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:gap-0"
             staggerDelay={0.1}
             yOffset={24}
           >
             {[
               {
-                step: "01",
                 title: "Connect",
-                desc: "Link your Web3 wallet to WireFluid Testnet. Takes 10 seconds.",
-                color: "#58A6FF",
+                desc: "Link your Web3 wallet. Takes 10 seconds.",
+                icon: Zap,
               },
               {
-                step: "02",
                 title: "Pick a Side",
-                desc: "Buy tokens for teams you back. Prices are driven by real match outcomes.",
-                color: "#3FB950",
+                desc: "Buy team tokens. Prices track real match outcomes.",
+                icon: Trophy,
               },
               {
-                step: "03",
                 title: "Trade Live",
-                desc: "React to wickets, sixes, and collapses. The pitch is your trading floor.",
-                color: "#FDB913",
+                desc: "React to wickets, sixes, collapses in real time.",
+                icon: Activity,
               },
               {
-                step: "04",
                 title: "Collect",
-                desc: "Underdogs win? The Upset Vault rewards you for calling it right.",
-                color: "#E4002B",
+                desc: "Upset Vault pays out when underdogs win.",
+                icon: Flame,
               },
-            ].map(({ step, title, desc, color }) => (
-              <div
-                key={step}
-                className="group relative rounded-xl border border-[#30363D] bg-[#161B22] p-5 transition-all duration-300 hover:border-opacity-60 hover-lift"
-                style={{ ["--step-color" as string]: color }}
-              >
-                {/* Top accent line */}
-                <div
-                  className="absolute top-0 left-4 right-4 h-px opacity-0 transition-opacity group-hover:opacity-100"
-                  style={{ backgroundColor: color }}
-                />
-                <div
-                  className="mb-3 text-3xl font-black"
-                  style={{ color: `${color}50` }}
-                >
-                  {step}
+            ].map(({ title, desc, icon: StepIcon }, idx) => (
+              <div key={title} className="flex flex-1 items-start gap-0 sm:flex-col sm:items-center">
+                <div className="flex flex-1 flex-col items-center text-center">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-[#21262D] bg-[#161B22]">
+                    <StepIcon className="h-4 w-4 text-[#8B949E]" />
+                  </div>
+                  <h3 className="mb-1 text-sm font-semibold text-[#E6EDF3]">
+                    {title}
+                  </h3>
+                  <p className="max-w-[180px] text-xs leading-relaxed text-[#8B949E]">{desc}</p>
                 </div>
-                <h3
-                  className="mb-2 text-sm font-bold"
-                  style={{ color }}
-                >
-                  {title}
-                </h3>
-                <p className="text-xs leading-relaxed text-[#8B949E]">{desc}</p>
+                {idx < 3 && (
+                  <div className="hidden sm:flex items-center justify-center px-4 pt-4">
+                    <ArrowRight className="h-4 w-4 text-[#30363D]" />
+                  </div>
+                )}
               </div>
             ))}
           </StaggerReveal>
-
-          <div className="mt-8 text-center">
-            <Link
-              href="/how-it-works"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[#58A6FF] hover:text-[#79C0FF] transition-colors"
-            >
-              Learn the full mechanics
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
         </div>
       </section>
 
       {/* Upset Vault explainer */}
-      <section className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="relative overflow-hidden rounded-2xl border border-[#30363D] bg-[#161B22]">
+      <section className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
+        <div className="relative overflow-hidden rounded-2xl border border-[#21262D] bg-[#161B22]">
 
-          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-0">
-            <div className="p-6 sm:p-10">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#E4002B]/40 bg-[#E4002B]/10 px-3 py-1 text-xs font-semibold text-[#E4002B]">
-                <Flame className="h-3 w-3" />
-                Upset Vault
-              </div>
-              <h2 className="text-2xl font-black text-[#E6EDF3] leading-tight sm:text-3xl">
-                Favorites Lose.{" "}
-                <span className="text-[#E4002B]">You Win.</span>
-              </h2>
-              <p className="mt-3 text-sm text-[#8B949E] leading-relaxed">
-                2% of every trade fee flows into the Vault. When an underdog
-                pulls off the upset, holders of the winning team&apos;s tokens
-                split the pot — with a multiplier that scales with how unlikely
-                the win was.
-              </p>
+          {/* Vault balance — the hero of this section */}
+          <div className="px-6 pt-10 pb-6 sm:px-10 text-center">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#E4002B]/40 bg-[#E4002B]/10 px-3 py-1 text-xs font-semibold text-[#E4002B]">
+              <Flame className="h-3 w-3" />
+              Upset Vault
+            </div>
+            <p className="vault-glow mt-2 text-5xl font-black text-[#E6EDF3] sm:text-6xl md:text-7xl tabular-nums tracking-tight">
+              <CountUp
+                value={vaultBalance}
+                formatter={(n) => formatCurrency(n)}
+                duration={2}
+              />
+            </p>
+            <p className="mt-3 text-sm text-[#8B949E]">
+              2% of every trade fee. Underdogs win, you split the pot.
+            </p>
+          </div>
+
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-0 border-t border-[#21262D]">
+            {/* Multiplier tiers */}
+            <div className="p-6 sm:p-8">
+              <h3 className="mb-4 text-sm font-semibold text-[#E6EDF3]">Payout Multipliers</h3>
               <StaggerReveal
-                className="mt-6 space-y-2.5"
+                className="space-y-2.5"
                 staggerDelay={0.12}
                 yOffset={16}
               >
@@ -542,52 +519,39 @@ export default function LandingPage() {
               </StaggerReveal>
               <Link
                 href="/vault"
-                className="mt-8 inline-flex items-center gap-2 rounded-xl border border-[#30363D] bg-[#21262D] px-5 py-2.5 text-sm font-bold text-[#E6EDF3] hover:border-[#E4002B]/40 hover:bg-[#E4002B]/10 transition-all duration-300 hover-lift"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#21262D] bg-[#21262D] px-5 py-2.5 text-sm font-bold text-[#E6EDF3] hover:border-[#E4002B]/40 hover:bg-[#E4002B]/10 transition-all duration-300 hover-lift"
               >
                 View Upset Vault
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <div className="flex items-center justify-center border-t border-[#21262D] p-6 sm:p-10 md:border-l md:border-t-0">
-              <div className="text-center">
-                <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#8B949E]">
-                  Current Vault Balance
-                </p>
-                <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight">
-                  <CountUp
-                    value={vaultBalance}
-                    formatter={(n) => formatCurrency(n)}
-                    duration={2}
-                  />
-                </p>
-                <p className="mt-2 text-sm font-medium text-[#8B949E]">
-                  Next payout: IU vs LQ tonight
-                </p>
-                <StaggerReveal
-                  className="mt-8 grid grid-cols-3 gap-4 text-center"
-                  staggerDelay={0.1}
-                  yOffset={20}
-                >
-                  {[
-                    { label: "Paid Out", raw: 249, prefix: "$", suffix: "K" },
-                    { label: "Upsets", raw: 18, prefix: "", suffix: "" },
-                    { label: "Avg Mult.", raw: 2.7, prefix: "", suffix: "x" },
-                  ].map(({ label, raw, prefix, suffix }) => (
-                    <div key={label} className="rounded-lg bg-[#0D1117]/60 px-3 py-3 border border-[#30363D]/50">
-                      <p className="text-lg font-black tabular-nums text-[#E6EDF3]">
-                        <CountUp
-                          value={raw}
-                          prefix={prefix}
-                          suffix={suffix}
-                          decimals={raw % 1 !== 0 ? 1 : 0}
-                          duration={1.8}
-                        />
-                      </p>
-                      <p className="text-[10px] text-[#8B949E] mt-0.5">{label}</p>
-                    </div>
-                  ))}
-                </StaggerReveal>
-              </div>
+
+            {/* Stats */}
+            <div className="flex items-center justify-center border-t border-[#21262D] p-6 sm:p-8 md:border-l md:border-t-0">
+              <StaggerReveal
+                className="grid grid-cols-3 gap-5 text-center w-full"
+                staggerDelay={0.1}
+                yOffset={20}
+              >
+                {[
+                  { label: "Paid Out", raw: 249, prefix: "$", suffix: "K" },
+                  { label: "Upsets", raw: 18, prefix: "", suffix: "" },
+                  { label: "Avg Mult.", raw: 2.7, prefix: "", suffix: "x" },
+                ].map(({ label, raw, prefix, suffix }) => (
+                  <div key={label} className="rounded-lg bg-[#0D1117]/60 px-3 py-3 border border-[#21262D]">
+                    <p className="text-lg font-black tabular-nums text-[#E6EDF3]">
+                      <CountUp
+                        value={raw}
+                        prefix={prefix}
+                        suffix={suffix}
+                        decimals={raw % 1 !== 0 ? 1 : 0}
+                        duration={1.8}
+                      />
+                    </p>
+                    <p className="text-[10px] text-[#8B949E] mt-0.5">{label}</p>
+                  </div>
+                ))}
+              </StaggerReveal>
             </div>
           </div>
         </div>

@@ -154,9 +154,9 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
   }, [numAmount, isLoading, useRealContracts, isBuy, buy, sell, team.contractAddress]);
 
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Tabs */}
-      <div className="grid grid-cols-2 border-b border-[#30363D]">
+      <div className="grid grid-cols-2 border-b border-[#21262D]">
         {(["buy", "sell"] as TabType[]).map((t) => (
           <button
             key={t}
@@ -229,7 +229,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full rounded-lg border border-[#30363D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#30363D] outline-none focus:border-[#58A6FF] transition-colors"
+              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#30363D] outline-none focus:border-[#58A6FF] transition-colors"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <div
@@ -261,7 +261,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            className="rounded-lg border border-[#30363D] bg-[#0D1117] p-3 space-y-2"
+            className="rounded-lg border border-[#21262D] bg-[#0D1117] p-3 space-y-2"
           >
             <div className="flex items-center justify-between text-xs">
               <span className="text-[#8B949E]">Price</span>
@@ -280,7 +280,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
                 )}
               </span>
             </div>
-            <div className="border-t border-[#30363D] pt-2 flex items-center justify-between text-xs font-semibold">
+            <div className="border-t border-[#21262D] pt-2 flex items-center justify-between text-xs font-semibold">
               <span className="text-[#8B949E]">You receive</span>
               <span className="text-[#E6EDF3]">
                 {isBuy
@@ -289,7 +289,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               </span>
             </div>
             {!useRealContracts && (
-              <div className="border-t border-[#30363D] pt-2">
+              <div className="border-t border-[#21262D] pt-2">
                 <span className="text-[10px] text-[#8B949E] italic">
                   Simulated trade — contracts not deployed
                 </span>

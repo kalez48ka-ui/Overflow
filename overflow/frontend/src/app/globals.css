@@ -13,8 +13,8 @@
   --bg-tertiary: #1C2128;
 
   /* ── Borders ───────────────────────────────────────────────── */
-  --border: #30363D;
-  --border-light: #3D444D;
+  --border: #21262D;
+  --border-light: #30363D;
 
   /* ── Text ──────────────────────────────────────────────────── */
   --text-primary: #E6EDF3;
@@ -153,9 +153,14 @@ input[type="number"] {
   /* No-op */
 }
 
-/* ── Card border glow — disabled (was rotating gradient) ──────── */
+/* ── Card border glow — subtle white shimmer ────────────────────── */
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.06); }
+  50% { border-color: rgba(255, 255, 255, 0.14); }
+}
+
 .card-border-glow {
-  /* No-op */
+  animation: borderGlow 3s ease-in-out infinite;
 }
 
 /* ── Price tick — disabled (was fake price flash) ─────────────── */
@@ -177,9 +182,9 @@ input[type="number"] {
   animation: fadeInUp 0.6s ease-out forwards;
 }
 
-/* ── Vault glow — disabled (was purple text glow pulse) ──────── */
+/* ── Vault glow — very subtle purple tint ────────────────────── */
 .vault-glow {
-  /* No-op */
+  text-shadow: 0 0 20px rgba(106, 13, 173, 0.15);
 }
 
 /* ── Live indicator dot — toned down ──────────────────────────── */

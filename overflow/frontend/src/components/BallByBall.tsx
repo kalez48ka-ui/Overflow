@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { BallEvent } from "@/types";
-import { cn, formatTimeAgo } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 interface BallByBallProps {
   events: BallEvent[];
@@ -12,14 +12,14 @@ interface BallByBallProps {
 function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean; isExtra: boolean }) {
   if (isWicket) {
     return (
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F85149] text-xs font-bold text-white">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E4002B] text-[10px] font-bold text-white">
         W
       </span>
     );
   }
   if (isExtra) {
     return (
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#8B949E] text-xs font-bold text-[#8B949E]">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#484F58] text-[10px] font-bold text-[#8B949E]">
         +1
       </span>
     );
@@ -30,13 +30,13 @@ function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean
       : runs === 4
       ? "bg-[#3FB950] text-white"
       : runs === 0
-      ? "bg-[#21262D] text-[#8B949E]"
-      : "bg-[#30363D] text-[#E6EDF3]";
+      ? "bg-[#21262D] text-[#484F58]"
+      : "bg-[#21262D] text-[#E6EDF3]";
 
   return (
     <span
       className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold font-mono",
         color
       )}
     >
@@ -112,12 +112,9 @@ export function BallByBall({ events }: BallByBallProps) {
     .reverse();
 
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
-      <div className="flex items-center justify-between border-b border-[#30363D] px-4 py-3">
-        <div>
-          <h3 className="text-sm font-semibold text-[#E6EDF3]">Ball by Ball</h3>
-          <p className="text-xs text-[#8B949E]">Live commentary feed</p>
-        </div>
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
+      <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2.5">
+        <span className="text-xs text-[#8B949E]">Commentary</span>
         {/* Current over mini-dots */}
         {currentOverEvents.length > 0 && (
           <div className="flex items-center gap-1" aria-label={`Over ${currentOverEvents[0]?.over} balls`}>
@@ -153,7 +150,7 @@ export function BallByBall({ events }: BallByBallProps) {
 
       <div
         ref={scrollRef}
-        className="h-72 overflow-y-auto p-3 space-y-2"
+        className="h-72 overflow-y-auto"
         style={{ scrollBehavior: "smooth" }}
         role="log"
         aria-label="Ball by ball commentary"
@@ -163,13 +160,19 @@ export function BallByBall({ events }: BallByBallProps) {
           {localEvents.map((event, i) => (
             <motion.div
               key={event.id}
-              initial={i === 0 ? { opacity: 0, y: -16 } : false}
+              initial={i === 0 ? { opacity: 0, y: -12 } : false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
               className={cn(
-                "flex items-start gap-3 rounded-lg px-3 py-2.5",
-                i === 0 ? "bg-[#21262D]" : "bg-transparent",
-                event.isWicket && "border border-[#F85149]/30"
+                "flex items-center gap-2.5 px-4 py-2 border-l-2",
+                event.isWicket
+                  ? "border-l-[#E4002B] bg-[#E4002B]/05"
+                  : event.runs === 6
+                  ? "border-l-[#388BFD] bg-[#388BFD]/05"
+                  : event.runs === 4
+                  ? "border-l-[#3FB950]/50"
+                  : "border-l-transparent",
+                i === 0 && "bg-[#21262D]/50"
               )}
             >
               <RunBadge
@@ -180,20 +183,20 @@ export function BallByBall({ events }: BallByBallProps) {
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
-                    "text-xs leading-relaxed",
+                    "text-xs",
                     event.isWicket
                       ? "font-semibold text-[#F85149]"
                       : event.runs >= 4
-                      ? "font-semibold text-[#3FB950]"
-                      : "text-[#C9D1D9]"
+                      ? "font-medium text-[#E6EDF3]"
+                      : "text-[#8B949E]"
                   )}
                 >
                   {event.description}
                 </p>
-                <p className="mt-0.5 text-[10px] text-[#8B949E]">
-                  Over {event.over}.{event.ball} · {formatTimeAgo(event.timestamp)}
-                </p>
               </div>
+              <span className="shrink-0 text-[10px] font-mono tabular-nums text-[#484F58]">
+                {event.over}.{event.ball}
+              </span>
             </motion.div>
           ))}
         </AnimatePresence>

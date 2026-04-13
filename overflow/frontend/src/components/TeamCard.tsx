@@ -117,15 +117,15 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
       <Link href={`/trade/${team.id.toLowerCase()}`} className="block group">
         <div
           ref={cardRef}
-          className="relative overflow-hidden rounded-xl bg-[#161B22] p-5 transition-all duration-300 hover:translate-y-[-2px]"
+          className="card-border-glow relative overflow-hidden rounded-xl bg-[#161B22] p-5 transition-all duration-300 hover:translate-y-[-2px]"
           style={{
-            border: "1px solid #30363D",
+            border: "1px solid #21262D",
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "#3D444D";
+            e.currentTarget.style.borderColor = "#30363D";
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "#30363D";
+            e.currentTarget.style.borderColor = "#21262D";
           }}
         >
           {/* Subtle accent */}
@@ -208,7 +208,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-3 gap-2 border-t border-[#30363D]/60 pt-3">
+          <div className="grid grid-cols-3 gap-2 border-t border-[#21262D]/60 pt-3">
             <div>
               <p className="text-[10px] text-[#8B949E]">Volume</p>
               <p className="text-xs font-bold tabular-nums text-[#E6EDF3]">

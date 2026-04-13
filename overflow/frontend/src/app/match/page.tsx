@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Brain,
-  Flame,
   TrendingUp,
   Shield,
-  Zap,
   AlertTriangle,
   ArrowRight,
 } from "lucide-react";
@@ -17,7 +14,7 @@ import { BallByBall } from "@/components/BallByBall";
 import { TradingChart } from "@/components/TradingChart";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
 import { AIAnalysis } from "@/components/AIAnalysis";
-import { CountUp, MouseTrackCard, StaggerReveal } from "@/components/motion";
+import { CountUp, StaggerReveal } from "@/components/motion";
 import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA, MOCK_FAN_WARS } from "@/lib/mockData";
 import { fanWarsApi } from "@/lib/api";
 import type { FanWarStatus } from "@/lib/api";
@@ -124,21 +121,17 @@ function AiAnalysisPanel() {
   }, [fetchSignals]);
 
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
-        <Brain className="h-4 w-4 text-[#58A6FF]" />
-        <h3 className="text-sm font-semibold text-[#E6EDF3]">AI Analysis</h3>
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] overflow-hidden">
+      <div className="flex items-center gap-2 border-b border-[#21262D] px-4 py-2.5">
+        <span className="text-xs text-[#8B949E]">AI Signals</span>
         {refreshing && (
-          <span className="flex items-center gap-1 text-[10px] text-[#8B949E]">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#58A6FF]" />
-            Refreshing…
-          </span>
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#58A6FF]" />
         )}
-        <span className="ml-auto rounded-full bg-[#58A6FF]/10 border border-[#58A6FF]/30 px-2 py-0.5 text-[10px] font-medium text-[#58A6FF]">
-          Live Engine
+        <span className="ml-auto text-[10px] font-mono text-[#484F58]">
+          live
         </span>
       </div>
-      <StaggerReveal className="p-4 space-y-3" staggerDelay={0.1} yOffset={16}>
+      <StaggerReveal className="p-3 space-y-2" staggerDelay={0.1} yOffset={16}>
         {signals.map((signal) => (
           <motion.div
             key={signal.type}
@@ -203,44 +196,38 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
   ];
 
   return (
-    <MouseTrackCard maxTilt={3} spotlightOpacity={0.06} className="rounded-xl">
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
-      <h3 className="mb-3 text-sm font-semibold text-[#E6EDF3]">Quick Trade</h3>
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
       <div className="grid grid-cols-2 gap-3">
         {teams.map((team) => (
-          <div
-            key={team.id}
-            className="rounded-lg border p-3"
-            style={{ borderColor: `${team.color}30` }}
-          >
+          <div key={team.id}>
             <div className="mb-2 flex items-center gap-2">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white"
+                className="flex h-6 w-6 items-center justify-center rounded-full text-[9px] font-bold text-white"
                 style={{ backgroundColor: team.color }}
               >
                 {team.id}
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#E6EDF3]">{team.symbol}</p>
-                <p className="text-[10px] text-[#8B949E]">${formatPrice(team.price)}</p>
+                <span className="text-xs font-semibold text-[#E6EDF3]">{team.symbol}</span>
+                <span className="ml-1.5 text-[10px] font-mono tabular-nums text-[#8B949E]">${formatPrice(team.price)}</span>
+                <span className={cn(
+                  "ml-1 text-[10px] font-mono tabular-nums",
+                  team.change >= 0 ? "text-[#3FB950]" : "text-[#F85149]"
+                )}>
+                  {formatPercent(team.change)}
+                </span>
               </div>
             </div>
-            <p className={cn(
-              "mb-2 text-xs font-medium",
-              team.change >= 0 ? "text-[#3FB950]" : "text-[#F85149]"
-            )}>
-              {formatPercent(team.change)}
-            </p>
             <div className="grid grid-cols-2 gap-1">
               <Link
                 href={`/trade/${team.symbol.replace('$', '').toLowerCase()}`}
-                className="rounded-md bg-[#238636] py-2.5 text-center text-xs font-bold text-white hover:bg-[#2EA043] transition-colors"
+                className="rounded bg-[#238636] py-2 text-center text-xs font-bold text-white hover:bg-[#2EA043] transition-colors"
               >
                 Buy
               </Link>
               <Link
                 href={`/trade/${team.symbol.replace('$', '').toLowerCase()}`}
-                className="rounded-md bg-[#DA3633] py-2.5 text-center text-xs font-bold text-white hover:bg-[#F85149] transition-colors"
+                className="rounded bg-[#DA3633] py-2 text-center text-xs font-bold text-white hover:bg-[#F85149] transition-colors"
               >
                 Sell
               </Link>
@@ -249,7 +236,6 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
         ))}
       </div>
     </div>
-    </MouseTrackCard>
   );
 }
 
@@ -260,32 +246,29 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
     score >= 75 ? "#F85149" : score >= 50 ? "#FDB913" : score >= 25 ? "#58A6FF" : "#3FB950";
 
   return (
-    <div className="rounded-xl border border-[#30363D] bg-[#161B22] p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-[#FDB913]" />
-          <h3 className="text-sm font-semibold text-[#E6EDF3]">Upset Score</h3>
-        </div>
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs text-[#8B949E]">Upset Score</span>
         <span
-          className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-          style={{ color: levelColor, backgroundColor: `${levelColor}15` }}
+          className="text-[10px] font-bold font-mono"
+          style={{ color: levelColor }}
         >
           {level}
         </span>
       </div>
 
-      <div className="mb-3 text-center">
-        <p className="text-5xl font-black tabular-nums" style={{ color: levelColor }}>
+      <div className="flex items-baseline gap-2 mb-3">
+        <span className="text-4xl font-black font-mono tabular-nums" style={{ color: levelColor }}>
           <CountUp value={score} duration={1.5} />
-        </p>
-        <p className="text-xs text-[#8B949E]">out of 100</p>
+        </span>
+        <span className="text-xs text-[#484F58]">/ 100</span>
       </div>
 
-      <div className="h-3 overflow-hidden rounded-full bg-[#21262D]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-[#21262D] mb-3">
         <motion.div
           className="h-full rounded-full"
           style={{
-            background: `linear-gradient(to right, #3FB950, #FDB913, #F85149)`,
+            backgroundColor: levelColor,
             width: `${score}%`,
           }}
           initial={{ width: 0 }}
@@ -294,16 +277,16 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-center">
-        <div className="rounded-lg bg-[#0D1117] py-2">
-          <p className="text-[10px] text-[#8B949E]">Vault Multiplier</p>
-          <p className="text-sm font-bold text-[#6A0DAD]">1.8x</p>
+      <div className="flex items-center justify-between text-xs">
+        <div>
+          <span className="text-[#484F58]">Multiplier </span>
+          <span className="font-bold font-mono tabular-nums text-[#E6EDF3]">1.8x</span>
         </div>
-        <div className="rounded-lg bg-[#0D1117] py-2">
-          <p className="text-[10px] text-[#8B949E]">Potential Payout</p>
-          <p className="text-sm font-bold text-[#E6EDF3]">
+        <div>
+          <span className="text-[#484F58]">Payout </span>
+          <span className="font-bold font-mono tabular-nums text-[#E6EDF3]">
             {formatCurrency(vaultBalance * 1.8)}
-          </p>
+          </span>
         </div>
       </div>
     </div>
@@ -353,14 +336,10 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
   const homePercent = total > 0 ? ((war.totalHomeLocked / total) * 100).toFixed(0) : "50";
 
   return (
-    <MouseTrackCard maxTilt={3} spotlightOpacity={0.05}>
-      <div className="rounded-xl border border-[#F85149]/30 bg-[#161B22] p-4">
+    <div className="rounded-lg border border-[#21262D] bg-[#161B22] p-4">
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Flame className="h-4 w-4 text-[#F85149]" />
-            <h3 className="text-sm font-semibold text-[#E6EDF3]">Fan War</h3>
-          </div>
-          <span className="rounded-full bg-[#F85149]/15 px-2 py-0.5 text-[10px] font-bold text-[#F85149]">
+          <span className="text-xs text-[#8B949E]">Fan War</span>
+          <span className="text-[10px] font-bold font-mono text-[#F85149]">
             ACTIVE
           </span>
         </div>
@@ -373,13 +352,13 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
             >
               {war.homeTeamId}
             </div>
-            <span className="tabular-nums text-[#E6EDF3]">
+            <span className="font-mono tabular-nums text-[#E6EDF3]">
               {war.totalHomeLocked.toLocaleString()}
             </span>
           </div>
-          <span className="text-[#8B949E]">vs</span>
+          <span className="text-[#484F58]">vs</span>
           <div className="flex items-center gap-1.5">
-            <span className="tabular-nums text-[#E6EDF3]">
+            <span className="font-mono tabular-nums text-[#E6EDF3]">
               {war.totalAwayLocked.toLocaleString()}
             </span>
             <div
@@ -391,8 +370,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
           </div>
         </div>
 
-        {/* Mini distribution bar */}
-        <div className="mb-3 flex h-1.5 overflow-hidden rounded-full bg-[#21262D]">
+        <div className="mb-3 flex h-1 overflow-hidden rounded-full bg-[#21262D]">
           <div
             className="h-full rounded-l-full"
             style={{
@@ -409,22 +387,21 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
           />
         </div>
 
-        <div className="mb-3 text-center">
-          <p className="text-[10px] text-[#8B949E]">Boost Pool</p>
-          <p className="text-sm font-black tabular-nums text-[#FDB913]">
+        <div className="mb-3 flex items-center justify-between text-xs">
+          <span className="text-[#484F58]">Boost Pool</span>
+          <span className="font-bold font-mono tabular-nums text-[#FDB913]">
             {war.boostPool.toLocaleString()} WIRE
-          </p>
+          </span>
         </div>
 
         <Link
           href="/fan-wars"
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#F85149] py-2 text-xs font-bold text-white transition-colors hover:bg-[#DA3633]"
+          className="flex w-full items-center justify-center gap-1.5 rounded bg-[#E4002B] py-2 text-xs font-bold text-white transition-colors hover:bg-[#C00025]"
         >
           Lock Tokens
           <ArrowRight className="h-3 w-3" />
         </Link>
-      </div>
-    </MouseTrackCard>
+    </div>
   );
 }
 
@@ -677,7 +654,7 @@ export default function MatchPage() {
       className="min-h-screen bg-[#0D1117]"
     >
       {/* Match status header */}
-      <div className="border-b border-[#30363D] bg-[#161B22]">
+      <div className="border-b border-[#21262D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             {hasLiveMatch ? (
@@ -709,16 +686,15 @@ export default function MatchPage() {
       {loading ? (
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="flex items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#30363D] border-t-[#58A6FF]" />
-            <span className="ml-3 text-sm text-[#8B949E]">Loading match data...</span>
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" />
           </div>
         </div>
       ) : !hasLiveMatch ? (
         /* No live match — show upcoming match info and trading UI */
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          <div className="mb-6 rounded-xl border border-[#58A6FF]/30 bg-[#58A6FF]/05 p-6">
-            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-[#58A6FF]">
-              No live match right now
+          <div className="mb-6 rounded-lg border border-[#21262D] bg-[#161B22] p-5">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#484F58]">
+              No live match
             </p>
             {upcomingMatch ? (
               <>
@@ -749,16 +725,15 @@ export default function MatchPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
             <div className="space-y-4">
               <LiveScorecard match={matchData} />
-              <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
-                <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
-                  <span className="text-sm font-medium text-[#E6EDF3]">Price Chart</span>
+              <div>
+                <div className="flex items-center gap-2 mb-2 px-1">
                   <div className="ml-auto flex items-center gap-1">
                     {matchTeams.map(({ id, team: t }) => (
                       <button
                         key={id}
                         onClick={() => setActiveChart(id)}
                         className={cn(
-                          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                          "rounded px-2.5 py-1 text-xs font-semibold transition-all",
                           activeChart === id
                             ? "text-white"
                             : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
@@ -770,7 +745,7 @@ export default function MatchPage() {
                     ))}
                   </div>
                 </div>
-                <div className="p-2">
+                <div>
                   <TradingChart
                     data={CANDLESTICK_DATA[activeChart] ?? CANDLESTICK_DATA["IU"]}
                     teamColor={PSL_TEAMS.find((t) => t.id === activeChart)?.color ?? "#58A6FF"}
@@ -782,6 +757,8 @@ export default function MatchPage() {
             </div>
             <div className="space-y-4">
               <UpsetScoreTracker score={matchData.upsetScore} vaultBalance={matchData.vaultBalance} />
+              <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
+              <FanWarWidget team1Id={team1Id} team2Id={team2Id} />
               <UpsetVaultDisplay
                 balance={VAULT_DATA.currentBalance}
                 multiplier={VAULT_DATA.currentMultiplier}
@@ -793,42 +770,26 @@ export default function MatchPage() {
                 matchContext={matchData.matchType}
                 defaultOpen={false}
               />
-              <FanWarWidget team1Id={team1Id} team2Id={team2Id} />
-              <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
             </div>
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
             {/* Left column */}
-            <div className="space-y-4">
-              {/* Scorecard — pulsing red border when live */}
-              <motion.div
-                animate={{
-                  boxShadow: [
-                    "0 0 0 0 rgba(248, 81, 73, 0)",
-                    "0 0 0 3px rgba(248, 81, 73, 0.3)",
-                    "0 0 0 0 rgba(248, 81, 73, 0)",
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="rounded-xl"
-              >
-                <LiveScorecard match={matchData} />
-              </motion.div>
+            <div className="space-y-6">
+              <LiveScorecard match={matchData} />
 
               {/* Price chart with team switcher */}
-              <div className="rounded-xl border border-[#30363D] bg-[#161B22] overflow-hidden">
-                <div className="flex items-center gap-2 border-b border-[#30363D] px-4 py-3">
-                  <span className="text-sm font-medium text-[#E6EDF3]">Price Chart</span>
+              <div>
+                <div className="flex items-center gap-2 mb-2 px-1">
                   <div className="ml-auto flex items-center gap-1">
                     {matchTeams.map(({ id, team: t }) => (
                       <button
                         key={id}
                         onClick={() => setActiveChart(id)}
                         className={cn(
-                          "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                          "rounded px-2.5 py-1 text-xs font-semibold transition-all",
                           activeChart === id
                             ? "text-white"
                             : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
@@ -844,7 +805,7 @@ export default function MatchPage() {
                     ))}
                   </div>
                 </div>
-                <div className="p-2">
+                <div>
                   <TradingChart
                     data={CANDLESTICK_DATA[activeChart] ?? CANDLESTICK_DATA["IU"]}
                     teamColor={PSL_TEAMS.find((t) => t.id === activeChart)?.color ?? "#58A6FF"}
@@ -860,6 +821,8 @@ export default function MatchPage() {
             {/* Right column */}
             <div className="space-y-4">
               <UpsetScoreTracker score={matchData.upsetScore} vaultBalance={matchData.vaultBalance} />
+              <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
+              <FanWarWidget team1Id={team1Id} team2Id={team2Id} />
               <UpsetVaultDisplay
                 balance={VAULT_DATA.currentBalance}
                 multiplier={VAULT_DATA.currentMultiplier}
@@ -871,8 +834,6 @@ export default function MatchPage() {
                 matchContext={matchData.matchType}
                 defaultOpen={false}
               />
-              <FanWarWidget team1Id={team1Id} team2Id={team2Id} />
-              <MatchTradingButtons team1Id={team1Id} team2Id={team2Id} />
             </div>
           </div>
         </div>
