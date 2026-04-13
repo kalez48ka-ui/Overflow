@@ -12,6 +12,8 @@ import {
   TrendingUp,
   BarChart2,
   Activity,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api";
@@ -111,18 +113,24 @@ function SkeletonRow() {
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("pnl");
 
-  useEffect(() => {
+  const fetchLeaderboard = (sort: SortKey) => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
 
     (async () => {
       try {
-        const data = await api.leaderboard.get(sortKey, 50);
+        const data = await api.leaderboard.get(sort, 50);
         if (!cancelled) setEntries(data);
-      } catch {
-        if (!cancelled) setEntries([]);
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setEntries([]);
+          const msg = err instanceof Error ? err.message : "Failed to load leaderboard";
+          setError(msg);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -131,6 +139,10 @@ export default function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
+  };
+
+  useEffect(() => {
+    return fetchLeaderboard(sortKey);
   }, [sortKey]);
 
   return (
@@ -223,6 +235,27 @@ export default function LeaderboardPage() {
                   Array.from({ length: 8 }).map((_, i) => (
                     <SkeletonRow key={i} />
                   ))
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-16 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <AlertTriangle className="h-8 w-8 text-[#F85149]" />
+                        <p className="text-sm text-[#E6EDF3]">
+                          Something went wrong
+                        </p>
+                        <p className="text-xs text-[#8B949E] max-w-xs">
+                          {error}
+                        </p>
+                        <button
+                          onClick={() => fetchLeaderboard(sortKey)}
+                          className="mt-2 flex items-center gap-1.5 rounded-lg border border-[#30363D] bg-[#21262D] px-4 py-2 text-xs font-medium text-[#E6EDF3] transition-colors hover:border-[#58A6FF] hover:text-[#58A6FF]"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          Retry
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
                 ) : entries.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-16 text-center">

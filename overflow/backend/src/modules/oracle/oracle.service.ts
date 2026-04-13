@@ -81,6 +81,8 @@ export class OracleService {
         where: { id: matchId },
         data: {
           winnerId,
+          status: 'COMPLETED',
+          endTime: new Date(),
           isUpset: true,
           upsetScore,
         },
@@ -89,7 +91,11 @@ export class OracleService {
     } else {
       await this.prisma.match.update({
         where: { id: matchId },
-        data: { winnerId },
+        data: {
+          winnerId,
+          status: 'COMPLETED',
+          endTime: new Date(),
+        },
       });
     }
 
@@ -148,7 +154,7 @@ export class OracleService {
     const teams = await this.prisma.team.findMany();
     for (const team of teams) {
       const taxMap: Record<number, number> = {
-        1: 2, 2: 3, 3: 5, 4: 7, 5: 9, 6: 12,
+        1: 2, 2: 3, 3: 5, 4: 7, 5: 9, 6: 12, 7: 15, 8: 15,
       };
       const newTax = taxMap[team.ranking] ?? 5;
       if (team.sellTaxRate !== newTax) {

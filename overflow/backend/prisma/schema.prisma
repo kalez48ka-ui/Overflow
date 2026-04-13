@@ -71,6 +71,8 @@ model BallEvent {
   wicketType String?
   commentary String?
   timestamp  DateTime @default(now())
+
+  @@index([matchId, timestamp])
 }
 
 model Trade {
@@ -86,6 +88,9 @@ model Trade {
   taxRate    Float
   txHash     String?
   createdAt  DateTime @default(now())
+
+  @@index([wallet, createdAt])
+  @@index([teamId, createdAt])
 }
 
 model Position {

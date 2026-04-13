@@ -169,7 +169,7 @@ export function createTradesRouter(
       });
 
       // Handle error results from the transaction
-      if ('error' in result) {
+      if ('error' in result && result.status) {
         res.status(result.status).json({ error: result.error });
         return;
       }

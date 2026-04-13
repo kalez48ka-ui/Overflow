@@ -590,6 +590,7 @@ export class CricketDataService {
     return this.prisma.ballEvent.findMany({
       where: { matchId },
       orderBy: { timestamp: 'asc' },
+      take: 300,
     });
   }
 

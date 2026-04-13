@@ -140,6 +140,11 @@ export class CricApiClient {
     const { data } = await this.http.get<CricApiResponse<{ info: CricApiSeries; matchList: CricApiMatch[] }>>('/series_info', {
       params: { apikey: this.apiKey, id: seriesId },
     });
-    return data;
+    return this.stripApiKey(data);
+  }
+
+  /** Remove the apikey field from API responses to prevent leaking credentials */
+  private stripApiKey<T>(response: CricApiResponse<T>): CricApiResponse<T> {
+    return { ...response, apikey: '' };
   }
 }

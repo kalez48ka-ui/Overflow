@@ -23,6 +23,7 @@ import { PSL_TEAMS, GLOBAL_STATS } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import type { PSLTeam } from "@/types";
 import type { VaultState } from "@/lib/api";
+import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
 
 function FeaturePill({
@@ -498,7 +499,7 @@ export default function LandingPage() {
                   Current Vault Balance
                 </p>
                 <p className="mt-3 text-4xl font-black text-[#E6EDF3] sm:text-5xl md:text-6xl tabular-nums tracking-tight">
-                  $42.8K
+                  {formatCurrency(vaultState?.balance ?? GLOBAL_STATS.upsetVaultBalance)}
                 </p>
                 <p className="mt-2 text-sm font-medium text-[#A855F7]">
                   Next payout: IU vs LQ tonight

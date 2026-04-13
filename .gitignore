@@ -20,7 +20,7 @@ graphify/
 ui-ux-pro-max-skill/
 .claude/
 
-# Secrets — never commit
+# Secrets
 *.pem
 *.key
 *.secret
@@ -29,3 +29,11 @@ ui-ux-pro-max-skill/
 **/.secrets
 mnemonic.txt
 private-key.txt
+
+# Data files (generated at runtime, not source code)
+**/chromadb/
+**/data/raw/
+*.zip
+*.bin
+*.sqlite3
+*.pdf

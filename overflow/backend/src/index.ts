@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import rateLimit from 'express-rate-limit';
 import { Server as SocketServer } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
 import { config } from './config';
@@ -35,12 +36,38 @@ const io = new SocketServer(server, {
   },
 });
 
+// Rate limiters
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,  // 1 minute
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later' },
+});
+
+const tradesLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trade rate limit exceeded, please wait before submitting more trades' },
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Admin rate limit exceeded' },
+});
+
 // Middleware
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST'],
 }));
 app.use(express.json({ limit: '1mb' }));
+app.use(globalLimiter);
 
 // Services
 const priceService = new PriceService(prisma);
@@ -55,14 +82,14 @@ cricketService.setSocket(io);
 const oracleService = new OracleService(prisma, vaultService);
 oracleService.setSocket(io);
 
-// Routes
+// Routes (with per-path rate limiters for sensitive endpoints)
 app.use('/api/teams', createTeamsRouter(prisma, priceService));
-app.use('/api/trades', createTradesRouter(prisma, priceService, vaultService, io));
+app.use('/api/trades', tradesLimiter, createTradesRouter(prisma, priceService, vaultService, io));
 app.use('/api/matches', createMatchesRouter(cricketService));
 app.use('/api/portfolio', createPortfolioRouter(prisma));
 app.use('/api/vault', createVaultRouter(vaultService));
 app.use('/api/ai', createAiRouter(prisma));
-app.use('/api/admin', createAdminRouter(prisma, oracleService, vaultService));
+app.use('/api/admin', adminLimiter, createAdminRouter(prisma, oracleService, vaultService));
 app.use('/api/leaderboard', createLeaderboardRouter(prisma));
 
 // Health check
@@ -71,15 +98,26 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Socket.io connection handler
+const ALPHANUMERIC_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
+
 io.on('connection', (socket) => {
   console.log(`[Socket] Client connected: ${socket.id}`);
 
-  socket.on('subscribe:team', (symbol: string) => {
-    socket.join(`team:${symbol}`);
-    console.log(`[Socket] ${socket.id} subscribed to team:${symbol}`);
+  socket.on('subscribe:team', (symbol: unknown) => {
+    if (typeof symbol !== 'string' || !ALPHANUMERIC_PATTERN.test(symbol)) {
+      socket.emit('error', { message: 'Invalid team symbol format' });
+      return;
+    }
+    const sanitized = symbol.toUpperCase();
+    socket.join(`team:${sanitized}`);
+    console.log(`[Socket] ${socket.id} subscribed to team:${sanitized}`);
   });
 
-  socket.on('subscribe:match', (matchId: string) => {
+  socket.on('subscribe:match', (matchId: unknown) => {
+    if (typeof matchId !== 'string' || !ALPHANUMERIC_PATTERN.test(matchId)) {
+      socket.emit('error', { message: 'Invalid match ID format' });
+      return;
+    }
     socket.join(`match:${matchId}`);
     console.log(`[Socket] ${socket.id} subscribed to match:${matchId}`);
   });

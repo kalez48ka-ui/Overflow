@@ -5,7 +5,7 @@ import { WalletProvider } from "@/components/WalletProvider";
 import { Navbar } from "@/components/Navbar";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/ToastProvider";
-import { Zap, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 const inter = Inter({
   subsets: ["latin"],

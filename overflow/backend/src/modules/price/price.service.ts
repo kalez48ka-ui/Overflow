@@ -30,6 +30,8 @@ export class PriceService {
       4: 7,
       5: 9,
       6: 12,
+      7: 15,
+      8: 15,
     };
     return taxMap[teamRanking] ?? 5;
   }

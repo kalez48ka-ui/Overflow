@@ -561,7 +561,7 @@ function TeamRow({
       {/* Team */}
       <td className="px-3 sm:px-4 py-3.5">
         <Link
-          href={`/trade/${team.id}`}
+          href={`/trade/${team.id.toLowerCase()}`}
           className="flex items-center gap-2 sm:gap-3 group/link"
         >
           <div
@@ -625,7 +625,7 @@ function TeamRow({
       {/* Token Price */}
       <td className="px-4 py-3.5 text-right">
         <Link
-          href={`/trade/${team.id}`}
+          href={`/trade/${team.id.toLowerCase()}`}
           className="tabular-nums font-semibold text-[#E6EDF3] hover:text-[#58A6FF] transition-colors"
         >
           ${formatPrice(team.price)}
