@@ -39,21 +39,25 @@ function useIsTouchDevice() {
 
 export function LiquidBlobs() {
   const isTouch = useIsTouchDevice();
+  const [mounted, setMounted] = useState(false);
 
   // Track mouse position with heavy springs so blobs lag behind the cursor
-  const mouseX = useMotionValue(
-    typeof window !== "undefined" ? window.innerWidth / 2 : 500
-  );
-  const mouseY = useMotionValue(
-    typeof window !== "undefined" ? window.innerHeight / 2 : 500
-  );
+  const mouseX = useMotionValue(500);
+  const mouseY = useMotionValue(500);
 
   const springConfig = { damping: 60, stiffness: 20, mass: 3 };
   const blobX = useSpring(mouseX, springConfig);
   const blobY = useSpring(mouseY, springConfig);
 
   useEffect(() => {
-    if (isTouch) return;
+    setMounted(true);
+    // Centre on actual viewport
+    mouseX.set(window.innerWidth / 2);
+    mouseY.set(window.innerHeight / 2);
+  }, [mouseX, mouseY]);
+
+  useEffect(() => {
+    if (isTouch || !mounted) return;
 
     function handleMove(e: MouseEvent) {
       mouseX.set(e.clientX);
@@ -62,10 +66,12 @@ export function LiquidBlobs() {
 
     window.addEventListener("mousemove", handleMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMove);
-  }, [isTouch, mouseX, mouseY]);
+  }, [isTouch, mounted, mouseX, mouseY]);
 
-  // Skip rendering entirely on touch devices
-  if (isTouch) return null;
+  // Don't render on server or touch devices — prevents hydration mismatch
+  if (!mounted || isTouch) return null;
+
+  const firstPath = BLOB_PATHS[0] ?? "";
 
   return (
     <div
@@ -81,7 +87,6 @@ export function LiquidBlobs() {
             y: blobY,
             translateX: "-50%",
             translateY: "-50%",
-            // Offset each blob slightly so they don't perfectly overlap
             marginLeft: `${(idx - 1) * 180}px`,
             marginTop: `${(idx - 1) * 80}px`,
           }}
@@ -96,12 +101,10 @@ export function LiquidBlobs() {
             }}
           >
             <motion.path
-              d={BLOB_PATHS[0]}
+              d={firstPath}
               fill={blob.color}
               fillOpacity={blob.opacity}
-              animate={{
-                d: BLOB_PATHS,
-              }}
+              animate={{ d: BLOB_PATHS }}
               transition={{
                 d: {
                   duration: blob.speed,

@@ -61,7 +61,7 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
    */
   router.get('/:matchId', async (req: Request, res: Response) => {
     try {
-      const { matchId } = req.params;
+      const matchId = String(req.params.matchId);
       const status = await fanWarsService.getStatus(matchId);
       res.json(status);
     } catch (err: unknown) {
@@ -82,7 +82,7 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
    */
   router.post('/:matchId/lock', async (req: Request, res: Response) => {
     try {
-      const { matchId } = req.params;
+      const matchId = String(req.params.matchId);
       const { wallet, teamId, amount } = req.body;
 
       if (!wallet || !teamId || amount === undefined) {
@@ -130,7 +130,7 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
    */
   router.post('/:matchId/claim', async (req: Request, res: Response) => {
     try {
-      const { matchId } = req.params;
+      const matchId = String(req.params.matchId);
       const { wallet } = req.body;
 
       if (!wallet) {

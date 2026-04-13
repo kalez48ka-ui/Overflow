@@ -78,12 +78,12 @@ priceService.setSocket(io);
 const vaultService = new VaultService(prisma);
 vaultService.setSocket(io);
 
+const fanWarsService = new FanWarsService(prisma);
+fanWarsService.setSocket(io);
+
 const cricketService = new CricketDataService(prisma);
 cricketService.setSocket(io);
 cricketService.setFanWarsService(fanWarsService);
-
-const fanWarsService = new FanWarsService(prisma);
-fanWarsService.setSocket(io);
 
 const oracleService = new OracleService(prisma, vaultService, fanWarsService);
 oracleService.setSocket(io);
@@ -127,6 +127,15 @@ io.on('connection', (socket) => {
     }
     socket.join(`match:${matchId}`);
     console.log(`[Socket] ${socket.id} subscribed to match:${matchId}`);
+  });
+
+  socket.on('subscribe:fanwar', (matchId: unknown) => {
+    if (typeof matchId !== 'string' || !ALPHANUMERIC_PATTERN.test(matchId)) {
+      socket.emit('error', { message: 'Invalid match ID format' });
+      return;
+    }
+    socket.join(`fanwar:${matchId}`);
+    console.log(`[Socket] ${socket.id} subscribed to fanwar:${matchId}`);
   });
 
   socket.on('disconnect', () => {

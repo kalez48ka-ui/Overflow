@@ -4,10 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Brain,
+  Flame,
   TrendingUp,
   Shield,
   Zap,
   AlertTriangle,
+  ArrowRight,
 } from "lucide-react";
 import { io, Socket } from "socket.io-client";
 import { LiveScorecard } from "@/components/LiveScorecard";
@@ -16,7 +18,9 @@ import { TradingChart } from "@/components/TradingChart";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
 import { AIAnalysis } from "@/components/AIAnalysis";
 import { CountUp, MouseTrackCard, StaggerReveal } from "@/components/motion";
-import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA } from "@/lib/mockData";
+import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA, MOCK_FAN_WARS } from "@/lib/mockData";
+import { fanWarsApi } from "@/lib/api";
+import type { FanWarStatus } from "@/lib/api";
 import { api } from "@/lib/api";
 import type { MatchInfo } from "@/lib/api";
 import type { MatchData, BattingTeamData } from "@/types";
@@ -303,6 +307,124 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
         </div>
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fan War Widget — compact sidebar card for match page
+// ---------------------------------------------------------------------------
+
+function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }) {
+  const [war, setWar] = useState<FanWarStatus | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const active = await fanWarsApi.getActive();
+        if (cancelled) return;
+        // Find a fan war matching either team in the current match
+        const match = active.find(
+          (w) =>
+            (w.homeTeamId === team1Id && w.awayTeamId === team2Id) ||
+            (w.homeTeamId === team2Id && w.awayTeamId === team1Id),
+        );
+        if (match) {
+          setWar(match);
+        }
+      } catch {
+        // Fallback to mock data
+        const mock = MOCK_FAN_WARS.find(
+          (w) =>
+            (w.homeTeamId === team1Id && w.awayTeamId === team2Id) ||
+            (w.homeTeamId === team2Id && w.awayTeamId === team1Id),
+        );
+        if (!cancelled && mock) {
+          setWar(mock as FanWarStatus);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [team1Id, team2Id]);
+
+  if (!war || war.status === "SETTLED" || war.status === "CANCELLED") return null;
+
+  const total = war.totalHomeLocked + war.totalAwayLocked;
+  const homePercent = total > 0 ? ((war.totalHomeLocked / total) * 100).toFixed(0) : "50";
+
+  return (
+    <MouseTrackCard maxTilt={3} spotlightOpacity={0.05}>
+      <div className="rounded-xl border border-[#F85149]/30 bg-[#161B22] p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Flame className="h-4 w-4 text-[#F85149]" />
+            <h3 className="text-sm font-semibold text-[#E6EDF3]">Fan War</h3>
+          </div>
+          <span className="rounded-full bg-[#F85149]/15 px-2 py-0.5 text-[10px] font-bold text-[#F85149]">
+            ACTIVE
+          </span>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5">
+            <div
+              className="flex h-5 w-5 items-center justify-center rounded-full text-[8px] font-bold text-white"
+              style={{ backgroundColor: war.homeTeamColor }}
+            >
+              {war.homeTeamId}
+            </div>
+            <span className="tabular-nums text-[#E6EDF3]">
+              {war.totalHomeLocked.toLocaleString()}
+            </span>
+          </div>
+          <span className="text-[#8B949E]">vs</span>
+          <div className="flex items-center gap-1.5">
+            <span className="tabular-nums text-[#E6EDF3]">
+              {war.totalAwayLocked.toLocaleString()}
+            </span>
+            <div
+              className="flex h-5 w-5 items-center justify-center rounded-full text-[8px] font-bold text-white"
+              style={{ backgroundColor: war.awayTeamColor }}
+            >
+              {war.awayTeamId}
+            </div>
+          </div>
+        </div>
+
+        {/* Mini distribution bar */}
+        <div className="mb-3 flex h-1.5 overflow-hidden rounded-full bg-[#21262D]">
+          <div
+            className="h-full rounded-l-full"
+            style={{
+              width: `${homePercent}%`,
+              backgroundColor: war.homeTeamColor,
+            }}
+          />
+          <div
+            className="h-full rounded-r-full"
+            style={{
+              width: `${100 - parseInt(homePercent)}%`,
+              backgroundColor: war.awayTeamColor,
+            }}
+          />
+        </div>
+
+        <div className="mb-3 text-center">
+          <p className="text-[10px] text-[#8B949E]">Boost Pool</p>
+          <p className="text-sm font-black tabular-nums text-[#FDB913]">
+            {war.boostPool.toLocaleString()} WIRE
+          </p>
+        </div>
+
+        <Link
+          href="/fan-wars"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#F85149] py-2 text-xs font-bold text-white transition-colors hover:bg-[#DA3633]"
+        >
+          Lock Tokens
+          <ArrowRight className="h-3 w-3" />
+        </Link>
+      </div>
+    </MouseTrackCard>
   );
 }
 

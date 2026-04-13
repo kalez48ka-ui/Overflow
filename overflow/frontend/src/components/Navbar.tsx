@@ -11,6 +11,7 @@ import {
   Briefcase,
   ChevronDown,
   Clock,
+  Flame,
   Shield,
   Trophy,
 } from "lucide-react";
@@ -100,6 +101,7 @@ const primaryLinks = [
   { href: "/standings", label: "Standings", icon: Trophy },
   { href: "/portfolio", label: "Portfolio", icon: Briefcase },
   { href: "/vault", label: "Vault", icon: Shield },
+  { href: "/fan-wars", label: "Fan Wars", icon: Flame },
 ];
 
 const moreLinks = [
