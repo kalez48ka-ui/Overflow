@@ -1,0 +1,74 @@
+# =============================================================================
+# CricTrade AI Engine — Python Dependencies
+#
+# Version pins are set to the minimum compatible version (>=) to allow
+# patch-level updates while avoiding known breaking changes.
+#
+# When building the Docker image, all packages are compiled at install time
+# (pip install --compile) so the first import is not penalised.
+#
+# To regenerate a fully-pinned lock file for reproducible builds:
+#   pip-compile requirements.txt -o requirements.lock.txt
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Web framework
+# ---------------------------------------------------------------------------
+flask>=3.1.0,<4.0
+flask-cors>=5.0.0,<6.0
+
+# ---------------------------------------------------------------------------
+# LangChain ecosystem
+# ---------------------------------------------------------------------------
+langchain>=0.3.0,<0.4.0
+langchain-anthropic>=0.3.0,<0.4.0
+langchain-community>=0.3.0,<0.4.0
+langchain-chroma>=0.2.0,<0.3.0
+
+# ---------------------------------------------------------------------------
+# Vector store
+# ---------------------------------------------------------------------------
+chromadb>=0.5.0,<0.7.0
+
+# ---------------------------------------------------------------------------
+# Anthropic SDK (direct client; also pulled by langchain-anthropic but pinned
+# separately so updates to the LangChain wrapper don't silently downgrade it)
+# ---------------------------------------------------------------------------
+anthropic>=0.40.0,<1.0.0
+
+# ---------------------------------------------------------------------------
+# Embeddings — sentence-transformers pulls torch automatically.
+# Pinned to <4.0 to avoid PyTorch 2.x major-version surprises in CI.
+# ---------------------------------------------------------------------------
+sentence-transformers>=3.0.0,<4.0.0
+
+# ---------------------------------------------------------------------------
+# Scientific / data
+# ---------------------------------------------------------------------------
+numpy>=1.26.0,<3.0.0
+pandas>=2.2.0,<3.0.0
+scikit-learn>=1.5.0,<2.0.0
+
+# ---------------------------------------------------------------------------
+# HTTP client
+# ---------------------------------------------------------------------------
+requests>=2.32.0,<3.0.0
+
+# ---------------------------------------------------------------------------
+# Config / utilities
+# ---------------------------------------------------------------------------
+python-dotenv>=1.0.0,<2.0.0
+pyyaml>=6.0.0,<7.0.0
+
+# ---------------------------------------------------------------------------
+# Database (optional — uncomment if ai-engine needs direct Postgres access)
+# ---------------------------------------------------------------------------
+# psycopg2-binary>=2.9.0,<3.0.0
+
+# ---------------------------------------------------------------------------
+# WSGI production server
+# Using gunicorn instead of the Flask development server in production.
+# server.py should call app.run() only in __main__ guard, or delegate to
+# gunicorn via: CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5001", "server:app"]
+# ---------------------------------------------------------------------------
+gunicorn>=22.0.0,<24.0.0

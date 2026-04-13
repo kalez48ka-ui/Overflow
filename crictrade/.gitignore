@@ -1,0 +1,1 @@
+node_modules/\n.env\ncache/\nartifacts/\ntypechain-types/\n.next/\ndist/\n__pycache__/\n*.pyc\n.chromadb/

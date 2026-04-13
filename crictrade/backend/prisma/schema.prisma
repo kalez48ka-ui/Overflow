@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Team {
+  id               String   @id @default(uuid())
+  name             String   @unique
+  symbol           String   @unique
+  tokenAddress     String?
+  color            String
+  currentPrice     Float    @default(0)
+  priceChange24h   Float    @default(0)
+  sellTaxRate      Float    @default(5)
+  performanceScore Float    @default(50)
+  ranking          Int      @default(0)
+  wins             Int      @default(0)
+  losses           Int      @default(0)
+  nrr              Float    @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  trades       Trade[]
+  matchesHome  Match[]      @relation("HomeTeam")
+  matchesAway  Match[]      @relation("AwayTeam")
+  positions    Position[]
+  priceHistory PricePoint[]
+}
+
+model Match {
+  id          String    @id @default(uuid())
+  homeTeamId  String
+  awayTeamId  String
+  homeTeam    Team      @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    Team      @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  status      String    @default("UPCOMING")
+  homeScore   String?
+  awayScore   String?
+  toss        String?
+  venue       String?
+  startTime   DateTime
+  endTime     DateTime?
+  winnerId    String?
+  upsetScore  Int?
+  isUpset     Boolean   @default(false)
+  aiAnalysis  String?   @db.Text
+  cricApiId   String?   @unique
+  cricApiName String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  balls BallEvent[]
+}
+
+model BallEvent {
+  id         String   @id @default(uuid())
+  matchId    String
+  match      Match    @relation(fields: [matchId], references: [id])
+  innings    Int
+  over       Int
+  ball       Int
+  batter     String
+  bowler     String
+  runs       Int
+  extras     Int      @default(0)
+  isWicket   Boolean  @default(false)
+  wicketType String?
+  commentary String?
+  timestamp  DateTime @default(now())
+}
+
+model Trade {
+  id         String   @id @default(uuid())
+  teamId     String
+  team       Team     @relation(fields: [teamId], references: [id])
+  wallet     String
+  type       String
+  amount     Float
+  price      Float
+  totalValue Float
+  fee        Float
+  taxRate    Float
+  txHash     String?
+  createdAt  DateTime @default(now())
+}
+
+model Position {
+  id          String   @id @default(uuid())
+  wallet      String
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id])
+  amount      Float
+  avgBuyPrice Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([wallet, teamId])
+}
+
+model PricePoint {
+  id        String   @id @default(uuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id])
+  price     Float
+  volume    Float    @default(0)
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  timestamp DateTime @default(now())
+
+  @@index([teamId, timestamp])
+}
+
+model UpsetEvent {
+  id              String   @id @default(uuid())
+  matchId         String
+  winnerSymbol    String
+  loserSymbol     String
+  upsetScore      Int
+  multiplier      Int
+  vaultRelease    Float
+  totalPayout     Float
+  holdersCount    Int
+  perHolderPayout Float
+  createdAt       DateTime @default(now())
+}
+
+model VaultState {
+  id        String   @id @default("vault")
+  balance   Float    @default(0)
+  totalIn   Float    @default(0)
+  totalOut  Float    @default(0)
+  updatedAt DateTime @updatedAt
+}
