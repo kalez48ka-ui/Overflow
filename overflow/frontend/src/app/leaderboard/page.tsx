@@ -24,7 +24,7 @@ const Spotlight = dynamic(
 const SORT_TABS = [
   { key: "pnl", label: "P&L" },
   { key: "volume", label: "Volume" },
-  { key: "trades", label: "Most Active" },
+  { key: "activity", label: "Most Active" },
 ] as const;
 
 type SortKey = (typeof SORT_TABS)[number]["key"];
