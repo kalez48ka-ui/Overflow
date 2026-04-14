@@ -1,8 +1,14 @@
 import { Router, Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { requireAdminAuth } from './admin';
 import { CricketDataService } from '../modules/cricket/cricket-data.service';
 
-function mapMatchToFrontend(match: any) {
+/** Prisma Match with both homeTeam and awayTeam relations included. */
+type MatchWithTeams = Prisma.MatchGetPayload<{
+  include: { homeTeam: true; awayTeam: true };
+}>;
+
+function mapMatchToFrontend(match: MatchWithTeams) {
   return {
     id: match.id,
     team1Id: match.homeTeam?.symbol ?? match.homeTeamId,
@@ -29,10 +35,12 @@ function mapMatchToFrontend(match: any) {
 export function createMatchesRouter(cricketService: CricketDataService): Router {
   const router = Router();
 
-  // All matches
-  router.get('/', async (_req: Request, res: Response) => {
+  // All matches (paginated)
+  router.get('/', async (req: Request, res: Response) => {
     try {
-      const matches = await cricketService.getAllMatches();
+      const limit = Math.min(Math.max(1, parseInt(String(req.query.limit || '50')) || 50), 200);
+      const offset = Math.max(0, parseInt(String(req.query.offset || '0')) || 0);
+      const matches = await cricketService.getAllMatches(limit, offset);
       res.json(matches.map(mapMatchToFrontend));
     } catch (err) {
       console.error('[Matches] GET / error:', err);
@@ -93,6 +101,10 @@ export function createMatchesRouter(cricketService: CricketDataService): Router 
   router.post('/refresh/:cricApiId', requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { cricApiId } = req.params;
+      if (!/^[a-zA-Z0-9_-]{1,128}$/.test(cricApiId as string)) {
+        res.status(400).json({ error: 'Invalid cricApiId format' });
+        return;
+      }
       const result = await cricketService.forceRefreshMatch(cricApiId as string);
       if (!result) {
         res.status(404).json({ error: 'Match not found or API not configured' });
@@ -108,8 +120,12 @@ export function createMatchesRouter(cricketService: CricketDataService): Router 
   // Single match by ID
   router.get('/:id', async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const match = await cricketService.getMatchById(id as string);
+      const id = String(req.params.id);
+      if (!/^[0-9a-f-]{1,64}$/i.test(id)) {
+        res.status(400).json({ error: 'Invalid match ID format' });
+        return;
+      }
+      const match = await cricketService.getMatchById(id);
 
       if (!match) {
         res.status(404).json({ error: 'Match not found' });
@@ -126,8 +142,12 @@ export function createMatchesRouter(cricketService: CricketDataService): Router 
   // Ball-by-ball events for a match
   router.get('/:id/balls', async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const balls = await cricketService.getMatchBalls(id as string);
+      const id = String(req.params.id);
+      if (!/^[0-9a-f-]{1,64}$/i.test(id)) {
+        res.status(400).json({ error: 'Invalid match ID format' });
+        return;
+      }
+      const balls = await cricketService.getMatchBalls(id);
       res.json(balls);
     } catch (err) {
       console.error('[Matches] GET /:id/balls error:', err);

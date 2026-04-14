@@ -9,8 +9,13 @@ const LoadingScreen = dynamic(
   { ssr: false },
 );
 
+const LiquidBlobs = dynamic(
+  () => import("@/components/effects/LiquidBlobs").then((m) => ({ default: m.LiquidBlobs })),
+  { ssr: false },
+);
+
 const SPLASH_KEY = "overflow_splash_shown";
-const SPLASH_DURATION_MS = 800;
+const SPLASH_DURATION_MS = 200;
 
 /**
  * Wraps the app content with an initial loading screen.
@@ -51,6 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <LiquidBlobs />
       <AnimatePresence mode="wait">
         {showLoading && (
           <LoadingScreen

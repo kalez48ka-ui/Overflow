@@ -1,3 +1,4 @@
+import { requireWalletAuth } from '../middleware/walletAuth';
 import { Router, Request, Response } from 'express';
 import { PredictionsService } from '../modules/predictions/predictions.service';
 import { requireAdminAuth } from './admin';
@@ -63,7 +64,9 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
         return;
       }
 
-      const predictions = await predictionsService.getUserPredictions(wallet);
+      const limit = Math.min(Math.max(1, parseInt(String(req.query.limit || '50')) || 50), 200);
+      const offset = Math.max(0, parseInt(String(req.query.offset || '0')) || 0);
+      const predictions = await predictionsService.getUserPredictions(wallet, limit, offset);
       res.json(predictions);
     } catch (err) {
       console.error('[Predictions] GET /user/:wallet error:', err);
@@ -174,7 +177,7 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
    * Enter a prediction pool with answers.
    * Body: { wallet: string, answers: [{ questionIndex: number, chosenOption: number }] }
    */
-  router.post('/:matchId/enter', async (req: Request, res: Response) => {
+  router.post('/:matchId/enter', requireWalletAuth('prediction:enter'), async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
 
@@ -183,17 +186,11 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
         return;
       }
 
-      const { wallet, answers } = req.body;
+      const { answers } = req.body;
+      const normalizedWallet = req.verifiedWallet!;
 
-      if (!wallet || !answers) {
-        res.status(400).json({ error: 'Missing required fields: wallet, answers' });
-        return;
-      }
-
-      const normalizedWallet = String(wallet).toLowerCase();
-
-      if (!isValidWallet(normalizedWallet)) {
-        res.status(400).json({ error: 'Invalid wallet address format' });
+      if (!answers) {
+        res.status(400).json({ error: 'Missing required fields: answers' });
         return;
       }
 
@@ -247,7 +244,7 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
    * Submit a live answer during the match.
    * Body: { wallet: string, questionIndex: number, chosenOption: number }
    */
-  router.post('/:matchId/live-answer', async (req: Request, res: Response) => {
+  router.post('/:matchId/live-answer', requireWalletAuth('prediction:live-answer'), async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
 
@@ -256,17 +253,11 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
         return;
       }
 
-      const { wallet, questionIndex, chosenOption } = req.body;
+      const { questionIndex, chosenOption } = req.body;
+      const normalizedWallet = req.verifiedWallet!;
 
-      if (!wallet || questionIndex === undefined || chosenOption === undefined) {
-        res.status(400).json({ error: 'Missing required fields: wallet, questionIndex, chosenOption' });
-        return;
-      }
-
-      const normalizedWallet = String(wallet).toLowerCase();
-
-      if (!isValidWallet(normalizedWallet)) {
-        res.status(400).json({ error: 'Invalid wallet address format' });
+      if (questionIndex === undefined || chosenOption === undefined) {
+        res.status(400).json({ error: 'Missing required fields: questionIndex, chosenOption' });
         return;
       }
 
@@ -310,7 +301,7 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
    * Claim reward from a settled prediction pool.
    * Body: { wallet: string }
    */
-  router.post('/:matchId/claim', async (req: Request, res: Response) => {
+  router.post('/:matchId/claim', requireWalletAuth('prediction:claim'), async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
 
@@ -319,19 +310,7 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
         return;
       }
 
-      const { wallet } = req.body;
-
-      if (!wallet) {
-        res.status(400).json({ error: 'Missing required field: wallet' });
-        return;
-      }
-
-      const normalizedWallet = String(wallet).toLowerCase();
-
-      if (!isValidWallet(normalizedWallet)) {
-        res.status(400).json({ error: 'Invalid wallet address format' });
-        return;
-      }
+      const normalizedWallet = req.verifiedWallet!;
 
       const result = await predictionsService.claimReward(matchId, normalizedWallet);
       res.json(result);

@@ -17,7 +17,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 /* ── Logo SVG — Diamond shield with rising candlestick ─────── */
 const OverflowLogo = React.memo(function OverflowLogo({ className }: { className?: string }) {
@@ -26,70 +26,67 @@ const OverflowLogo = React.memo(function OverflowLogo({ className }: { className
       viewBox="0 0 40 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
       className={className}
     >
       <defs>
-        <linearGradient id="shield-fill" x1="20" y1="2" x2="20" y2="38">
-          <stop stopColor="#1A1F2E" />
-          <stop offset="1" stopColor="#0D1117" />
-        </linearGradient>
-        <linearGradient id="shield-stroke" x1="4" y1="8" x2="36" y2="32">
+        <linearGradient id="ball-grad" x1="10" y1="6" x2="30" y2="34">
           <stop stopColor="#E4002B" />
-          <stop offset="0.5" stopColor="#FF4D6A" />
-          <stop offset="1" stopColor="#E4002B" />
+          <stop offset="1" stopColor="#A00020" />
         </linearGradient>
-        <linearGradient id="candle-green" x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#4ADE80" />
+        <linearGradient id="chart-grad" x1="8" y1="28" x2="32" y2="12">
+          <stop stopColor="#3FB950" />
           <stop offset="1" stopColor="#22C55E" />
         </linearGradient>
-        <linearGradient id="candle-red" x1="0" y1="0" x2="0" y2="1">
-          <stop stopColor="#F87171" />
-          <stop offset="1" stopColor="#EF4444" />
-        </linearGradient>
-        <filter id="glow-red">
-          <feGaussianBlur stdDeviation="2" result="blur" />
+        <filter id="logo-glow">
+          <feGaussianBlur stdDeviation="1.5" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
-      {/* Shield shape */}
-      <path
-        d="M20 3 L35 10 L35 25 Q35 33 20 38 Q5 33 5 25 L5 10 Z"
-        fill="url(#shield-fill)"
-        stroke="url(#shield-stroke)"
-        strokeWidth="1.8"
+      {/* Cricket ball circle */}
+      <circle cx="20" cy="20" r="17" fill="url(#ball-grad)" opacity="0.15" />
+      <circle cx="20" cy="20" r="17" fill="none" stroke="url(#ball-grad)" strokeWidth="2"
       />
-      {/* Inner shield highlight */}
+      {/* Cricket ball seam — curved line across */}
       <path
-        d="M20 7 L31 12.5 L31 24.5 Q31 30.5 20 34.5 Q9 30.5 9 24.5 L9 12.5 Z"
+        d="M8 14 Q14 20 8 26"
         fill="none"
         stroke="#E4002B"
-        strokeWidth="0.3"
-        opacity="0.25"
+        strokeWidth="1.2"
+        opacity="0.5"
+        strokeLinecap="round"
       />
-      {/* Candlestick 1 — red (left) */}
-      <rect x="12" y="17" width="3.5" height="8" rx="0.8" fill="url(#candle-red)" />
-      <line x1="13.75" y1="14" x2="13.75" y2="17" stroke="#F87171" strokeWidth="1" strokeLinecap="round" />
-      <line x1="13.75" y1="25" x2="13.75" y2="28" stroke="#F87171" strokeWidth="1" strokeLinecap="round" />
-      {/* Candlestick 2 — green (center, taller = dominant) */}
-      <rect x="18.25" y="11" width="3.5" height="12" rx="0.8" fill="url(#candle-green)" />
-      <line x1="20" y1="8" x2="20" y2="11" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
-      <line x1="20" y1="23" x2="20" y2="26" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
-      {/* Candlestick 3 — green (right, medium) */}
-      <rect x="24.5" y="13" width="3.5" height="9" rx="0.8" fill="url(#candle-green)" />
-      <line x1="26.25" y1="10" x2="26.25" y2="13" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
-      <line x1="26.25" y1="22" x2="26.25" y2="25" stroke="#4ADE80" strokeWidth="1" strokeLinecap="round" />
-      {/* Upward arrow above center candle */}
       <path
-        d="M17.5 8.5 L20 5 L22.5 8.5"
-        stroke="#FDB913"
+        d="M32 14 Q26 20 32 26"
+        fill="none"
+        stroke="#E4002B"
+        strokeWidth="1.2"
+        opacity="0.5"
+        strokeLinecap="round"
+      />
+      {/* Upward chart line — the "overflow" */}
+      <path
+        d="M10 28 L16 24 L20 26 L26 16 L32 10"
+        fill="none"
+        stroke="url(#chart-grad)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        filter="url(#logo-glow)"
+      />
+      {/* Chart dot at peak */}
+      <circle cx="32" cy="10" r="2.5" fill="#3FB950" />
+      {/* Small arrow tip at the end */}
+      <path
+        d="M29 12 L32 10 L30 7"
+        fill="none"
+        stroke="#3FB950"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        fill="none"
-        filter="url(#glow-red)"
       />
     </svg>
   );
@@ -119,6 +116,52 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const menuItemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
+
+  // Keyboard navigation for the "More" dropdown menu
+  const handleMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!moreOpen) return;
+
+      const items = menuItemsRef.current.filter(Boolean) as HTMLAnchorElement[];
+      const currentIndex = items.findIndex((el) => el === document.activeElement);
+
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+          items[next]?.focus();
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+          items[prev]?.focus();
+          break;
+        }
+        case "Home": {
+          e.preventDefault();
+          items[0]?.focus();
+          break;
+        }
+        case "End": {
+          e.preventDefault();
+          items[items.length - 1]?.focus();
+          break;
+        }
+        case "Escape": {
+          e.preventDefault();
+          setMoreOpen(false);
+          moreButtonRef.current?.focus();
+          break;
+        }
+      }
+    },
+    [moreOpen],
+  );
 
   // Close "More" dropdown on outside click — only listen when open
   useEffect(() => {
@@ -132,17 +175,59 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [moreOpen]);
 
-  // Close menus on Escape key
+  // Close menus on Escape key and return focus
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        setMobileOpen(false);
-        setMoreOpen(false);
+        if (mobileOpen) {
+          setMobileOpen(false);
+          hamburgerRef.current?.focus();
+        }
+        if (moreOpen) {
+          setMoreOpen(false);
+          moreButtonRef.current?.focus();
+        }
       }
     };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, []);
+  }, [mobileOpen, moreOpen]);
+
+  // Mobile menu focus trap
+  useEffect(() => {
+    if (!mobileOpen || !mobileMenuRef.current) return;
+
+    const menu = mobileMenuRef.current;
+    const focusableSelector = 'a[href], button, [tabindex]:not([tabindex="-1"])';
+
+    function handleTrapKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const focusable = Array.from(menu.querySelectorAll<HTMLElement>(focusableSelector));
+      if (focusable.length === 0) return;
+
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+
+    // Focus first item when menu opens
+    const firstFocusable = menu.querySelector<HTMLElement>(focusableSelector);
+    firstFocusable?.focus();
+
+    document.addEventListener("keydown", handleTrapKeyDown);
+    return () => document.removeEventListener("keydown", handleTrapKeyDown);
+  }, [mobileOpen]);
 
   const isMoreActive = moreLinks.some((l) => pathname === l.href);
 
@@ -159,13 +244,13 @@ export function Navbar() {
               whileHover={{ scale: 1.02 }}
               transition={{ duration: 0.2 }}
             >
-              <OverflowLogo className="h-9 w-9 drop-shadow-[0_0_8px_rgba(228,0,43,0.3)]" />
+              <OverflowLogo className="h-11 w-11 drop-shadow-[0_0_8px_rgba(228,0,43,0.3)]" />
             </motion.div>
             <div className="flex flex-col leading-none">
               <span className="text-[15px] font-black tracking-tight text-[#E6EDF3]">
                 OVER<span className="text-[#E4002B]">FLOW</span>
               </span>
-              <span className="text-[8px] font-medium tracking-[0.2em] text-[#8B949E]/60 uppercase">
+              <span className="text-[8px] font-medium tracking-[0.2em] text-[#768390] uppercase">
                 PSL Trading
               </span>
             </div>
@@ -183,7 +268,7 @@ export function Navbar() {
                     "relative flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200",
                     isActive
                       ? "text-[#E6EDF3]"
-                      : "text-[#8B949E] hover:text-[#C9D1D9]"
+                      : "text-[#9CA3AF] hover:text-[#C9D1D9]"
                   )}
                 >
                   {isActive && (
@@ -210,13 +295,15 @@ export function Navbar() {
             {/* More dropdown */}
             <div ref={moreRef} className="relative">
               <button
+                ref={moreButtonRef}
                 onClick={() => setMoreOpen(!moreOpen)}
                 aria-expanded={moreOpen}
+                aria-haspopup="true"
                 className={cn(
                   "relative flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium transition-all duration-200",
                   moreOpen || isMoreActive
                     ? "text-[#E6EDF3]"
-                    : "text-[#8B949E] hover:text-[#C9D1D9]"
+                    : "text-[#9CA3AF] hover:text-[#C9D1D9]"
                 )}
               >
                 {(moreOpen || isMoreActive) && (
@@ -239,20 +326,26 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
+                    role="menu"
+                    aria-label="More navigation"
+                    onKeyDown={handleMenuKeyDown}
                     className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-white/[0.08] bg-[#161B22]/95 backdrop-blur-xl p-1 shadow-2xl shadow-black/60"
                   >
-                    {moreLinks.map(({ href, label, icon: Icon }) => {
+                    {moreLinks.map(({ href, label, icon: Icon }, idx) => {
                       const isActive = pathname === href;
                       return (
                         <Link
                           key={href}
+                          ref={(el) => { menuItemsRef.current[idx] = el; }}
                           href={href}
+                          role="menuitem"
+                          tabIndex={-1}
                           onClick={() => setMoreOpen(false)}
                           className={cn(
                             "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
                             isActive
                               ? "bg-white/[0.06] text-[#E6EDF3]"
-                              : "text-[#8B949E] hover:bg-white/[0.04] hover:text-[#E6EDF3]"
+                              : "text-[#9CA3AF] hover:bg-white/[0.04] hover:text-[#E6EDF3]"
                           )}
                         >
                           <Icon className="h-3.5 w-3.5" />
@@ -268,7 +361,7 @@ export function Navbar() {
 
           {/* ── Right side ── */}
           <div className="flex items-center gap-2">
-            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[10px] font-medium tracking-wide text-[#8B949E]/80">
+            <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-white/[0.06] bg-white/[0.02] px-2.5 py-1 text-[10px] font-medium tracking-wide text-[#9CA3AF]/80">
               <span className="h-1.5 w-1.5 rounded-full bg-[#3FB950] shadow-[0_0_4px_rgba(63,185,80,0.5)]" />
               WireFluid
             </div>
@@ -281,7 +374,8 @@ export function Navbar() {
 
             {/* Mobile hamburger */}
             <button
-              className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[#8B949E] hover:text-[#E6EDF3] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50 rounded-lg"
+              ref={hamburgerRef}
+              className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-[#E6EDF3] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50 rounded-lg"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
               aria-expanded={mobileOpen}
@@ -305,7 +399,7 @@ export function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="border-t border-[#21262D] bg-[#0D1117] md:hidden overflow-hidden"
           >
-            <div className="flex flex-col gap-0.5 p-3">
+            <div ref={mobileMenuRef} className="flex flex-col gap-0.5 p-3">
               {allLinks.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href;
                 return (
@@ -317,7 +411,7 @@ export function Navbar() {
                       "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       isActive
                         ? "bg-[#161B22] text-[#E6EDF3]"
-                        : "text-[#8B949E] hover:bg-[#161B22] hover:text-[#E6EDF3]"
+                        : "text-[#9CA3AF] hover:bg-[#161B22] hover:text-[#E6EDF3]"
                     )}
                   >
                     <Icon className="h-4 w-4" />

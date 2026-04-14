@@ -137,12 +137,12 @@ function SignalCard({ signal }: { signal: Signal }) {
               style={{ width: `${signal.confidence}%`, backgroundColor: signal.color }}
             />
           </div>
-          <span className="font-mono text-[10px] text-[#8B949E]" aria-label={`${signal.confidence}% confidence`}>
+          <span className="font-mono text-[10px] text-[#9CA3AF]" aria-label={`${signal.confidence}% confidence`}>
             {signal.confidence}%
           </span>
         </div>
       </div>
-      <p className="text-xs leading-relaxed text-[#8B949E]">{signal.description}</p>
+      <p className="text-xs leading-relaxed text-[#9CA3AF]">{signal.description}</p>
     </motion.div>
   );
 }
@@ -173,7 +173,7 @@ function LoadingState() {
           <SkeletonLine key={i} width={`${70 + i * 5}%`} />
         ))}
       </div>
-      <div className="flex items-center justify-center gap-2 text-xs text-[#8B949E]">
+      <div className="flex items-center justify-center gap-2 text-xs text-[#9CA3AF]">
         <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
         Running LightGBM + GNN ensemble…
       </div>
@@ -192,7 +192,7 @@ function ReportSection({ title, content }: ReportSectionProps) {
       <h4 className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#58A6FF]">
         {title}
       </h4>
-      <p className="text-xs leading-relaxed text-[#8B949E]">{content}</p>
+      <p className="text-xs leading-relaxed text-[#9CA3AF]">{content}</p>
     </div>
   );
 }
@@ -329,14 +329,14 @@ export function AIAnalysis({
         </span>
 
         {timeLabel && (
-          <span className="ml-auto text-[10px] text-[#8B949E]">
+          <span className="ml-auto text-[10px] text-[#9CA3AF]">
             Updated {timeLabel}
           </span>
         )}
 
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-[#8B949E] transition-transform duration-200",
+            "h-4 w-4 shrink-0 text-[#9CA3AF] transition-transform duration-200",
             !timeLabel && "ml-auto",
             open && "rotate-180"
           )}
@@ -379,14 +379,14 @@ export function AIAnalysis({
 
                 {/* Footer */}
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] text-[#8B949E]">
+                  <p className="text-[10px] text-[#9CA3AF]">
                     {report.modelVersion} · Updates every 6 balls
                   </p>
                   <button
                     onClick={generateReport}
                     disabled={loading}
                     aria-label="Refresh AI analysis"
-                    className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-[#8B949E] hover:bg-[#21262D] hover:text-[#E6EDF3] transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-[#9CA3AF] hover:bg-[#21262D] hover:text-[#E6EDF3] transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className="h-3 w-3" aria-hidden="true" />
                     Refresh
@@ -403,7 +403,7 @@ export function AIAnalysis({
                   <p className="text-sm font-semibold text-[#E6EDF3]">
                     AI Pre-Match Report
                   </p>
-                  <p className="mt-1 text-xs text-[#8B949E]">
+                  <p className="mt-1 text-xs text-[#9CA3AF]">
                     Analyse head-to-head stats, momentum indicators, and generate
                     trading signals powered by LightGBM + GNN models.
                   </p>
@@ -424,7 +424,7 @@ export function AIAnalysis({
       {/* Collapsed CTA — only when no report and closed */}
       {!open && !report && (
         <div className="flex items-center justify-between px-4 py-2.5">
-          <p className="text-xs text-[#8B949E]">
+          <p className="text-xs text-[#9CA3AF]">
             AI signals · head-to-head · trading recommendation
           </p>
           <button

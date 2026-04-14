@@ -9,9 +9,11 @@ interface TradingChartProps {
   height?: number;
   /** Explicit floor price. If omitted, calculated as 50% of the first candle's open. */
   floorPrice?: number;
+  /** Team symbol for accessibility label */
+  teamSymbol?: string;
 }
 
-export function TradingChart({ data, teamColor, height = 380, floorPrice }: TradingChartProps) {
+export function TradingChart({ data, teamColor, height = 380, floorPrice, teamSymbol }: TradingChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<unknown>(null);
   const seriesRef = useRef<unknown>(null);
@@ -40,7 +42,7 @@ export function TradingChart({ data, teamColor, height = 380, floorPrice }: Trad
         const chart = createChart(containerRef.current, {
           layout: {
             background: { type: ColorType.Solid, color: "#161B22" },
-            textColor: "#8B949E",
+            textColor: "#9CA3AF",
           },
           grid: {
             vertLines: { color: "#21262D" },
@@ -135,7 +137,7 @@ export function TradingChart({ data, teamColor, height = 380, floorPrice }: Trad
     return (
       <div
         style={{ height }}
-        className="w-full flex items-center justify-center rounded-lg bg-[#161B22] text-[#8B949E] text-sm"
+        className="w-full flex items-center justify-center rounded-lg bg-[#161B22] text-[#9CA3AF] text-sm"
       >
         Loading chart...
       </div>
@@ -145,6 +147,8 @@ export function TradingChart({ data, teamColor, height = 380, floorPrice }: Trad
   return (
     <div
       ref={containerRef}
+      role="img"
+      aria-label={teamSymbol ? `Price chart for ${teamSymbol}` : "Price chart"}
       style={{ height }}
       className="w-full rounded-lg overflow-hidden"
     />

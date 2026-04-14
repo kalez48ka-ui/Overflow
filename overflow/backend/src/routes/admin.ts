@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { OracleService } from '../modules/oracle/oracle.service';
 import { VaultService } from '../modules/vault/vault.service';
+import { getMultiplier } from '../common/constants';
 
 // ---------------------------------------------------------------------------
 // Startup validation: warn if ADMIN_SECRET is missing or weak
@@ -35,6 +36,8 @@ const MIN_SECRET_LENGTH = 32;
 // ---------------------------------------------------------------------------
 const AUTH_MAX_FAILURES = 5;
 const AUTH_LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+const GLOBAL_MAX_FAILURES = 50;
+const GLOBAL_LOCKOUT_MS = 15 * 60 * 1000;
 
 interface AuthAttempt {
   failures: number;
@@ -42,6 +45,11 @@ interface AuthAttempt {
 }
 
 const authAttempts = new Map<string, AuthAttempt>();
+
+// Global lockout — protects against distributed brute-force across many IPs
+let globalFailures = 0;
+let globalLockedUntil = 0;
+let globalFailureWindowStart = Date.now();
 
 // Periodic cleanup of expired lockout entries to prevent unbounded Map growth.
 // Runs every 15 minutes and removes IPs whose lockout period has elapsed.
@@ -74,10 +82,19 @@ function safeTokenCompare(supplied: string, expected: string): boolean {
 
 /** Middleware: verify x-admin-token header against ADMIN_SECRET env var */
 export function requireAdminAuth(req: Request, res: Response, next: NextFunction): void {
+  // Check global lockout first
+  if (globalLockedUntil > Date.now()) {
+    const remainingSec = Math.ceil((globalLockedUntil - Date.now()) / 1000);
+    res.status(429).json({
+      error: `Admin endpoint temporarily locked due to excessive failed attempts. Retry in ${remainingSec}s.`,
+    });
+    return;
+  }
+
   const clientIP = getClientIP(req);
   const attempt = authAttempts.get(clientIP);
 
-  // Check lockout
+  // Check per-IP lockout
   if (attempt && attempt.lockedUntil > Date.now()) {
     const remainingSec = Math.ceil((attempt.lockedUntil - Date.now()) / 1000);
     res.status(429).json({
@@ -97,15 +114,28 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
   const token = req.headers['x-admin-token'];
 
   if (!token || typeof token !== 'string' || !safeTokenCompare(token, secret)) {
-    // Track failed attempt
+    // Track per-IP failed attempt
     const current = authAttempts.get(clientIP) || { failures: 0, lockedUntil: 0 };
     current.failures += 1;
     if (current.failures >= AUTH_MAX_FAILURES) {
       current.lockedUntil = Date.now() + AUTH_LOCKOUT_MS;
-      current.failures = 0; // reset counter after lockout
+      current.failures = 0;
       console.warn(`[Admin] IP ${clientIP} locked out after ${AUTH_MAX_FAILURES} failed auth attempts`);
     }
     authAttempts.set(clientIP, current);
+
+    // Track global failures (reset window if expired)
+    const now = Date.now();
+    if (now - globalFailureWindowStart > GLOBAL_LOCKOUT_MS) {
+      globalFailures = 0;
+      globalFailureWindowStart = now;
+    }
+    globalFailures++;
+    if (globalFailures >= GLOBAL_MAX_FAILURES) {
+      globalLockedUntil = now + GLOBAL_LOCKOUT_MS;
+      globalFailures = 0;
+      console.warn(`[Admin] GLOBAL lockout triggered after ${GLOBAL_MAX_FAILURES} total failures`);
+    }
 
     res.status(401).json({ error: 'Unauthorized: invalid or missing admin token' });
     return;
@@ -359,11 +389,3 @@ export function createAdminRouter(
   return router;
 }
 
-/** Mirror of VaultService.getMultiplier for response calculation */
-function getMultiplier(upsetScore: number): number {
-  if (upsetScore >= 80) return 5;
-  if (upsetScore >= 60) return 4;
-  if (upsetScore >= 40) return 3;
-  if (upsetScore >= 20) return 2;
-  return 1;
-}

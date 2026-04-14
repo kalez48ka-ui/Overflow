@@ -1,3 +1,5 @@
+// NOTE: Backend uses 0-based answer indexing. PredictionPool contract uses 1-based
+// (0 = unanswered). Translate +1 when submitting to contract.
 import { PrismaClient, Prisma } from '@prisma/client';
 import { Server as SocketServer } from 'socket.io';
 import {
@@ -122,7 +124,7 @@ export class PredictionsService {
 
     // Emit live question event for real-time questions
     if (data.isLive && this.io) {
-      this.io.emit('prediction:live', {
+      this.io.to(`prediction:${pool.matchId}`).emit('prediction:live', {
         matchId: pool.matchId,
         question: {
           questionIndex: question.questionIndex,
@@ -278,7 +280,7 @@ export class PredictionsService {
 
     // Emit socket event outside the transaction
     if (this.io) {
-      this.io.emit('prediction:update', {
+      this.io.to(`prediction:${matchId}`).emit('prediction:update', {
         matchId,
         participantCount: result.participantCount,
         totalPool: result.totalPool,
@@ -302,6 +304,7 @@ export class PredictionsService {
   /**
    * Submit a live answer for a real-time question during the match.
    * The user must have already entered the pool.
+   * Wrapped in a transaction with P2002 handling for concurrent duplicate submissions.
    */
   async submitLiveAnswer(
     matchId: string,
@@ -311,69 +314,82 @@ export class PredictionsService {
   ): Promise<{ questionIndex: number; chosenOption: number }> {
     wallet = wallet.toLowerCase();
 
-    const pool = await this.prisma.predictionPool.findUnique({
-      where: { matchId },
-      include: {
-        questions: { where: { questionIndex } },
-      },
-    });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const pool = await tx.predictionPool.findUnique({
+          where: { matchId },
+          include: {
+            questions: { where: { questionIndex } },
+          },
+        });
 
-    if (!pool) {
-      throw new Error(`No prediction pool found for match ${matchId}`);
-    }
+        if (!pool) {
+          throw new Error(`No prediction pool found for match ${matchId}`);
+        }
 
-    if (pool.status !== 'LIVE' && pool.status !== 'OPEN') {
-      throw new Error(`Pool is ${pool.status}, not accepting live answers`);
-    }
+        if (pool.status !== 'LIVE' && pool.status !== 'OPEN') {
+          throw new Error(`Pool is ${pool.status}, not accepting live answers`);
+        }
 
-    const question = pool.questions[0];
-    if (!question) {
-      throw new Error(`Question ${questionIndex} not found in this pool`);
-    }
+        const question = pool.questions[0];
+        if (!question) {
+          throw new Error(`Question ${questionIndex} not found in this pool`);
+        }
 
-    if (!question.isLive) {
-      throw new Error(`Question ${questionIndex} is not a live question`);
-    }
+        if (!question.isLive) {
+          throw new Error(`Question ${questionIndex} is not a live question`);
+        }
 
-    const now = new Date();
-    if (now >= question.deadline) {
-      throw new Error(`Deadline for question ${questionIndex} has passed`);
-    }
+        const now = new Date();
+        if (now >= question.deadline) {
+          throw new Error(`Deadline for question ${questionIndex} has passed`);
+        }
 
-    if (chosenOption < 0 || chosenOption >= question.options.length) {
-      throw new Error(
-        `Invalid option ${chosenOption} for question ${questionIndex} (max: ${question.options.length - 1})`
-      );
-    }
+        if (chosenOption < 0 || chosenOption >= question.options.length) {
+          throw new Error(
+            `Invalid option ${chosenOption} for question ${questionIndex} (max: ${question.options.length - 1})`
+          );
+        }
 
-    // Find the user's entry
-    const entry = await this.prisma.predictionEntry.findUnique({
-      where: { poolId_wallet: { poolId: pool.id, wallet } },
-    });
+        // Find the user's entry
+        const entry = await tx.predictionEntry.findUnique({
+          where: { poolId_wallet: { poolId: pool.id, wallet } },
+        });
 
-    if (!entry) {
-      throw new Error('You must enter the prediction pool before submitting live answers');
-    }
+        if (!entry) {
+          throw new Error('You must enter the prediction pool before submitting live answers');
+        }
 
-    // Check if already answered this question
-    const existingAnswer = await this.prisma.predictionAnswer.findUnique({
-      where: { entryId_questionId: { entryId: entry.id, questionId: question.id } },
-    });
+        // Check if already answered this question
+        const existingAnswer = await tx.predictionAnswer.findUnique({
+          where: { entryId_questionId: { entryId: entry.id, questionId: question.id } },
+        });
 
-    if (existingAnswer) {
-      // Update the existing answer (allow changing live answers before deadline)
-      await this.prisma.predictionAnswer.update({
-        where: { id: existingAnswer.id },
-        data: { chosenOption },
+        if (existingAnswer) {
+          // Update the existing answer (allow changing live answers before deadline)
+          await tx.predictionAnswer.update({
+            where: { id: existingAnswer.id },
+            data: { chosenOption },
+          });
+        } else {
+          await tx.predictionAnswer.create({
+            data: {
+              entryId: entry.id,
+              questionId: question.id,
+              chosenOption,
+            },
+          });
+        }
       });
-    } else {
-      await this.prisma.predictionAnswer.create({
-        data: {
-          entryId: entry.id,
-          questionId: question.id,
-          chosenOption,
-        },
-      });
+    } catch (error) {
+      // Handle unique constraint violation (P2002) for concurrent answer submissions
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new Error('Answer already submitted for this question');
+      }
+      throw error;
     }
 
     console.log(
@@ -386,50 +402,66 @@ export class PredictionsService {
   /**
    * Claim reward from a settled prediction pool.
    * Must be within the claim window (48h after settlement).
+   * Uses Serializable isolation to prevent double-claim race conditions.
    */
   async claimReward(matchId: string, wallet: string): Promise<PredictionClaimResult> {
     wallet = wallet.toLowerCase();
 
-    const pool = await this.prisma.predictionPool.findUnique({
-      where: { matchId },
-    });
+    const payout = await this.prisma.$transaction(
+      async (tx) => {
+        // Re-read everything inside the serializable transaction to prevent TOCTOU
+        const pool = await tx.predictionPool.findUnique({
+          where: { matchId },
+        });
 
-    if (!pool) {
-      throw new Error(`No prediction pool found for match ${matchId}`);
-    }
+        if (!pool) {
+          throw new Error(`No prediction pool found for match ${matchId}`);
+        }
 
-    if (pool.status !== 'SETTLED') {
-      throw new Error(`Pool is ${pool.status}, cannot claim yet`);
-    }
+        if (pool.status !== 'SETTLED') {
+          throw new Error(`Pool is ${pool.status}, cannot claim yet`);
+        }
 
-    if (pool.claimDeadline) {
-      const now = new Date();
-      if (now > pool.claimDeadline) {
-        throw new Error('Claim window has expired');
-      }
-    }
+        if (pool.claimDeadline) {
+          const now = new Date();
+          if (now > pool.claimDeadline) {
+            throw new Error('Claim window has expired');
+          }
+        }
 
-    const entry = await this.prisma.predictionEntry.findUnique({
-      where: { poolId_wallet: { poolId: pool.id, wallet } },
-    });
+        const entry = await tx.predictionEntry.findUnique({
+          where: { poolId_wallet: { poolId: pool.id, wallet } },
+        });
 
-    if (!entry) {
-      throw new Error('No entry found for this wallet in this pool');
-    }
+        if (!entry) {
+          throw new Error('No entry found for this wallet in this pool');
+        }
 
-    if (entry.claimed) {
-      throw new Error('Reward already claimed');
-    }
+        if (entry.claimed) {
+          throw new Error('Reward already claimed');
+        }
 
-    const payout = Number(entry.payout ?? 0);
+        const entryPayout = Number(entry.payout ?? 0);
 
-    await this.prisma.predictionEntry.update({
-      where: { id: entry.id },
-      data: {
-        claimed: true,
-        claimedAt: new Date(),
+        // Atomic update with WHERE claimed = false as extra safety net
+        const updateResult = await tx.predictionEntry.updateMany({
+          where: { id: entry.id, claimed: false },
+          data: {
+            claimed: true,
+            claimedAt: new Date(),
+          },
+        });
+
+        if (updateResult.count === 0) {
+          throw new Error('Reward already claimed');
+        }
+
+        return entryPayout;
       },
-    });
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      }
+    );
 
     console.log(
       `[Predictions] Claim processed: wallet ${wallet.slice(0, 6)}... payout=${payout.toFixed(2)}`
@@ -635,7 +667,7 @@ export class PredictionsService {
     );
 
     if (this.io) {
-      this.io.emit('prediction:settled', {
+      this.io.to(`prediction:${matchId}`).emit('prediction:settled', {
         matchId,
         highestScore,
         participantCount,
@@ -757,11 +789,13 @@ export class PredictionsService {
   /**
    * Get all prediction entries for a wallet across all pools.
    */
-  async getUserPredictions(wallet: string): Promise<unknown[]> {
+  async getUserPredictions(wallet: string, limit = 50, offset = 0): Promise<unknown[]> {
     wallet = wallet.toLowerCase();
 
     const entries = await this.prisma.predictionEntry.findMany({
       where: { wallet },
+      take: limit,
+      skip: offset,
       include: {
         pool: {
           include: {
@@ -831,7 +865,7 @@ export class PredictionsService {
     });
 
     return aggregated.map((entry) => ({
-      wallet: entry.wallet,
+      wallet: entry.wallet.slice(0, 6) + '...' + entry.wallet.slice(-4),
       totalEarnings: Number(entry._sum.payout ?? 0),
       totalPools: entry._count.id,
       avgScore: entry._count.id > 0

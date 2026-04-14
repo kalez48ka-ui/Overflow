@@ -1,3 +1,5 @@
+import { signAction, type WalletSignature } from "./walletSign";
+import type { WalletClient } from "viem";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 // ---------------------------------------------------------------------------
@@ -193,7 +195,7 @@ async function fetchWithRetry<T>(
 export function adminHeaders(): Record<string, string> {
   const token =
     typeof window !== "undefined"
-      ? localStorage.getItem("overflow_admin_token")
+      ? sessionStorage.getItem("overflow_admin_token")
       : null;
   return {
     "Content-Type": "application/json",
@@ -217,6 +219,34 @@ async function adminFetchJSON<T>(
   }
 
   return res.json() as Promise<T>;
+}
+
+
+// ---------------------------------------------------------------------------
+// Signed POST helper (EIP-712 wallet auth)
+// ---------------------------------------------------------------------------
+
+/**
+ * Performs a signed POST request. Signs the action with the wallet's private
+ * key via EIP-712, then includes `signature` and `nonce` in the JSON body
+ * alongside the original payload.
+ *
+ * @param url           - Full API URL
+ * @param walletClient  - viem WalletClient from wagmi's useWalletClient()
+ * @param action        - Action label matching the backend middleware config
+ * @param body          - Original request body (wallet address should be included)
+ */
+async function signedPost<T>(
+  url: string,
+  walletClient: WalletClient,
+  action: string,
+  body: Record<string, unknown>,
+): Promise<T> {
+  const { signature, nonce } = await signAction(walletClient, action);
+  return fetchJSON<T>(url, {
+    method: "POST",
+    body: JSON.stringify({ ...body, signature, nonce }),
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -245,11 +275,20 @@ export const api = {
 
   // ---- Trades ----
   trades: {
-    create: (trade: CreateTradeDto): Promise<TradeRecord> =>
-      fetchJSON(`${API_URL}/api/trades`, {
+    create: (trade: CreateTradeDto, walletClient?: WalletClient): Promise<TradeRecord> => {
+      if (walletClient) {
+        return signedPost<TradeRecord>(
+          `${API_URL}/api/trades`,
+          walletClient,
+          "trade",
+          trade as unknown as Record<string, unknown>,
+        );
+      }
+      return fetchJSON(`${API_URL}/api/trades`, {
         method: "POST",
         body: JSON.stringify(trade),
-      }),
+      });
+    },
 
     getRecent: (limit: number = 50, signal?: AbortSignal): Promise<TradeRecord[]> =>
       fetchWithRetry(`${API_URL}/api/trades/recent?limit=${limit}`, { signal }),
@@ -510,20 +549,40 @@ export const fanWarsApi = {
   lock: (
     matchId: string,
     body: { wallet: string; teamId: string; amount: number },
-  ): Promise<{ success: boolean; lockId: string }> =>
-    fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/lock`, {
+    walletClient?: WalletClient,
+  ): Promise<{ success: boolean; lockId: string }> => {
+    if (walletClient) {
+      return signedPost<{ success: boolean; lockId: string }>(
+        `${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/lock`,
+        walletClient,
+        "fanwar:lock",
+        body as unknown as Record<string, unknown>,
+      );
+    }
+    return fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/lock`, {
       method: "POST",
       body: JSON.stringify(body),
-    }),
+    });
+  },
 
   claim: (
     matchId: string,
     body: { wallet: string },
-  ): Promise<{ success: boolean; claimed: number }> =>
-    fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/claim`, {
+    walletClient?: WalletClient,
+  ): Promise<{ success: boolean; claimed: number }> => {
+    if (walletClient) {
+      return signedPost<{ success: boolean; claimed: number }>(
+        `${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/claim`,
+        walletClient,
+        "fanwar:claim",
+        body as unknown as Record<string, unknown>,
+      );
+    }
+    return fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/claim`, {
       method: "POST",
       body: JSON.stringify(body),
-    }),
+    });
+  },
 
   getActive: (): Promise<FanWarStatus[]> =>
     fetchWithRetry(`${API_URL}/api/fanwars/active`),
@@ -598,14 +657,41 @@ export const predictionsApi = {
   getPoolStatus: (matchId: string, wallet?: string, signal?: AbortSignal): Promise<PredictionPoolStatus> =>
     fetchWithRetry(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}${wallet ? `?wallet=${wallet}` : ''}`, { signal }),
 
-  enter: (matchId: string, body: { wallet: string; answers: { questionIndex: number; chosenOption: number }[] }): Promise<{ success: boolean }> =>
-    fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/enter`, { method: "POST", body: JSON.stringify(body) }),
+  enter: (matchId: string, body: { wallet: string; answers: { questionIndex: number; chosenOption: number }[] }, walletClient?: WalletClient): Promise<{ success: boolean }> => {
+    if (walletClient) {
+      return signedPost<{ success: boolean }>(
+        `${API_URL}/api/predictions/${encodeURIComponent(matchId)}/enter`,
+        walletClient,
+        "prediction:enter",
+        body as unknown as Record<string, unknown>,
+      );
+    }
+    return fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/enter`, { method: "POST", body: JSON.stringify(body) });
+  },
 
-  submitLiveAnswer: (matchId: string, body: { wallet: string; questionIndex: number; chosenOption: number }): Promise<{ success: boolean }> =>
-    fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/live-answer`, { method: "POST", body: JSON.stringify(body) }),
+  submitLiveAnswer: (matchId: string, body: { wallet: string; questionIndex: number; chosenOption: number }, walletClient?: WalletClient): Promise<{ success: boolean }> => {
+    if (walletClient) {
+      return signedPost<{ success: boolean }>(
+        `${API_URL}/api/predictions/${encodeURIComponent(matchId)}/live-answer`,
+        walletClient,
+        "prediction:live-answer",
+        body as unknown as Record<string, unknown>,
+      );
+    }
+    return fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/live-answer`, { method: "POST", body: JSON.stringify(body) });
+  },
 
-  claim: (matchId: string, body: { wallet: string }): Promise<{ payout: number }> =>
-    fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/claim`, { method: "POST", body: JSON.stringify(body) }),
+  claim: (matchId: string, body: { wallet: string }, walletClient?: WalletClient): Promise<{ payout: number }> => {
+    if (walletClient) {
+      return signedPost<{ payout: number }>(
+        `${API_URL}/api/predictions/${encodeURIComponent(matchId)}/claim`,
+        walletClient,
+        "prediction:claim",
+        body as unknown as Record<string, unknown>,
+      );
+    }
+    return fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/claim`, { method: "POST", body: JSON.stringify(body) });
+  },
 
   getUserPredictions: (wallet: string, signal?: AbortSignal): Promise<PredictionPoolStatus[]> =>
     fetchWithRetry(`${API_URL}/api/predictions/user/${encodeURIComponent(wallet)}`, { signal }),

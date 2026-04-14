@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { predictionsApi } from "@/lib/api";
 import type { PredictionQuestionData } from "@/lib/api";
 
@@ -48,6 +48,7 @@ export function LivePredictionBanner({
   onAnswer,
 }: LivePredictionBannerProps) {
   const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const remaining = useCountdown(question.deadline);
   const isExpired = remaining <= 0;
   const [answered, setAnswered] = useState(false);
@@ -83,7 +84,7 @@ export function LivePredictionBanner({
           wallet: address,
           questionIndex: question.questionIndex,
           chosenOption: optionIndex,
-        });
+        }, walletClient ?? undefined);
         setAnswered(true);
         toast.success("Live answer submitted!");
         onAnswer?.();
@@ -99,7 +100,7 @@ export function LivePredictionBanner({
         setSubmitting(false);
       }
     },
-    [address, isConnected, answered, isExpired, matchId, question.questionIndex, onAnswer, onDismiss],
+    [address, isConnected, answered, isExpired, matchId, question.questionIndex, onAnswer, onDismiss, walletClient],
   );
 
   return (
@@ -139,7 +140,7 @@ export function LivePredictionBanner({
                   <span className="rounded-full bg-[#FDB913]/15 px-2 py-0.5 text-[10px] font-bold text-[#FDB913]">
                     +{bonusPoints} bonus pts
                   </span>
-                  <div className="flex items-center gap-1 text-xs text-[#8B949E]">
+                  <div className="flex items-center gap-1 text-xs text-[#9CA3AF]">
                     <Clock className="h-3 w-3" />
                     <span className="font-mono tabular-nums">
                       {Math.floor(remaining / 1000)}s

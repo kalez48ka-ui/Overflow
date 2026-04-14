@@ -38,7 +38,7 @@ function StatItem({ label, icon: Icon, color, mono, isLive, children }: StatItem
         <Icon className="h-3.5 w-3.5" style={{ color }} />
       </div>
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-medium text-[#8B949E]">
+        <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-medium text-[#9CA3AF]">
           {label}
           {isLive && (
             <span

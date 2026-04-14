@@ -8,7 +8,8 @@ import { useAccount, useBalance } from "wagmi";
 import { parseEther, type Address } from "viem";
 import type { PSLTeam } from "@/types";
 import { cn, formatPrice, formatCurrency } from "@/lib/utils";
-import { useBuyTokens, useSellTokens, CONTRACTS } from "@/hooks/useContracts";
+import { MovingBorderButton } from "@/components/ui/moving-border";
+import { useBuyTokens, useSellTokens, useEstimateSellProceeds, CONTRACTS } from "@/hooks/useContracts";
 
 interface BuySellPanelProps {
   team: PSLTeam;
@@ -58,6 +59,15 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
   const numAmount = parseFloat(amount) || 0;
   const isBuy = tab === "buy";
   const useRealContracts = isConnected && areContractsDeployed();
+
+  // Estimate sell proceeds on-chain to enforce slippage protection
+  const tokenAddr = team.contractAddress as Address;
+  const sellTokenWei = !isBuy && numAmount > 0 ? parseEther(numAmount.toString()) : undefined;
+  const { estimatedProceeds: sellEstimate, isLoading: isSellEstimateLoading } =
+    useEstimateSellProceeds(
+      !isBuy ? tokenAddr : undefined,
+      sellTokenWei,
+    );
 
   // Track real contract tx state
   const contractPending = isBuy ? isBuyPending : isSellPending;
@@ -129,17 +139,17 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
 
     if (useRealContracts) {
       // Use real contract calls
-      const tokenAddr = team.contractAddress as Address;
-
       if (isBuy) {
         // 3% default slippage; no on-chain estimate available here so
         // the hook falls back to inputWei * (1 - slippage) as a floor.
         buy(tokenAddr, numAmount.toString(), undefined, 300);
       } else {
         const tokenWei = parseEther(numAmount.toString());
-        // 3% default slippage; no on-chain estimate so minProceeds = 0
-        // (the hook handles this gracefully).
-        sell(tokenAddr, tokenWei, undefined, 300);
+        if (!sellEstimate || sellEstimate <= BigInt(0)) {
+          toast.error("Cannot sell: price estimate unavailable. Try again shortly.");
+          return;
+        }
+        sell(tokenAddr, tokenWei, sellEstimate, 300);
       }
     } else {
       // Fallback: simulate transaction (mock)
@@ -155,15 +165,19 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
       setTimeout(() => setTxResult(null), 3000);
       setAmount("");
     }
-  }, [numAmount, isLoading, useRealContracts, isBuy, buy, sell, team.contractAddress]);
+  }, [numAmount, isLoading, useRealContracts, isBuy, buy, sell, tokenAddr, sellEstimate, team.symbol]);
 
   return (
     <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Tabs */}
-      <div className="grid grid-cols-2 border-b border-[#21262D]">
+      <div className="grid grid-cols-2 border-b border-[#21262D]" role="tablist" aria-label="Trade type">
         {(["buy", "sell"] as TabType[]).map((t) => (
           <button
             key={t}
+            role="tab"
+            aria-selected={tab === t}
+            aria-controls={`buysell-tabpanel-${t}`}
+            id={`buysell-tab-${t}`}
             onClick={() => { setTab(t); setAmount(""); setTxResult(null); setTxHash(null); }}
             className={cn(
               "relative py-3.5 text-sm font-semibold capitalize transition-colors",
@@ -171,7 +185,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
                 ? t === "buy"
                   ? "text-[#3FB950]"
                   : "text-[#F85149]"
-                : "text-[#8B949E] hover:text-[#E6EDF3]"
+                : "text-[#9CA3AF] hover:text-[#E6EDF3]"
             )}
           >
             {t}
@@ -188,12 +202,12 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
         ))}
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-4" role="tabpanel" id={`buysell-tabpanel-${tab}`} aria-label={`${tab} ${team.symbol}`}>
         {/* Wallet connection notice */}
         {!isConnected && (
           <div className="flex items-center gap-2 rounded-lg bg-[#21262D] px-3 py-2.5">
             <Wallet className="h-4 w-4 shrink-0 text-[#58A6FF]" />
-            <p className="text-xs text-[#8B949E]">
+            <p className="text-xs text-[#9CA3AF]">
               <span className="text-[#58A6FF] font-medium">Connect your wallet</span>{" "}
               to trade with real contracts. Demo mode is active.
             </p>
@@ -202,8 +216,8 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
 
         {/* Tax info banner */}
         <div className="flex items-center gap-2 rounded-lg bg-[#0D1117] px-3 py-2">
-          <Info className="h-3.5 w-3.5 shrink-0 text-[#8B949E]" />
-          <p className="text-xs text-[#8B949E]">
+          <Info className="h-3.5 w-3.5 shrink-0 text-[#9CA3AF]" />
+          <p className="text-xs text-[#9CA3AF]">
             Current {isBuy ? "buy" : "sell"} tax:{" "}
             <span className={cn("font-semibold", isBuy ? "text-[#3FB950]" : "text-[#F85149]")}>
               {taxRate}%
@@ -215,10 +229,10 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
         {/* Amount input */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="text-xs text-[#8B949E]">
+            <label htmlFor="trade-amount" className="text-xs text-[#9CA3AF]">
               {isBuy ? "Amount (WIRE)" : `Amount (${team.symbol})`}
             </label>
-            <span className="text-xs text-[#8B949E]">
+            <span className="text-xs text-[#9CA3AF]">
               Balance:{" "}
               {isConnected && walletBalance
                 ? isBuy
@@ -229,12 +243,14 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
           </div>
           <div className="relative">
             <input
+              id="trade-amount"
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               min="0"
+              maxLength={20}
               placeholder="0.00"
-              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#484F58] outline-none focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 transition-colors duration-150"
+              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#768390] outline-none focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 transition-colors duration-150"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <div
@@ -243,7 +259,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               >
                 {team.id}
               </div>
-              <span className="text-xs text-[#8B949E]">{isBuy ? "WIRE" : team.symbol}</span>
+              <span className="text-xs text-[#9CA3AF]">{isBuy ? "WIRE" : team.symbol}</span>
             </div>
           </div>
         </div>
@@ -254,7 +270,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
             <button
               key={qa}
               onClick={() => setAmount(qa.toString())}
-              className="rounded-md bg-[#21262D] px-2 py-1.5 text-xs font-medium text-[#8B949E] hover:bg-[#21262D]/80 hover:text-[#E6EDF3] transition-colors"
+              className="rounded-md bg-[#21262D] px-2 py-1.5 text-xs font-medium text-[#9CA3AF] hover:bg-[#21262D]/80 hover:text-[#E6EDF3] transition-colors"
             >
               {isBuy ? qa : qa >= 1000 ? `${qa / 1000}K` : qa}
             </button>
@@ -269,16 +285,16 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
             className="rounded-lg border border-[#21262D] bg-[#0D1117] p-3 space-y-2"
           >
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[#8B949E]">Price</span>
+              <span className="text-[#9CA3AF]">Price</span>
               <span className="text-[#E6EDF3]">${formatPrice(team.price)}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[#8B949E]">{taxRate}% Tax</span>
+              <span className="text-[#9CA3AF]">{taxRate}% Tax</span>
               <span className="text-[#F85149]">-${taxAmount.toFixed(4)}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[#8B949E]">Price Impact</span>
-              <span className={cn(priceImpact > 5 ? "text-[#F85149]" : "text-[#8B949E]")}>
+              <span className="text-[#9CA3AF]">Price Impact</span>
+              <span className={cn(priceImpact > 5 ? "text-[#F85149]" : "text-[#9CA3AF]")}>
                 {priceImpact.toFixed(2)}%
                 {priceImpact > 5 && (
                   <AlertTriangle className="inline ml-1 h-3 w-3" />
@@ -286,7 +302,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               </span>
             </div>
             <div className="border-t border-[#21262D] pt-2 flex items-center justify-between text-xs font-semibold">
-              <span className="text-[#8B949E]">You receive</span>
+              <span className="text-[#9CA3AF]">You receive</span>
               <span className="text-[#E6EDF3]">
                 {isBuy
                   ? `${youReceive.toFixed(2)} ${team.symbol}`
@@ -295,7 +311,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
             </div>
             {!useRealContracts && (
               <div className="border-t border-[#21262D] pt-2">
-                <span className="text-[10px] text-[#8B949E] italic">
+                <span className="text-[10px] text-[#9CA3AF] italic">
                   Simulated trade — contracts not deployed
                 </span>
               </div>
@@ -304,16 +320,23 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
         )}
 
         {/* Submit */}
-        <button
+        <MovingBorderButton
+          as="button"
           onClick={handleSubmit}
-          disabled={!numAmount || isLoading}
+          disabled={!numAmount || isLoading || (!isBuy && useRealContracts && isSellEstimateLoading)}
+          borderRadius="0.5rem"
+          containerClassName="w-full"
           className={cn(
-            "w-full rounded-lg py-3.5 text-sm font-bold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
+            "w-full py-3.5 text-sm font-bold transition-all duration-150",
             isBuy
-              ? "bg-[#238636] hover:bg-[#2EA043] text-white disabled:bg-[#21262D] disabled:text-[#8B949E]"
-              : "bg-[#DA3633] hover:bg-[#F85149] text-white disabled:bg-[#21262D] disabled:text-[#8B949E]",
-            isLoading && "cursor-not-allowed"
+              ? "bg-[#238636] text-white"
+              : "bg-[#DA3633] text-white",
+            (!numAmount || isLoading) && "opacity-50 cursor-not-allowed"
           )}
+          borderClassName={isBuy
+            ? "bg-[conic-gradient(from_90deg_at_50%_50%,#21262D_0%,#3FB950_50%,#21262D_100%)]"
+            : "bg-[conic-gradient(from_90deg_at_50%_50%,#21262D_0%,#F85149_50%,#21262D_100%)]"
+          }
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -323,12 +346,13 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
           ) : (
             `${isBuy ? "Buy" : "Sell"} ${team.symbol}`
           )}
-        </button>
+        </MovingBorderButton>
 
         {/* Result */}
         <AnimatePresence>
           {txResult && (
             <motion.div
+              role="alert"
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -343,7 +367,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
                 <>
                   Transaction submitted! {isBuy ? "Buying" : "Selling"} {team.symbol}
                   {txHash && (
-                    <span className="block mt-1 text-[10px] text-[#8B949E] break-all">
+                    <span className="block mt-1 text-[10px] text-[#9CA3AF] break-all">
                       Tx: {txHash}
                     </span>
                   )}

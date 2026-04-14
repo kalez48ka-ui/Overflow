@@ -117,7 +117,7 @@ async function aggregatePnl(prisma: PrismaClient): Promise<LeaderboardEntry[]> {
     const winRate = sellCount > 0 ? (winCount / sellCount) * 100 : 0;
     return {
       rank: i + 1,
-      wallet: r.wallet,
+      wallet: r.wallet.slice(0, 6) + '...' + r.wallet.slice(-4),
       totalPnl: Math.round(Number(r.total_pnl) * 100) / 100,
       tradeCount: Number(r.trade_count),
       totalVolume: Math.round(Number(r.total_volume) * 100) / 100,
@@ -169,7 +169,7 @@ async function aggregateVolume(prisma: PrismaClient): Promise<LeaderboardEntry[]
 
   return rows.map((r, i) => ({
     rank: i + 1,
-    wallet: r.wallet,
+    wallet: r.wallet.slice(0, 6) + '...' + r.wallet.slice(-4),
     totalPnl: Math.round(Number(r.total_pnl) * 100) / 100,
     tradeCount: Number(r.trade_count),
     totalVolume: Math.round(Number(r.total_volume) * 100) / 100,
@@ -220,7 +220,7 @@ async function aggregateActivity(prisma: PrismaClient): Promise<LeaderboardEntry
 
   return rows.map((r, i) => ({
     rank: i + 1,
-    wallet: r.wallet,
+    wallet: r.wallet.slice(0, 6) + '...' + r.wallet.slice(-4),
     totalPnl: Math.round(Number(r.total_pnl) * 100) / 100,
     tradeCount: Number(r.trade_count),
     totalVolume: Math.round(Number(r.total_volume) * 100) / 100,

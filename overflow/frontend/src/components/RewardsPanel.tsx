@@ -36,7 +36,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
     <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2.5">
-        <span className="text-xs text-[#8B949E]">Rewards</span>
+        <span className="text-xs text-[#9CA3AF]">Rewards</span>
         {totalClaimable > 0 && (
           <button
             onClick={handleClaimAll}
@@ -61,7 +61,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
                 <p className="text-xs font-medium text-[#E6EDF3] truncate">
                   {reward.description}
                 </p>
-                <p className="mt-0.5 text-[10px] text-[#8B949E]">
+                <p className="mt-0.5 text-[10px] text-[#9CA3AF]">
                   {formatTimeAgo(reward.earnedAt)}
                 </p>
               </div>
@@ -71,7 +71,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
                   <p className="text-sm font-bold text-[#FDB913]">
                     +{reward.amount.toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-[#8B949E]">{reward.token}</p>
+                  <p className="text-[10px] text-[#9CA3AF]">{reward.token}</p>
                 </div>
 
                 <AnimatePresence mode="wait">
@@ -104,7 +104,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
                   ) : (
                     <span
                       key="pending"
-                      className="rounded-lg border border-[#21262D] px-3 py-1.5 text-[10px] text-[#8B949E]"
+                      className="rounded-lg border border-[#21262D] px-3 py-1.5 text-[10px] text-[#9CA3AF]"
                     >
                       Pending
                     </span>
@@ -117,8 +117,8 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
 
         {rewards.length === 0 && (
           <div className="px-4 py-12 text-center">
-            <p className="text-sm text-[#8B949E]">No rewards yet</p>
-            <p className="mt-1 text-xs text-[#484F58]">Trade team tokens to earn rewards</p>
+            <p className="text-sm text-[#9CA3AF]">No rewards yet</p>
+            <p className="mt-1 text-xs text-[#768390]">Trade team tokens to earn rewards</p>
           </div>
         )}
       </div>

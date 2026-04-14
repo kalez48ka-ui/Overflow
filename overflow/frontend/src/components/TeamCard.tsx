@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { PSLTeam } from "@/types";
 import { cn, formatPrice, formatPercent, formatCurrency, hexToRgba } from "@/lib/utils";
@@ -22,6 +23,7 @@ const Sparkline = React.memo(function Sparkline({
   color: string;
   isPositive: boolean;
 }) {
+  const prefersReduced = useReducedMotion();
   if (!data.length) return null;
 
   const min = Math.min(...data);
@@ -66,10 +68,10 @@ const Sparkline = React.memo(function Sparkline({
       <motion.polygon
         points={areaPoints}
         fill={`url(#${gradId})`}
-        initial={{ opacity: 0 }}
+        initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        transition={{ delay: 1.0, duration: 0.5 }}
+        transition={prefersReduced ? { duration: 0 } : { delay: 1.0, duration: 0.5 }}
       />
       {/* Main line — draws on from left to right when in view */}
       <motion.path
@@ -79,10 +81,10 @@ const Sparkline = React.memo(function Sparkline({
         strokeWidth="1.8"
         strokeLinejoin="round"
         strokeLinecap="round"
-        initial={{ pathLength: 0 }}
+        initial={prefersReduced ? { pathLength: 1 } : { pathLength: 0 }}
         whileInView={{ pathLength: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 1.0, ease: "easeOut" }}
+        transition={prefersReduced ? { duration: 0 } : { duration: 1.0, ease: "easeOut" }}
       />
       {/* Dot on last data point — appears after path finishes drawing */}
       <motion.circle
@@ -90,24 +92,28 @@ const Sparkline = React.memo(function Sparkline({
         cy={points[points.length - 1].y}
         r="2.5"
         fill={lineColor}
-        initial={{ opacity: 0, scale: 0 }}
+        initial={prefersReduced ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
-        transition={{ delay: 1.0, duration: 0.3, ease: "easeOut" }}
+        transition={prefersReduced ? { duration: 0 } : { delay: 1.0, duration: 0.3, ease: "easeOut" }}
       >
-        {/* Lightweight CSS-driven pulse — stays infinite */}
-        <animate
-          attributeName="r"
-          values="2.5;3.5;2.5"
-          dur="2s"
-          repeatCount="indefinite"
-        />
-        <animate
-          attributeName="opacity"
-          values="1;0.6;1"
-          dur="2s"
-          repeatCount="indefinite"
-        />
+        {/* Lightweight SMIL pulse — only render when reduced motion is NOT preferred */}
+        {!prefersReduced && (
+          <>
+            <animate
+              attributeName="r"
+              values="2.5;3.5;2.5"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+            <animate
+              attributeName="opacity"
+              values="1;0.6;1"
+              dur="2s"
+              repeatCount="indefinite"
+            />
+          </>
+        )}
       </motion.circle>
     </svg>
   );
@@ -115,13 +121,11 @@ const Sparkline = React.memo(function Sparkline({
 
 export const TeamCard = React.memo(function TeamCard({ team, index = 0 }: TeamCardProps) {
   const isPositive = team.change24h >= 0;
-  const cardRef = useRef<HTMLDivElement>(null);
 
   return (
     <div>
       <Link href={`/trade/${team.id.toLowerCase()}`} className="block group">
         <div
-          ref={cardRef}
           className="card-border-glow relative overflow-hidden rounded-xl bg-[#161B22] p-4 transition-all duration-200 ease-out hover:translate-y-[-2px]"
           style={{
             border: "1px solid #21262D",
@@ -144,7 +148,7 @@ export const TeamCard = React.memo(function TeamCard({ team, index = 0 }: TeamCa
             <div className="flex items-center gap-3">
               <TeamLogo teamId={team.id} color={team.color} size={40} className="shadow-lg transition-transform duration-200 group-hover:scale-[1.01]" />
               <div>
-                <p className="text-[10px] font-medium uppercase tracking-wider text-[#8B949E]">{team.symbol}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[#9CA3AF]">{team.symbol}</p>
                 <h3 className="text-sm font-bold text-[#E6EDF3] leading-tight truncate max-w-[140px]">
                   {team.name}
                 </h3>
@@ -207,20 +211,20 @@ export const TeamCard = React.memo(function TeamCard({ team, index = 0 }: TeamCa
           {/* Stats row */}
           <div className="grid grid-cols-3 gap-2 border-t border-[#21262D]/60 pt-3">
             <div>
-              <p className="text-[10px] text-[#8B949E]">Volume</p>
+              <p className="text-[10px] text-[#9CA3AF]">Volume</p>
               <p className="text-xs font-bold tabular-nums text-[#E6EDF3]">
                 {formatCurrency(team.volume24h)}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-[#8B949E]">Mkt Cap</p>
+              <p className="text-[10px] text-[#9CA3AF]">Mkt Cap</p>
               <p className="text-xs font-bold tabular-nums text-[#E6EDF3]">
                 {formatCurrency(team.marketCap)}
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-[#8B949E]">Tax</p>
-              <p className="text-xs font-bold tabular-nums text-[#8B949E]">
+              <p className="text-[10px] text-[#9CA3AF]">Tax</p>
+              <p className="text-xs font-bold tabular-nums text-[#9CA3AF]">
                 {team.sellTax}%
               </p>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Copy,
@@ -13,6 +14,12 @@ import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api";
 import { cn, formatCurrency, shortenAddress } from "@/lib/utils";
 import { PSL_TEAMS } from "@/lib/mockData";
+import { CountUp } from "@/components/motion/CountUp";
+
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
+  { ssr: false },
+);
 
 const SORT_TABS = [
   { key: "pnl", label: "P&L" },
@@ -58,7 +65,7 @@ function WalletCell({ wallet }: { wallet: string }) {
       </span>
       <button
         onClick={handleCopy}
-        className="rounded p-2 text-[#484F58] hover:text-[#E6EDF3] transition-colors"
+        className="rounded p-2 text-[#768390] hover:text-[#E6EDF3] transition-colors"
         aria-label="Copy wallet address"
       >
         {copied ? (
@@ -124,22 +131,27 @@ export default function LeaderboardPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-[#0D1117]"
+      className="min-h-screen bg-[#0D1117] relative overflow-hidden"
     >
+      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-black text-[#E6EDF3] mb-4">Leaderboard</h1>
 
         {/* Sort tabs — text with underline */}
-        <div className="mb-6 flex items-center gap-6 border-b border-[#21262D]">
+        <div className="mb-6 flex items-center gap-6 border-b border-[#21262D]" role="tablist" aria-label="Leaderboard sorting">
           {SORT_TABS.map(({ key, label }) => (
             <button
               key={key}
+              role="tab"
+              id={`leaderboard-tab-${key}`}
+              aria-selected={sortKey === key}
+              aria-controls="leaderboard-tabpanel"
               onClick={() => setSortKey(key)}
               className={cn(
                 "relative min-h-[44px] pb-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
                 sortKey === key
                   ? "text-[#E6EDF3]"
-                  : "text-[#8B949E] hover:text-[#C9D1D9]"
+                  : "text-[#9CA3AF] hover:text-[#C9D1D9]"
               )}
             >
               {label}
@@ -158,6 +170,9 @@ export default function LeaderboardPage() {
         <AnimatePresence mode="wait">
         <motion.div
           key={sortKey}
+          role="tabpanel"
+          id="leaderboard-tabpanel"
+          aria-labelledby={`leaderboard-tab-${sortKey}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -165,28 +180,28 @@ export default function LeaderboardPage() {
         >
         <div className="rounded-lg border border-[#21262D] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left" aria-label="Trading leaderboard">
               <thead>
                 <tr className="border-b border-[#21262D]">
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E] w-16">
+                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] w-16">
                     Rank
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E]">
+                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
                     Wallet
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E] text-right">
+                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Total P&L
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E] text-right">
+                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Trades
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E] text-right">
+                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Volume
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E] text-center">
+                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-center">
                     Favorite
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#8B949E] text-right">
+                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Win Rate
                   </th>
                 </tr>
@@ -204,7 +219,7 @@ export default function LeaderboardPage() {
                         <p className="text-sm text-[#E6EDF3]">
                           Something went wrong
                         </p>
-                        <p className="text-xs text-[#8B949E] max-w-xs">
+                        <p className="text-xs text-[#9CA3AF] max-w-xs">
                           {error}
                         </p>
                         <button
@@ -220,7 +235,7 @@ export default function LeaderboardPage() {
                 ) : entries.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-16 text-center">
-                      <p className="text-sm text-[#8B949E]">
+                      <p className="text-sm text-[#9CA3AF]">
                         No trading activity yet.
                       </p>
                     </td>
@@ -230,12 +245,19 @@ export default function LeaderboardPage() {
                     const dotColor = RANK_DOT_COLORS[entry.rank];
                     const isCurrentUser = address ? entry.wallet.toLowerCase() === address.toLowerCase() : false;
                     return (
-                      <tr
+                      <motion.tr
                         key={entry.wallet}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.04 }}
                         className={cn(
                           "border-b border-[#21262D]/50 transition-colors hover:bg-[#21262D]/40",
                           idx % 2 === 1 && "bg-white/[0.01]",
                           entry.rank <= 3 && "bg-white/[0.02]",
+                          entry.rank <= 3 && "ring-1 ring-inset",
+                          entry.rank === 1 && "ring-[#FDB913]/30",
+                          entry.rank === 2 && "ring-[#C9D1D9]/20",
+                          entry.rank === 3 && "ring-[#CD7F32]/20",
                           isCurrentUser && "ring-1 ring-[#58A6FF] bg-[#58A6FF]/5"
                         )}
                       >
@@ -247,7 +269,7 @@ export default function LeaderboardPage() {
                                 style={{ backgroundColor: dotColor }}
                               />
                             ) : null}
-                            <span className="text-xs font-bold tabular-nums text-[#8B949E]">
+                            <span className="text-xs font-bold tabular-nums text-[#9CA3AF]">
                               {entry.rank}
                             </span>
                           </div>
@@ -271,7 +293,7 @@ export default function LeaderboardPage() {
                                 : "text-[#F85149]"
                             )}
                           >
-                            {entry.totalPnl >= 0 ? "+" : ""}{formatCurrency(entry.totalPnl)}
+                            <CountUp value={Math.abs(entry.totalPnl)} prefix={entry.totalPnl >= 0 ? "+$" : "-$"} decimals={2} duration={1.2} />
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -298,7 +320,7 @@ export default function LeaderboardPage() {
                               {entry.favoriteTeam}
                             </span>
                           ) : (
-                            <span className="text-xs text-[#484F58]">&mdash;</span>
+                            <span className="text-xs text-[#768390]">&mdash;</span>
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -309,13 +331,13 @@ export default function LeaderboardPage() {
                                 ? "text-[#3FB950]"
                                 : entry.winRate > 0
                                   ? "text-[#FDB913]"
-                                  : "text-[#8B949E]"
+                                  : "text-[#9CA3AF]"
                             )}
                           >
                             {entry.winRate.toFixed(1)}%
                           </span>
                         </td>
-                      </tr>
+                      </motion.tr>
                     );
                   })
                 )}

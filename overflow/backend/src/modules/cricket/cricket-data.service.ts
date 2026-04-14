@@ -207,15 +207,23 @@ export class CricketDataService {
 
         // Push score updates via WebSocket
         if (apiMatch.score && apiMatch.score.length > 0 && this.io) {
-          this.io.emit('match:liveScore', {
-            cricApiId: apiMatch.id,
-            name: apiMatch.name,
-            status: apiMatch.status,
-            teams: apiMatch.teams,
-            score: apiMatch.score,
-            venue: apiMatch.venue,
-            matchType: apiMatch.matchType,
+          // Look up the DB match to get the internal matchId for room targeting
+          const dbMatch = await this.prisma.match.findUnique({
+            where: { cricApiId: apiMatch.id },
+            select: { id: true },
           });
+          if (dbMatch) {
+            this.io.to(`match:${dbMatch.id}`).emit('match:liveScore', {
+              cricApiId: apiMatch.id,
+              matchId: dbMatch.id,
+              name: apiMatch.name,
+              status: apiMatch.status,
+              teams: apiMatch.teams,
+              score: apiMatch.score,
+              venue: apiMatch.venue,
+              matchType: apiMatch.matchType,
+            });
+          }
         }
       }
 
@@ -277,7 +285,7 @@ export class CricketDataService {
           homeScore: typeof updateData.homeScore === 'string' ? updateData.homeScore : undefined,
           awayScore: typeof updateData.awayScore === 'string' ? updateData.awayScore : undefined,
         };
-        this.io.emit('match:status', statusUpdate);
+        this.io.to(`match:${dbMatchId}`).emit('match:status', statusUpdate);
       }
     } catch (err) {
       console.error(`[CricketData] refreshMatchInfo failed for ${cricApiId}:`, err);
@@ -415,7 +423,7 @@ export class CricketDataService {
         liveMatches = [overdue];
 
         if (this.io) {
-          this.io.emit('match:status', {
+          this.io.to(`match:${overdue.id}`).emit('match:status', {
             matchId: overdue.id,
             status: 'LIVE',
           });
@@ -518,7 +526,7 @@ export class CricketDataService {
     }
 
     if (this.io) {
-      this.io.emit('match:ball', ballEvent);
+      this.io.to(`match:${matchId}`).emit('match:ball', ballEvent);
     }
   }
 
@@ -601,7 +609,7 @@ export class CricketDataService {
         );
 
         if (this.io) {
-          this.io.emit('match:winner', {
+          this.io.to(`match:${matchId}`).emit('match:winner', {
             matchId,
             winnerId,
             homeScore: match.homeScore,
@@ -619,7 +627,7 @@ export class CricketDataService {
     };
 
     if (this.io) {
-      this.io.emit('match:status', statusUpdate);
+      this.io.to(`match:${matchId}`).emit('match:status', statusUpdate);
     }
   }
 
@@ -666,10 +674,12 @@ export class CricketDataService {
     });
   }
 
-  async getAllMatches() {
+  async getAllMatches(limit = 50, offset = 0) {
     return this.prisma.match.findMany({
       include: { homeTeam: true, awayTeam: true },
       orderBy: { startTime: 'desc' },
+      take: limit,
+      skip: offset,
     });
   }
 

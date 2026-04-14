@@ -14,7 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { CountUp } from "@/components/motion/CountUp";
 import { MouseTrackCard } from "@/components/motion/MouseTrackCard";
 import { MagneticButton } from "@/components/effects/MagneticButton";
@@ -84,7 +84,7 @@ function QuestionOption({
 }) {
   let borderColor = "#21262D";
   let bgColor = "transparent";
-  let textColor = "#8B949E";
+  let textColor = "#9CA3AF";
   let icon = null;
 
   if (correct) {
@@ -122,7 +122,7 @@ function QuestionOption({
       <span
         className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-all"
         style={{
-          borderColor: selected || correct || wrong ? borderColor : "#484F58",
+          borderColor: selected || correct || wrong ? borderColor : "#768390",
         }}
       >
         {(selected || correct || wrong) && (
@@ -157,6 +157,7 @@ interface PredictionPoolCardProps {
 
 export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardProps) {
   const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const questions = pool.questions ?? [];
   const remaining = useCountdown(pool.deadline);
   const isExpired = remaining <= 0;
@@ -217,7 +218,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
         questionIndex: Number(qi),
         chosenOption: co,
       }));
-      await predictionsApi.enter(pool.matchId, { wallet: address, answers });
+      await predictionsApi.enter(pool.matchId, { wallet: address, answers }, walletClient ?? undefined);
       setLocalUserEntry({
         answers: answers.map((a) => ({
           ...a,
@@ -236,13 +237,13 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
     } finally {
       setSubmitting(false);
     }
-  }, [address, isConnected, allPreMatchAnswered, selectedAnswers, pool.matchId, onEntrySuccess]);
+  }, [address, isConnected, allPreMatchAnswered, selectedAnswers, pool.matchId, onEntrySuccess, walletClient]);
 
   const handleClaim = useCallback(async () => {
     if (!address) return;
     setClaiming(true);
     try {
-      const result = await predictionsApi.claim(pool.matchId, { wallet: address });
+      const result = await predictionsApi.claim(pool.matchId, { wallet: address }, walletClient ?? undefined);
       setLocalUserEntry((prev) =>
         prev ? { ...prev, claimed: true, payout: result.payout } : prev,
       );
@@ -255,7 +256,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
     } finally {
       setClaiming(false);
     }
-  }, [address, pool.matchId]);
+  }, [address, pool.matchId, walletClient]);
 
   return (
     <MouseTrackCard maxTilt={3} spotlightOpacity={0.05}>
@@ -282,13 +283,13 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
               </span>
             )}
             {isCancelled && (
-              <span className="rounded-full bg-[#8B949E]/15 px-2 py-0.5 text-[10px] font-bold text-[#8B949E]">
+              <span className="rounded-full bg-[#9CA3AF]/15 px-2 py-0.5 text-[10px] font-bold text-[#9CA3AF]">
                 CANCELLED
               </span>
             )}
           </div>
           {isOpen && (
-            <div className="flex items-center gap-1.5 text-xs text-[#8B949E]">
+            <div className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
               <Clock className="h-3.5 w-3.5" />
               <span className="font-mono tabular-nums">
                 {formatCountdown(remaining)}
@@ -324,7 +325,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
                   {pool.awayTeamSymbol}
                 </span>
               </p>
-              <div className="flex items-center gap-1.5 text-[10px] text-[#8B949E]">
+              <div className="flex items-center gap-1.5 text-[10px] text-[#9CA3AF]">
                 <MapPin className="h-3 w-3" />
                 {pool.matchVenue}
               </div>
@@ -335,13 +336,13 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2 px-4 pb-3">
           <div className="rounded-lg bg-[#0D1117] px-2 py-1.5 text-center">
-            <p className="text-[10px] text-[#8B949E]">Entry Fee</p>
+            <p className="text-[10px] text-[#9CA3AF]">Entry Fee</p>
             <p className="text-xs font-bold tabular-nums text-[#E6EDF3]">
               {pool.entryFee} WIRE
             </p>
           </div>
           <div className="rounded-lg bg-[#0D1117] px-2 py-1.5 text-center">
-            <p className="text-[10px] text-[#8B949E]">Prize Pool</p>
+            <p className="text-[10px] text-[#9CA3AF]">Prize Pool</p>
             <p className="text-xs font-bold tabular-nums text-[#FDB913]">
               <CountUp
                 value={pool.totalPool}
@@ -352,7 +353,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
             </p>
           </div>
           <div className="rounded-lg bg-[#0D1117] px-2 py-1.5 text-center">
-            <p className="text-[10px] text-[#8B949E]">Players</p>
+            <p className="text-[10px] text-[#9CA3AF]">Players</p>
             <p className="text-xs font-bold tabular-nums text-[#E6EDF3]">
               <CountUp value={pool.participantCount} duration={1} />
             </p>
@@ -363,7 +364,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
         <div className="border-t border-[#21262D] px-4 py-3">
           <p className="mb-3 text-xs font-semibold text-[#E6EDF3]">
             {isSettled ? "Results" : "Questions"}{" "}
-            <span className="text-[#8B949E] font-normal">
+            <span className="text-[#9CA3AF] font-normal">
               ({questions.length} questions, {maxPoints} pts max)
             </span>
           </p>
@@ -409,7 +410,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Coins className="h-3.5 w-3.5 text-[#FDB913]" />
-                  <span className="text-xs text-[#8B949E]">
+                  <span className="text-xs text-[#9CA3AF]">
                     Potential points: {estimatedPoints}/{maxPoints}
                   </span>
                 </div>
@@ -491,7 +492,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
                         duration={1.5}
                       />
                     </span>
-                    <span className="text-[#8B949E]">/{maxPoints}</span>
+                    <span className="text-[#9CA3AF]">/{maxPoints}</span>
                   </span>
                 </div>
 
@@ -521,7 +522,7 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
               </div>
 
               {pool.highestScore !== null && (
-                <p className="mt-1 text-[10px] text-[#8B949E]">
+                <p className="mt-1 text-[10px] text-[#9CA3AF]">
                   Highest score in pool:{" "}
                   <span className="font-bold text-[#E6EDF3] tabular-nums">
                     {pool.highestScore}
@@ -608,7 +609,7 @@ function QuestionBlock({
             </span>
           )}
         </p>
-        <span className="shrink-0 text-[10px] font-bold tabular-nums text-[#8B949E]">
+        <span className="shrink-0 text-[10px] font-bold tabular-nums text-[#9CA3AF]">
           {question.points} pts
         </span>
       </div>

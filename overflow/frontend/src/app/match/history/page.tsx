@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
+
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
+  { ssr: false },
+);
 import { MapPin } from "lucide-react";
 import { api } from "@/lib/api";
 import type { MatchInfo } from "@/lib/api";
@@ -42,14 +48,14 @@ const STATUS_ORDER: Record<string, number> = {
 // -------------------------------------------------------------------------
 
 function lookupTeamColor(symbol: string | undefined, name: string): string {
-  if (!symbol && !name) return "#8B949E";
+  if (!symbol && !name) return "#9CA3AF";
   const team = PSL_TEAMS.find(
     (t) =>
       t.symbol === symbol ||
       t.id === symbol ||
       t.name.toLowerCase() === name.toLowerCase()
   );
-  return team?.color ?? "#8B949E";
+  return team?.color ?? "#9CA3AF";
 }
 
 function sortMatches(matches: MatchInfo[]): MatchInfo[] {
@@ -102,7 +108,7 @@ function StatusDot({ status }: { status: MatchInfo["status"] }) {
   if (status === "completed") {
     return <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#3FB950]" />;
   }
-  return <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#484F58]" />;
+  return <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#768390]" />;
 }
 
 function SkeletonRow() {
@@ -126,20 +132,20 @@ function MatchRow({ match }: { match: MatchInfo }) {
         <div className="flex items-center gap-2 min-w-0">
           <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: team1Color }} />
           <span className="text-sm font-medium text-[#E6EDF3] truncate">{match.team1Name}</span>
-          <span className="text-xs text-[#484F58]">vs</span>
+          <span className="text-xs text-[#768390]">vs</span>
           <span className="text-sm font-medium text-[#E6EDF3] truncate">{match.team2Name}</span>
           <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: team2Color }} />
         </div>
         {/* Score inline for completed */}
         {(match.score1 != null || match.score2 != null) && (
-          <span className="text-xs font-mono tabular-nums text-[#8B949E] shrink-0">
+          <span className="text-xs font-mono tabular-nums text-[#9CA3AF] shrink-0">
             {match.score1 ?? "---"} vs {match.score2 ?? "---"}
           </span>
         )}
       </div>
 
       {/* Right: date + venue */}
-      <div className="flex items-center gap-3 text-xs text-[#8B949E] shrink-0 pl-7 sm:pl-0">
+      <div className="flex items-center gap-3 text-xs text-[#9CA3AF] shrink-0 pl-7 sm:pl-0">
         {match.startTime && (
           <span className="font-mono tabular-nums">
             {formatMatchDateShort(match.startTime)} {formatMatchTime(match.startTime)}
@@ -147,7 +153,7 @@ function MatchRow({ match }: { match: MatchInfo }) {
         )}
         {match.venue && (
           <>
-            <span className="text-[#484F58]">&middot;</span>
+            <span className="text-[#768390]">&middot;</span>
             <span className="flex items-center gap-1 max-w-[160px] truncate">
               <MapPin className="h-3 w-3 shrink-0" />
               {match.venue}
@@ -200,8 +206,9 @@ export default function MatchHistoryPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-[#0D1117]"
+      className="min-h-screen bg-[#0D1117] relative overflow-hidden"
     >
+      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <h1 className="mb-6 text-2xl font-bold text-[#E6EDF3]">Match History</h1>
 
@@ -211,13 +218,15 @@ export default function MatchHistoryPage() {
             <button
               key={tab.key}
               role="tab"
+              id={`matchhist-tab-${tab.key}`}
               aria-selected={activeTab === tab.key}
+              aria-controls="matchhist-tabpanel"
               onClick={() => handleTabChange(tab.key)}
               className={cn(
                 "relative min-h-[44px] pb-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
                 activeTab === tab.key
                   ? "text-[#E6EDF3]"
-                  : "text-[#8B949E] hover:text-[#C9D1D9]"
+                  : "text-[#9CA3AF] hover:text-[#C9D1D9]"
               )}
             >
               {tab.label}
@@ -232,6 +241,7 @@ export default function MatchHistoryPage() {
           ))}
         </div>
 
+        <div role="tabpanel" id="matchhist-tabpanel" aria-labelledby={`matchhist-tab-${activeTab}`}>
         {/* Loading state */}
         {loading && (
           <div className="space-y-2">
@@ -257,7 +267,7 @@ export default function MatchHistoryPage() {
         {/* Empty state */}
         {!loading && !error && matches.length === 0 && (
           <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
-            <p className="text-sm text-[#8B949E]">
+            <p className="text-sm text-[#9CA3AF]">
               No {activeTab === "all" ? "" : activeTab + " "}matches to display.
             </p>
           </div>
@@ -274,12 +284,20 @@ export default function MatchHistoryPage() {
               transition={{ duration: 0.15 }}
               className="space-y-1.5"
             >
-              {matches.map((match) => (
-                <MatchRow key={match.id} match={match} />
+              {matches.map((match, idx) => (
+                <motion.div
+                  key={match.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.04 }}
+                >
+                  <MatchRow match={match} />
+                </motion.div>
               ))}
             </motion.div>
           </AnimatePresence>
         )}
+        </div>
       </div>
     </motion.div>
   );

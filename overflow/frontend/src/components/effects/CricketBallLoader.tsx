@@ -220,7 +220,7 @@ export function CricketBallLoader({
           <h1 className="font-black text-2xl tracking-tight text-[#E6EDF3]">
             OVER<span className="text-[#E4002B]">FLOW</span>
           </h1>
-          <p className="text-xs text-[#8B949E] mt-1 tracking-widest uppercase">
+          <p className="text-xs text-[#9CA3AF] mt-1 tracking-widest uppercase">
             PSL Trading Platform
           </p>
         </motion.div>

@@ -12,7 +12,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAccount } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { CountUp } from "@/components/motion/CountUp";
 import { MouseTrackCard } from "@/components/motion/MouseTrackCard";
 import { MagneticButton } from "@/components/effects/MagneticButton";
@@ -103,7 +103,7 @@ function LockDistributionBar({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-[10px] font-semibold">
         <span style={{ color: homeColor }}>{homePercent.toFixed(0)}%</span>
-        <span className="text-[#8B949E]">Lock Distribution</span>
+        <span className="text-[#9CA3AF]">Lock Distribution</span>
         <span style={{ color: awayColor }}>{awayPercent.toFixed(0)}%</span>
       </div>
       <div className="flex h-2 overflow-hidden rounded-full bg-[#21262D]">
@@ -148,6 +148,7 @@ interface FanWarCardProps {
 
 export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
   const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
   const remaining = useCountdown(war.lockDeadline);
   const isExpired = remaining <= 0;
   const isOpen = war.status === "OPEN" && !isExpired;
@@ -191,7 +192,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
           wallet: address,
           teamId,
           amount,
-        });
+        }, walletClient ?? undefined);
         setLocalUserLock({ teamId, amount, boostReward: null, claimed: false });
         setHomeAmount("");
         setAwayAmount("");
@@ -204,14 +205,14 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
         setLocking(false);
       }
     },
-    [address, isConnected, war.matchId, localUserLock, onLockSuccess],
+    [address, isConnected, war.matchId, localUserLock, onLockSuccess, walletClient],
   );
 
   const handleClaim = useCallback(async () => {
     if (!address) return;
     setClaiming(true);
     try {
-      const result = await fanWarsApi.claim(war.matchId, { wallet: address });
+      const result = await fanWarsApi.claim(war.matchId, { wallet: address }, walletClient ?? undefined);
       setLocalUserLock((prev) =>
         prev ? { ...prev, claimed: true, boostReward: result.claimed } : prev,
       );
@@ -224,7 +225,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
     } finally {
       setClaiming(false);
     }
-  }, [address, war.matchId]);
+  }, [address, war.matchId, walletClient]);
 
   // Determine if user's team won
   const userWon =
@@ -252,13 +253,13 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
               </span>
             )}
             {isCancelled && (
-              <span className="rounded-full bg-[#8B949E]/15 px-2 py-0.5 text-[10px] font-bold text-[#8B949E]">
+              <span className="rounded-full bg-[#9CA3AF]/15 px-2 py-0.5 text-[10px] font-bold text-[#9CA3AF]">
                 CANCELLED
               </span>
             )}
           </div>
           {isOpen && (
-            <div className="flex items-center gap-1.5 text-xs text-[#8B949E]">
+            <div className="flex items-center gap-1.5 text-xs text-[#9CA3AF]">
               <Clock className="h-3.5 w-3.5" />
               <span className="font-mono tabular-nums">
                 {formatCountdown(remaining)}
@@ -275,7 +276,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
 
         {/* Boost Pool */}
         <div className="px-4 pt-3 pb-1 text-center">
-          <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
+          <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
             Boost Pool
           </p>
           <p className="text-2xl font-black tabular-nums text-[#FDB913]">
@@ -305,8 +306,8 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
 
           {/* VS divider */}
           <div className="flex flex-col items-center gap-1">
-            <Swords className="h-5 w-5 text-[#484F58]" />
-            <span className="text-xs font-black text-[#484F58]">VS</span>
+            <Swords className="h-5 w-5 text-[#768390]" />
+            <span className="text-xs font-black text-[#768390]">VS</span>
           </div>
 
           {/* Away Team */}
@@ -335,7 +336,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
         </div>
 
         {/* Venue */}
-        <div className="flex items-center gap-1.5 px-4 pb-3 text-[10px] text-[#8B949E]">
+        <div className="flex items-center gap-1.5 px-4 pb-3 text-[10px] text-[#9CA3AF]">
           <MapPin className="h-3 w-3" />
           {war.matchVenue}
         </div>
@@ -433,7 +434,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
               {!isSettled && localUserLock.boostReward === null && (
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <div className="rounded-lg bg-[#0D1117] px-2 py-1.5 text-center">
-                    <p className="text-[10px] text-[#8B949E]">
+                    <p className="text-[10px] text-[#9CA3AF]">
                       If {localUserLock.teamId} wins
                     </p>
                     <p className="text-xs font-bold text-[#3FB950] tabular-nums">
@@ -450,10 +451,10 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
                     </p>
                   </div>
                   <div className="rounded-lg bg-[#0D1117] px-2 py-1.5 text-center">
-                    <p className="text-[10px] text-[#8B949E]">
+                    <p className="text-[10px] text-[#9CA3AF]">
                       If {localUserLock.teamId} loses
                     </p>
-                    <p className="text-xs font-bold text-[#8B949E] tabular-nums">
+                    <p className="text-xs font-bold text-[#9CA3AF] tabular-nums">
                       ~{Math.round(
                         estimateBoost(
                           localUserLock.amount,
@@ -510,7 +511,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
               {war.homeBoostShare !== null && war.awayBoostShare !== null && (
                 <div className="mt-2 grid grid-cols-2 gap-2">
                   <div className="rounded-lg bg-[#0D1117] px-2 py-1.5 text-center">
-                    <p className="text-[10px] text-[#8B949E]">
+                    <p className="text-[10px] text-[#9CA3AF]">
                       {war.homeTeamSymbol} Boost
                     </p>
                     <p
@@ -521,7 +522,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
                     </p>
                   </div>
                   <div className="rounded-lg bg-[#0D1117] px-2 py-1.5 text-center">
-                    <p className="text-[10px] text-[#8B949E]">
+                    <p className="text-[10px] text-[#9CA3AF]">
                       {war.awayTeamSymbol} Boost
                     </p>
                     <p
@@ -634,7 +635,7 @@ function LockSide({
           placeholder="0"
           min={0}
           aria-label={`Lock amount for ${teamSymbol}`}
-          className="w-full rounded-md border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all focus:border-[#58A6FF] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="w-full rounded-md border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] placeholder-[#9CA3AF] outline-none transition-all focus:border-[#58A6FF] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           disabled={disabled}
         />
       </div>
@@ -648,7 +649,7 @@ function LockSide({
               onAmountChange(Math.floor(maxBalance * factor).toString())
             }
             disabled={disabled}
-            className="flex-1 rounded-md border border-[#21262D] py-1 text-[10px] font-semibold text-[#8B949E] transition-colors hover:border-[#58A6FF]/50 hover:text-[#E6EDF3] disabled:opacity-40"
+            className="flex-1 rounded-md border border-[#21262D] py-1 text-[10px] font-semibold text-[#9CA3AF] transition-colors hover:border-[#58A6FF]/50 hover:text-[#E6EDF3] disabled:opacity-40"
           >
             {label}
           </button>
@@ -659,14 +660,14 @@ function LockSide({
       {numAmount > 0 && (
         <div className="space-y-1 text-[10px]">
           <div className="flex justify-between">
-            <span className="text-[#8B949E]">Win boost:</span>
+            <span className="text-[#9CA3AF]">Win boost:</span>
             <span className="font-semibold text-[#3FB950]">
               ~{Math.round(estimate.winBoost).toLocaleString()} WIRE
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#8B949E]">Lose boost:</span>
-            <span className="font-semibold text-[#8B949E]">
+            <span className="text-[#9CA3AF]">Lose boost:</span>
+            <span className="font-semibold text-[#9CA3AF]">
               ~{Math.round(estimate.loseBoost).toLocaleString()} WIRE
             </span>
           </div>

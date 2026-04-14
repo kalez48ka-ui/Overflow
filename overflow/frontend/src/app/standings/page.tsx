@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
   ArrowUpDown,
@@ -15,6 +16,12 @@ import { cn, formatPrice } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
 import type { PSLTeam } from "@/types";
 import { CardSpotlight } from "@/components/ui/card-spotlight";
+import { GlitchPrice } from "@/components/effects/GlitchPrice";
+
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
+  { ssr: false },
+);
 
 type SortKey =
   | "ranking"
@@ -215,8 +222,9 @@ export default function StandingsPage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen bg-[#0D1117]"
+      className="relative overflow-hidden min-h-screen bg-[#0D1117]"
     >
+      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-black text-[#E6EDF3] mb-4">Points Table</h1>
 
@@ -225,10 +233,10 @@ export default function StandingsPage() {
         <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm">
             <span className="font-bold text-[#E6EDF3]">PSL 2026</span>
-            <span className="text-[#484F58]">&middot;</span>
-            <span className="text-[#8B949E]">{seasonStage}</span>
-            <span className="text-[#484F58]">&middot;</span>
-            <span className="tabular-nums text-[#8B949E]">
+            <span className="text-[#768390]">&middot;</span>
+            <span className="text-[#9CA3AF]">{seasonStage}</span>
+            <span className="text-[#768390]">&middot;</span>
+            <span className="tabular-nums text-[#9CA3AF]">
               {matchesLoading ? "..." : `${completedMatches}/${Math.max(allMatches.length, totalScheduledMatches)} matches`}
             </span>
             {liveMatches > 0 && (
@@ -245,13 +253,13 @@ export default function StandingsPage() {
                 style={{ width: `${seasonProgress}%`, transition: "width 0.6s ease-out" }}
               />
             </div>
-            <span className="text-xs tabular-nums text-[#8B949E]">{seasonProgress}%</span>
+            <span className="text-xs tabular-nums text-[#9CA3AF]">{seasonProgress}%</span>
           </div>
         </div>
         </CardSpotlight>
 
         {/* Table container */}
-        <p className="mb-2 text-[10px] text-[#8B949E] sm:hidden">Swipe to see all columns</p>
+        <p className="mb-2 text-[10px] text-[#9CA3AF] sm:hidden">Swipe to see all columns</p>
         <div className="overflow-x-auto rounded-xl border border-[#21262D] bg-[#161B22]">
           <table className="w-full min-w-[560px] text-sm" aria-label="PSL 2026 Points Table">
             <thead>
@@ -263,7 +271,7 @@ export default function StandingsPage() {
                     tabIndex={0}
                     aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
                     className={cn(
-                      "group cursor-pointer select-none px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[#8B949E] transition-colors hover:text-[#E6EDF3] sticky top-0 bg-[#161B22] z-10",
+                      "group cursor-pointer select-none px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[#9CA3AF] transition-colors hover:text-[#E6EDF3] sticky top-0 bg-[#161B22] z-10",
                       col.align === "left" ? "text-left" : "text-right",
                       col.key === "name" && "text-left",
                       col.key === "ranking" && "text-center w-16",
@@ -314,7 +322,7 @@ export default function StandingsPage() {
 
         {/* Upcoming Fixtures — compact list */}
         <div className="mt-8">
-          <h2 className="mb-3 text-sm font-medium text-[#8B949E]">
+          <h2 className="mb-3 text-sm font-medium text-[#9CA3AF]">
             Upcoming Fixtures
           </h2>
 
@@ -328,7 +336,7 @@ export default function StandingsPage() {
               ))}
             </div>
           ) : displayUpcoming.length === 0 ? (
-            <p className="text-sm text-[#484F58]">No upcoming fixtures scheduled.</p>
+            <p className="text-sm text-[#768390]">No upcoming fixtures scheduled.</p>
           ) : (
             <div className="space-y-1">
               {displayUpcoming.map((match) => (
@@ -373,8 +381,8 @@ function UpcomingFixtureRow({ match }: { match: MatchInfo }) {
   const t2Mock = PSL_TEAMS.find(
     (t) => t.id === match.team2Id || t.id === match.team2Symbol?.replace("$", ""),
   );
-  const t1Color = match.team1Color || t1Mock?.color || "#8B949E";
-  const t2Color = match.team2Color || t2Mock?.color || "#8B949E";
+  const t1Color = match.team1Color || t1Mock?.color || "#9CA3AF";
+  const t2Color = match.team2Color || t2Mock?.color || "#9CA3AF";
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-2.5 text-sm transition-colors hover:bg-[#21262D]/40">
@@ -382,20 +390,20 @@ function UpcomingFixtureRow({ match }: { match: MatchInfo }) {
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t1Color }} />
         <span className="font-medium text-[#E6EDF3] truncate">{match.team1Name}</span>
-        <span className="text-xs text-[#484F58]">vs</span>
+        <span className="text-xs text-[#768390]">vs</span>
         <span className="font-medium text-[#E6EDF3] truncate">{match.team2Name}</span>
         <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t2Color }} />
       </div>
 
       {/* Date + venue */}
-      <div className="flex items-center gap-3 text-xs text-[#8B949E] shrink-0">
+      <div className="flex items-center gap-3 text-xs text-[#9CA3AF] shrink-0">
         <span>
           <span className={cn("font-medium", isToday && "text-[#E4002B]")}>{dateLabel}</span>
           {" "}{timeLabel}
         </span>
         {match.venue && (
           <>
-            <span className="text-[#484F58]">&middot;</span>
+            <span className="text-[#768390]">&middot;</span>
             <span className="max-w-[140px] truncate hidden sm:inline">{match.venue}</span>
           </>
         )}
@@ -419,7 +427,10 @@ function TeamRow({
   const rankColor = RANK_COLORS[team.ranking];
 
   return (
-    <tr
+    <motion.tr
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: idx * 0.05 }}
       className={cn(
         "group border-b border-[#21262D]/50 transition-colors hover:bg-[#21262D]/40",
         idx % 2 === 1 && "bg-white/[0.01]",
@@ -430,7 +441,7 @@ function TeamRow({
         <span
           className={cn(
             "inline-flex h-6 w-6 items-center justify-center rounded text-xs font-bold font-mono tabular-nums",
-            rankColor ? "font-black" : "text-[#8B949E]",
+            rankColor ? "font-black" : "text-[#9CA3AF]",
           )}
           style={rankColor ? { color: rankColor } : undefined}
         >
@@ -449,7 +460,7 @@ function TeamRow({
             <span className="font-semibold text-[#E6EDF3] text-sm transition-colors group-hover/link:text-[#E4002B]">
               {team.name}
             </span>
-            <span className="ml-2 text-xs text-[#484F58]">{team.symbol}</span>
+            <span className="ml-2 text-xs text-[#768390]">{team.symbol}</span>
           </div>
         </Link>
       </td>
@@ -502,9 +513,9 @@ function TeamRow({
       <td className="px-4 py-3 text-right">
         <Link
           href={`/trade/${team.id.toLowerCase()}`}
-          className="font-mono tabular-nums font-semibold text-[#E6EDF3] hover:text-[#E4002B] transition-colors"
+          className="inline-block transition-colors hover:text-[#E4002B]"
         >
-          ${formatPrice(team.price)}
+          <GlitchPrice value={`$${formatPrice(team.price)}`} className="text-xs font-bold tabular-nums" />
         </Link>
       </td>
 
@@ -520,9 +531,9 @@ function TeamRow({
       </td>
 
       {/* Sell Tax */}
-      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#8B949E]">
+      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#9CA3AF]">
         {team.sellTax}%
       </td>
-    </tr>
+    </motion.tr>
   );
 }

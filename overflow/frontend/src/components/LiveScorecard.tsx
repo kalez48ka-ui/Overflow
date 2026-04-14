@@ -14,7 +14,7 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
   const bowlingTeam = team1.isBatting ? team2 : team1;
 
   return (
-    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden" aria-live="polite" aria-atomic="true">
       {/* Header strip */}
       <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2">
         <div className="flex items-center gap-2">
@@ -29,13 +29,13 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
               </span>
             </span>
           ) : (
-            <span className="text-[10px] font-bold text-[#484F58] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-[#768390] uppercase tracking-wider">
               {match.status === "completed" ? "COMPLETED" : "DEMO"}
             </span>
           )}
-          <span className="text-[10px] text-[#484F58]">{match.venue}</span>
+          <span className="text-[10px] text-[#768390]">{match.venue}</span>
         </div>
-        <span className="text-[10px] font-mono tabular-nums text-[#484F58]">
+        <span className="text-[10px] font-mono tabular-nums text-[#768390]">
           Ov {match.currentOver}
         </span>
       </div>
@@ -59,21 +59,21 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
                   speed={35}
                   scrambleSpeed={20}
                   resolvedColor="#E6EDF3"
-                  scrambledColor="#8B949E"
+                  scrambledColor="#9CA3AF"
                 />
-                <span className="text-xl sm:text-2xl text-[#8B949E]">/{battingTeam.wickets}</span>
+                <span className="text-xl sm:text-2xl text-[#9CA3AF]">/{battingTeam.wickets}</span>
               </p>
-              <p className="text-[10px] font-mono tabular-nums text-[#484F58]">{battingTeam.overs} ov &middot; RR {battingTeam.runRate.toFixed(2)}</p>
+              <p className="text-[10px] font-mono tabular-nums text-[#768390]">{battingTeam.overs} ov &middot; RR {battingTeam.runRate.toFixed(2)}</p>
             </div>
           </div>
           {(battingTeam.target || battingTeam.requiredRunRate != null) && (
             <div className="mt-2 flex items-center gap-3 text-xs font-mono tabular-nums">
               {battingTeam.target && (
-                <span className="text-[#8B949E]">Target <span className="font-bold text-[#E6EDF3]">{battingTeam.target}</span></span>
+                <span className="text-[#9CA3AF]">Target <span className="font-bold text-[#E6EDF3]">{battingTeam.target}</span></span>
               )}
               {battingTeam.requiredRunRate != null && (
                 <span>
-                  <span className="text-[#8B949E]">Req </span>
+                  <span className="text-[#9CA3AF]">Req </span>
                   <span
                     className="font-bold"
                     style={{
@@ -98,21 +98,21 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <TeamLogo teamId={bowlingTeam.teamId} color={bowlingTeam.color} size={28} className="opacity-70" />
-            <p className="text-sm text-[#8B949E]">{bowlingTeam.teamName}</p>
+            <p className="text-sm text-[#9CA3AF]">{bowlingTeam.teamName}</p>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold font-mono tabular-nums text-[#8B949E]">
+            <p className="text-xl font-bold font-mono tabular-nums text-[#9CA3AF]">
               {bowlingTeam.runs}
               <span className="text-base">/{bowlingTeam.wickets}</span>
             </p>
-            <p className="text-[10px] font-mono tabular-nums text-[#484F58]">{bowlingTeam.overs} ov</p>
+            <p className="text-[10px] font-mono tabular-nums text-[#768390]">{bowlingTeam.overs} ov</p>
           </div>
         </div>
 
         {/* Bowler */}
         <div className="mt-3 flex items-center justify-between text-xs">
-          <span className="text-[#484F58]">Bowling</span>
-          <span className="font-medium text-[#8B949E]">{match.currentBowler}</span>
+          <span className="text-[#768390]">Bowling</span>
+          <span className="font-medium text-[#9CA3AF]">{match.currentBowler}</span>
         </div>
       </div>
     </div>

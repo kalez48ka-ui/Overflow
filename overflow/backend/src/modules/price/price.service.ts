@@ -1,10 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Server as SocketServer } from 'socket.io';
 import { OHLCVCandle, PriceUpdate, Timeframe } from '../../common/types';
-import { SELL_TAX_BY_RANK } from '../../common/constants';
-
-const BONDING_CURVE_K = 0.0001;
-const BASE_PRICE = 1.0;
+import { SELL_TAX_BY_RANK, BONDING_CURVE_K, BASE_PRICE } from '../../common/constants';
 
 export class PriceService {
   private prisma: PrismaClient;
@@ -27,87 +24,108 @@ export class PriceService {
     return SELL_TAX_BY_RANK[teamRanking] ?? 5;
   }
 
+  /**
+   * Update the team price after a trade executes.
+   * Wrapped in a RepeatableRead transaction to prevent lost updates
+   * when concurrent trades read stale prices.
+   */
   async updatePriceAfterTrade(
     teamId: string,
     tradeType: 'BUY' | 'SELL',
     amount: number,
     price: number
   ): Promise<void> {
-    const team = await this.prisma.team.findUnique({ where: { id: teamId } });
-    if (!team) return;
+    let emitData: { symbol: string; price: number; change24h: number } | null = null as { symbol: string; price: number; change24h: number } | null;
 
-    const direction = tradeType === 'BUY' ? 1 : -1;
-    const impact = amount * BONDING_CURVE_K * direction;
-    const newPrice = Math.max(0.01, Number(team.currentPrice) + impact);
+    await this.prisma.$transaction(
+      async (tx) => {
+        const team = await tx.team.findUnique({ where: { id: teamId } });
+        if (!team) return;
 
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const now = new Date();
-    const candleStart = new Date(now);
-    candleStart.setMinutes(0, 0, 0);
+        const direction = tradeType === 'BUY' ? 1 : -1;
+        const impact = amount * BONDING_CURVE_K * direction;
+        const newPrice = Math.max(0.01, Number(team.currentPrice) + impact);
 
-    // Parallelize independent lookups: 24h old price point + current candle
-    const [oldPricePoint, existingCandle] = await Promise.all([
-      this.prisma.pricePoint.findFirst({
-        where: {
-          teamId,
-          timestamp: { lte: twentyFourHoursAgo },
-        },
-        orderBy: { timestamp: 'desc' },
-      }),
-      this.prisma.pricePoint.findFirst({
-        where: {
-          teamId,
-          timestamp: { gte: candleStart },
-        },
-        orderBy: { timestamp: 'desc' },
-      }),
-    ]);
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const now = new Date();
+        const candleStart = new Date(now);
+        candleStart.setMinutes(0, 0, 0);
 
-    const oldPrice = Number(oldPricePoint?.close ?? team.currentPrice);
-    const priceChange24h = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
+        // Parallelize independent lookups: 24h old price point + current candle
+        const [oldPricePoint, existingCandle] = await Promise.all([
+          tx.pricePoint.findFirst({
+            where: {
+              teamId,
+              timestamp: { lte: twentyFourHoursAgo },
+            },
+            orderBy: { timestamp: 'desc' },
+          }),
+          tx.pricePoint.findFirst({
+            where: {
+              teamId,
+              timestamp: { gte: candleStart },
+            },
+            orderBy: { timestamp: 'desc' },
+          }),
+        ]);
 
-    await this.prisma.team.update({
-      where: { id: teamId },
-      data: {
-        currentPrice: newPrice,
-        priceChange24h,
+        const oldPrice = Number(oldPricePoint?.close ?? team.currentPrice);
+        const priceChange24h = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
+
+        await tx.team.update({
+          where: { id: teamId },
+          data: {
+            currentPrice: newPrice,
+            priceChange24h,
+          },
+        });
+
+        if (existingCandle) {
+          await tx.pricePoint.update({
+            where: { id: existingCandle.id },
+            data: {
+              high: Math.max(Number(existingCandle.high), newPrice),
+              low: Math.min(Number(existingCandle.low), newPrice),
+              close: newPrice,
+              price: newPrice,
+              volume: Number(existingCandle.volume) + amount * price,
+            },
+          });
+        } else {
+          await tx.pricePoint.create({
+            data: {
+              teamId,
+              price: newPrice,
+              open: Number(team.currentPrice),
+              high: Math.max(Number(team.currentPrice), newPrice),
+              low: Math.min(Number(team.currentPrice), newPrice),
+              close: newPrice,
+              volume: amount * price,
+              timestamp: now,
+            },
+          });
+        }
+
+        emitData = {
+          symbol: team.symbol,
+          price: newPrice,
+          change24h: priceChange24h,
+        };
       },
-    });
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+      }
+    );
 
-    if (existingCandle) {
-      await this.prisma.pricePoint.update({
-        where: { id: existingCandle.id },
-        data: {
-          high: Math.max(Number(existingCandle.high), newPrice),
-          low: Math.min(Number(existingCandle.low), newPrice),
-          close: newPrice,
-          price: newPrice,
-          volume: Number(existingCandle.volume) + amount * price,
-        },
-      });
-    } else {
-      await this.prisma.pricePoint.create({
-        data: {
-          teamId,
-          price: newPrice,
-          open: Number(team.currentPrice),
-          high: Math.max(Number(team.currentPrice), newPrice),
-          low: Math.min(Number(team.currentPrice), newPrice),
-          close: newPrice,
-          volume: amount * price,
-          timestamp: now,
-        },
-      });
-    }
-
-    if (this.io) {
+    // Socket emission outside the transaction
+    if (this.io && emitData) {
       const update: PriceUpdate = {
-        symbol: team.symbol,
-        price: newPrice,
-        change24h: priceChange24h,
+        symbol: emitData.symbol,
+        price: emitData.price,
+        change24h: emitData.change24h,
         timestamp: Date.now(),
       };
-      this.io.to(`team:${team.symbol}`).emit('price:update', update);
+      this.io.to(`team:${emitData.symbol}`).emit('price:update', update);
     }
   }
 
@@ -158,6 +176,7 @@ export class PriceService {
 
     const now = Date.now();
     const allUpdates: PriceUpdate[] = [];
+    let anyChanged = false;
 
     for (const team of teams) {
       const price = Number(team.currentPrice);
@@ -174,10 +193,13 @@ export class PriceService {
       if (lastPrice !== price) {
         this.io.to(`team:${team.symbol}`).emit('price:update', update);
         this.lastEmittedPrices.set(team.symbol, price);
+        anyChanged = true;
       }
     }
 
-    // Batch emission for landing page clients that need all prices at once
-    this.io.emit('prices:all', allUpdates);
+    // Batch emission only when at least one price actually changed
+    if (anyChanged) {
+      this.io.to('markets').emit('prices:all', allUpdates);
+    }
   }
 }

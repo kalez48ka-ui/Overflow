@@ -19,9 +19,11 @@ export function createVaultRouter(vaultService: VaultService): Router {
     }
   });
 
-  router.get('/upsets', async (_req: Request, res: Response) => {
+  router.get('/upsets', async (req: Request, res: Response) => {
     try {
-      const upsets = await vaultService.getUpsetEvents();
+      const limit = Math.min(Math.max(1, parseInt(String(req.query.limit || '50')) || 50), 200);
+      const offset = Math.max(0, parseInt(String(req.query.offset || '0')) || 0);
+      const upsets = await vaultService.getUpsetEvents(limit, offset);
       res.json(upsets);
     } catch (err) {
       console.error('[Vault] GET /upsets error:', err);

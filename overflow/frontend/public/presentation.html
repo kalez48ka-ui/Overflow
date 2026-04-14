@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overflow — Hackathon Presentation</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/black.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0D1117;
+  --card: #161B22;
+  --border: #21262D;
+  --text: #E6EDF3;
+  --muted: #8B949E;
+  --accent: #E4002B;
+  --green: #3FB950;
+  --blue: #58A6FF;
+  --purple: #BC8CFF;
+  --orange: #F0883E;
+  --yellow: #D29922;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.reveal {
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text);
+}
+.reveal .slides { text-align: left; }
+.reveal .slides section { padding: 40px 60px; }
+.reveal h1, .reveal h2, .reveal h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.reveal h1 { font-size: 2.8em; line-height: 1.1; }
+.reveal h2 { font-size: 2em; margin-bottom: 0.5em; }
+.reveal h3 { font-size: 1.15em; color: var(--muted); font-weight: 500; line-height: 1.5; }
+.reveal p, .reveal li { font-size: 0.85em; line-height: 1.6; color: var(--muted); }
+.reveal .slide-background { background: var(--bg); }
+
+/* ===== UTILITY ===== */
+.accent { color: var(--accent) !important; }
+.green { color: var(--green) !important; }
+.blue { color: var(--blue) !important; }
+.purple { color: var(--purple) !important; }
+.orange { color: var(--orange) !important; }
+.yellow { color: var(--yellow) !important; }
+.white { color: var(--text) !important; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ===== GLASSMORPHISM CARDS ===== */
+.glass {
+  background: rgba(22, 27, 34, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(48, 54, 61, 0.6);
+  border-radius: 14px;
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.glass:hover {
+  border-color: rgba(88, 166, 255, 0.3);
+  box-shadow: 0 0 20px rgba(88, 166, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+/* ===== GLOW VARIANTS ===== */
+.glow-green { box-shadow: 0 0 30px rgba(63, 185, 80, 0.12), inset 0 1px 0 rgba(63, 185, 80, 0.1); }
+.glow-blue { box-shadow: 0 0 30px rgba(88, 166, 255, 0.12), inset 0 1px 0 rgba(88, 166, 255, 0.1); }
+.glow-purple { box-shadow: 0 0 30px rgba(188, 140, 255, 0.12), inset 0 1px 0 rgba(188, 140, 255, 0.1); }
+.glow-accent { box-shadow: 0 0 30px rgba(228, 0, 43, 0.12), inset 0 1px 0 rgba(228, 0, 43, 0.1); }
+.glow-orange { box-shadow: 0 0 30px rgba(240, 136, 62, 0.12), inset 0 1px 0 rgba(240, 136, 62, 0.1); }
+
+/* ===== ANIMATED GRADIENT SHIMMER ===== */
+.shimmer {
+  background: linear-gradient(90deg, #E4002B 0%, #FF4D6A 25%, #E4002B 50%, #FF4D6A 75%, #E4002B 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ===== ANIMATED DOT GRID ===== */
+.dot-grid {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0;
+}
+.dot-grid::before {
+  content: '';
+  position: absolute; inset: -50%;
+  width: 200%; height: 200%;
+  background-image: radial-gradient(circle, rgba(88, 166, 255, 0.12) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: drift 20s linear infinite;
+}
+.dot-grid::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, var(--bg) 80%);
+}
+@keyframes drift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(40px, 40px); }
+}
+
+/* ===== STAGGERED ENTRY ===== */
+.reveal .slides section .stagger > * {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal .slides section.present .stagger > * { opacity: 1; transform: translateY(0); }
+.reveal .slides section.present .stagger > *:nth-child(1) { transition-delay: 0.1s; }
+.reveal .slides section.present .stagger > *:nth-child(2) { transition-delay: 0.2s; }
+.reveal .slides section.present .stagger > *:nth-child(3) { transition-delay: 0.3s; }
+.reveal .slides section.present .stagger > *:nth-child(4) { transition-delay: 0.4s; }
+.reveal .slides section.present .stagger > *:nth-child(5) { transition-delay: 0.5s; }
+.reveal .slides section.present .stagger > *:nth-child(6) { transition-delay: 0.6s; }
+
+/* ===== SVG ICONS ===== */
+.icon-wrap {
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.icon-wrap svg { width: 100%; height: 100%; }
+.icon-lg { width: 48px; height: 48px; margin-bottom: 12px; }
+.icon-xl { width: 56px; height: 56px; margin-bottom: 16px; }
+
+/* ===== TITLE SLIDE ===== */
+.title-slide {
+  text-align: center !important;
+  display: flex !important; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative;
+}
+.title-slide h1 { font-size: 5em; margin-bottom: 0.05em; position: relative; z-index: 1; }
+.title-slide .tagline {
+  font-size: 1.4em; color: var(--muted); margin-bottom: 0.6em;
+  font-weight: 500; position: relative; z-index: 1;
+}
+.title-slide .sub-tagline {
+  font-size: 0.85em; color: var(--muted); margin-bottom: 24px;
+  position: relative; z-index: 1; max-width: 600px;
+}
+
+/* ===== TEAM LOGOS ===== */
+.teams-row {
+  display: flex; justify-content: center; gap: 20px;
+  margin-top: 12px; position: relative; z-index: 1;
+}
+.team-logo {
+  width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--border); background: var(--card);
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.team-logo:hover {
+  transform: scale(1.2) translateY(-4px);
+  border-color: var(--accent);
+  box-shadow: 0 8px 24px rgba(228, 0, 43, 0.2);
+}
+
+.chain-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 20px; border: 1px solid var(--border);
+  border-radius: 100px; font-size: 0.7em; color: var(--muted);
+  background: rgba(22, 27, 34, 0.6); backdrop-filter: blur(8px);
+  position: relative; z-index: 1;
+}
+.chain-badge svg { width: 16px; height: 16px; }
+
+/* ===== PROBLEM CARDS ===== */
+.problem-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; margin-top: 30px;
+}
+.problem-card {
+  padding: 28px 24px; text-align: center;
+}
+.problem-card h4 {
+  color: var(--text); font-size: 0.95em; margin: 0 0 8px 0; font-weight: 600;
+}
+.problem-card p { font-size: 0.65em !important; margin: 0; line-height: 1.6; }
+
+/* ===== FLOW DIAGRAM ===== */
+.flow-diagram {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-top: 28px; position: relative;
+}
+.flow-node {
+  padding: 18px 22px; text-align: center; min-width: 150px;
+  position: relative; z-index: 1;
+}
+.flow-node h4 { color: var(--text); font-size: 0.8em; margin: 0 0 4px 0; }
+.flow-node p { font-size: 0.55em !important; margin: 0; }
+.flow-connector {
+  width: 60px; height: 2px; position: relative; flex-shrink: 0;
+  background: linear-gradient(90deg, var(--border), var(--accent), var(--border));
+}
+.flow-connector::after {
+  content: ''; position: absolute; top: -3px; right: -1px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ===== HIGHLIGHT BOX ===== */
+.highlight-box {
+  background: rgba(228, 0, 43, 0.06);
+  border: 1px solid rgba(228, 0, 43, 0.15);
+  border-radius: 14px; padding: 20px 28px; margin-top: 16px;
+  backdrop-filter: blur(8px);
+}
+.highlight-box p { color: var(--text) !important; font-size: 0.8em !important; margin: 0; line-height: 1.7; }
+
+/* ===== TOKEN MECHANICS ===== */
+.mechanics-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-top: 20px;
+}
+.mechanic-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 16px 18px;
+}
+.mechanic-card h4 { color: var(--text); font-size: 0.78em; margin: 0 0 3px 0; font-weight: 600; }
+.mechanic-card p { font-size: 0.58em !important; margin: 0; line-height: 1.5; }
+
+/* ===== FEATURE CARDS ===== */
+.features-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-top: 20px;
+}
+.feature-card { padding: 22px; }
+.feature-card h4 { color: var(--text); font-size: 0.88em; margin: 0 0 6px 0; font-weight: 600; }
+.feature-card p { font-size: 0.62em !important; margin: 0; line-height: 1.5; }
+
+/* ===== ARCHITECTURE ===== */
+.arch-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-top: 20px;
+}
+.arch-box { padding: 20px; text-align: center; }
+.arch-box h4 { color: var(--text); font-size: 0.85em; margin: 0 0 4px 0; font-weight: 600; }
+.arch-box .tech {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.55em;
+  color: var(--blue); display: block; margin-bottom: 8px;
+}
+.arch-box p { font-size: 0.55em !important; margin: 0; }
+.arch-connector {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 16px; gap: 0;
+}
+.arch-line {
+  height: 2px; flex: 1; max-width: 200px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+.arch-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--blue); box-shadow: 0 0 6px var(--blue);
+}
+
+/* ===== CONTRACT TABLE ===== */
+.contract-table {
+  width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 0.7em;
+}
+.contract-table th {
+  text-align: left; color: var(--muted); font-weight: 500;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.06em;
+}
+.contract-table td {
+  padding: 9px 16px; border-bottom: 1px solid rgba(33, 38, 45, 0.5); color: var(--text);
+}
+.contract-table td.addr {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.85em; color: var(--blue);
+}
+.contract-table tr { transition: background 0.2s; }
+.contract-table tbody tr:hover { background: rgba(88, 166, 255, 0.04); }
+
+/* ===== STATS ===== */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-top: 24px;
+}
+.stat-card { padding: 22px; text-align: center; }
+.stat-card .number {
+  font-family: 'JetBrains Mono', monospace; font-size: 2.4em;
+  font-weight: 700; color: var(--text); display: block; line-height: 1.1;
+}
+.stat-card .label {
+  font-size: 0.65em; color: var(--muted); margin-top: 6px;
+  display: block; text-transform: uppercase; letter-spacing: 0.06em;
+}
+
+/* ===== SECURITY ===== */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; margin-top: 20px; }
+.sec-list { display: flex; flex-direction: column; gap: 12px; }
+.sec-item {
+  display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px;
+}
+.sec-item h4 { color: var(--text); font-size: 0.78em; margin: 0 0 3px 0; font-weight: 600; }
+.sec-item p { font-size: 0.58em !important; margin: 0; line-height: 1.5; }
+.perf-stack { display: flex; flex-direction: column; gap: 14px; }
+.perf-card { padding: 22px; text-align: center; }
+.perf-card .perf-val {
+  font-family: 'JetBrains Mono', monospace; font-size: 2.6em;
+  font-weight: 700; display: block; line-height: 1.1;
+}
+.perf-card .perf-label {
+  font-size: 0.62em; color: var(--muted); margin-top: 6px; display: block;
+}
+
+/* ===== ROADMAP ===== */
+.roadmap-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 20px; margin-top: 28px; position: relative;
+}
+.roadmap-phase { padding: 24px; position: relative; }
+.roadmap-phase .phase-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6em;
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; display: block;
+}
+.roadmap-phase h4 { color: var(--text); font-size: 0.88em; margin: 0 0 12px 0; }
+.roadmap-phase ul { padding-left: 16px; margin: 0; }
+.roadmap-phase li { font-size: 0.6em !important; padding: 3px 0; }
+.roadmap-timeline {
+  position: absolute; top: -14px; left: 5%; right: 5%; height: 2px;
+  background: linear-gradient(90deg, var(--green), var(--blue), var(--purple));
+  border-radius: 2px;
+}
+.roadmap-timeline::before, .roadmap-timeline::after, .roadmap-timeline span {
+  content: ''; position: absolute; top: -4px;
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.roadmap-timeline::before { left: 10%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+.roadmap-timeline span { left: 50%; transform: translateX(-50%); background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+.roadmap-timeline::after { right: 10%; background: var(--purple); box-shadow: 0 0 8px var(--purple); }
+
+/* ===== END SLIDE ===== */
+.end-slide {
+  text-align: center !important;
+  display: flex !important; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative;
+}
+.end-slide h1 { font-size: 3.5em; margin-bottom: 0.2em; position: relative; z-index: 1; }
+.end-links {
+  display: flex; gap: 24px; margin-top: 24px; position: relative; z-index: 1;
+}
+.end-link {
+  padding: 20px 32px; text-align: center; text-decoration: none; min-width: 160px;
+}
+.end-link h4 { color: var(--text); font-size: 0.82em; margin: 0 0 4px 0; }
+.end-link p { font-size: 0.6em !important; margin: 0; color: var(--blue); }
+
+/* ===== BADGES ===== */
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 100px;
+  font-size: 0.6em; font-weight: 600; margin-left: 6px; vertical-align: middle;
+}
+.badge-green { background: rgba(63, 185, 80, 0.12); color: var(--green); }
+.badge-blue { background: rgba(88, 166, 255, 0.12); color: var(--blue); }
+
+/* ===== PROGRESS BAR ===== */
+.reveal .progress { color: var(--accent); height: 3px; }
+.reveal .progress span { background: linear-gradient(90deg, var(--accent), #FF4D6A); }
+
+/* ===== SLIDE NUMBER ===== */
+.reveal .slide-number {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.55em;
+  color: var(--muted); background: transparent; right: 16px; bottom: 12px;
+}
+
+/* ===== NUMBER COUNTER ANIMATION ===== */
+@keyframes count-up {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.reveal .slides section.present .counter-animate .number {
+  animation: count-up 0.6s ease-out forwards;
+}
+.reveal .slides section.present .counter-animate .stat-card:nth-child(2) .number { animation-delay: 0.1s; }
+.reveal .slides section.present .counter-animate .stat-card:nth-child(3) .number { animation-delay: 0.2s; }
+.reveal .slides section.present .counter-animate .stat-card:nth-child(4) .number { animation-delay: 0.3s; }
+
+/* ===== PULSE ===== */
+@keyframes subtle-pulse { 0%, 100% { box-shadow: 0 0 20px rgba(88, 166, 255, 0.08); } 50% { box-shadow: 0 0 30px rgba(88, 166, 255, 0.16); } }
+.pulse-card { animation: subtle-pulse 3s ease-in-out infinite; }
+</style>
+</head>
+<body>
+
+<div class="reveal">
+<div class="slides">
+
+<!-- ==================== SLIDE 1: TITLE ==================== -->
+<section class="title-slide" data-background-color="#0D1117" data-transition="fade">
+  <div class="dot-grid"></div>
+  <h1 class="shimmer">OVERFLOW</h1>
+  <div class="tagline">Where Cricket Meets DeFi</div>
+  <p class="sub-tagline">Trade PSL team tokens whose prices move with <span class="white">real match performance</span></p>
+  <div class="teams-row">
+    <img class="team-logo" src="../frontend/public/teams/IU.png" alt="Islamabad United" loading="lazy">
+    <img class="team-logo" src="../frontend/public/teams/LQ.png" alt="Lahore Qalandars" loading="lazy">
+    <img class="team-logo" src="../frontend/public/teams/MS.png" alt="Multan Sultans" loading="lazy">
+    <img class="team-logo" src="../frontend/public/teams/KK.png" alt="Karachi Kings" loading="lazy">
+    <img class="team-logo" src="../frontend/public/teams/PZ.png" alt="Peshawar Zalmi" loading="lazy">
+    <img class="team-logo" src="../frontend/public/teams/QG.png" alt="Quetta Gladiators" loading="lazy">
+    <img class="team-logo" src="../frontend/public/teams/HK.png" alt="Hawks" loading="lazy">
+    <img class="team-logo" src="../frontend/public/teams/RW.png" alt="Rawalpindi" loading="lazy">
+  </div>
+  <div style="margin-top: 20px;">
+    <span class="chain-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Built on WireFluid Blockchain
+    </span>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 2: PROBLEM ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>The Problem</h2>
+  <h3>Cricket fans watch. They cheer. But they can't <span class="accent">profit</span> from their knowledge.</h3>
+  <div class="problem-grid stagger">
+    <div class="problem-card glass">
+      <div class="icon-wrap icon-xl" style="margin: 0 auto 12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+      </div>
+      <h4>Passive Fandom</h4>
+      <p>600M+ PSL viewers have zero financial upside from understanding the game</p>
+    </div>
+    <div class="problem-card glass">
+      <div class="icon-wrap icon-xl" style="margin: 0 auto 12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 8v4l2 2"/><circle cx="12" cy="12" r="3" stroke-dasharray="2 2"/></svg>
+      </div>
+      <h4>Betting Is Not Investing</h4>
+      <p>Traditional betting is binary win/lose. No way to invest in a team's long-term performance</p>
+    </div>
+    <div class="problem-card glass">
+      <div class="icon-wrap icon-xl" style="margin: 0 auto 12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h4>No On-Chain Sports</h4>
+      <p>DeFi has tokens for everything -- except real-time sports performance. This market doesn't exist yet.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 3: SOLUTION ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>The Solution</h2>
+  <h3><span class="accent">Overflow</span> -- A decentralized PSL team token exchange</h3>
+  <div class="highlight-box" style="margin-top: 20px;">
+    <p>Each PSL team has its own ERC-20 token. Prices are driven by a <span class="green">bonding curve</span> -- as more fans buy in, the price rises algorithmically. When a team wins, holders earn <span class="green">performance rewards</span>. When upsets happen, the <span class="accent">Upset Vault</span> pays out multipliers.</p>
+  </div>
+  <div class="flow-diagram" style="margin-top: 32px;">
+    <div class="flow-node glass">
+      <div class="icon-wrap" style="margin: 0 auto 8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l2-4 4 6 2-2"/></svg>
+      </div>
+      <h4>Live Match</h4>
+      <p>CricAPI real-time data</p>
+    </div>
+    <div class="flow-connector"></div>
+    <div class="flow-node glass">
+      <div class="icon-wrap" style="margin: 0 auto 8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      </div>
+      <h4>Oracle Update</h4>
+      <p>On-chain score feed</p>
+    </div>
+    <div class="flow-connector" style="animation-delay: 0.5s;"></div>
+    <div class="flow-node glass">
+      <div class="icon-wrap" style="margin: 0 auto 8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <h4>Price Moves</h4>
+      <p>Bonding curve reacts</p>
+    </div>
+    <div class="flow-connector" style="animation-delay: 1s;"></div>
+    <div class="flow-node glass">
+      <div class="icon-wrap" style="margin: 0 auto 8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      </div>
+      <h4>Rewards</h4>
+      <p>Holders earn profits</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 4: TOKEN MECHANICS ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>Token Mechanics</h2>
+  <h3>Battle-tested DeFi primitives adapted for sports</h3>
+  <div class="mechanics-grid stagger">
+    <div class="mechanic-card glass">
+      <div class="icon-wrap" style="flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <div>
+        <h4>Asymmetric Bonding Curve</h4>
+        <p>Buy: supply<sup>1.5</sup> | Sell: supply<sup>1.2</sup> -- rewards early believers</p>
+      </div>
+    </div>
+    <div class="mechanic-card glass">
+      <div class="icon-wrap" style="flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div>
+        <h4>Progressive Sell Tax</h4>
+        <p>12% under 5min, 8%, 5%, 3% after 2hrs -- discourages quick flips</p>
+      </div>
+    </div>
+    <div class="mechanic-card glass">
+      <div class="icon-wrap" style="flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <h4>Circuit Breaker</h4>
+        <p>Auto-pauses trading on 15% drop in 5 minutes -- flash crash protection</p>
+      </div>
+    </div>
+    <div class="mechanic-card glass">
+      <div class="icon-wrap" style="flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+      </div>
+      <div>
+        <h4>Performance Rewards</h4>
+        <p>Winning team holders share rewards -- ranked [30%, 22%, 17%...]</p>
+      </div>
+    </div>
+    <div class="mechanic-card glass">
+      <div class="icon-wrap" style="flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div>
+        <h4>Upset Vault</h4>
+        <p>When underdogs win, vault pays multiplied returns to early backers</p>
+      </div>
+    </div>
+    <div class="mechanic-card glass">
+      <div class="icon-wrap" style="flex-shrink:0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <div>
+        <h4>Predict and Earn</h4>
+        <p>Answer match questions, earn accuracy-based rewards -- 10/30/60 tier split</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 5: PLATFORM FEATURES ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>Platform Features</h2>
+  <h3>14 production pages -- not a prototype</h3>
+  <div class="features-grid stagger">
+    <div class="feature-card glass">
+      <div class="icon-wrap icon-lg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+      </div>
+      <h4>Markets Dashboard</h4>
+      <p>8 team cards with real-time prices, sparkline charts, search and sort</p>
+    </div>
+    <div class="feature-card glass">
+      <div class="icon-wrap icon-lg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+      </div>
+      <h4>Trading Terminal</h4>
+      <p>Candlestick charts, buy/sell interface, order book, slippage protection</p>
+    </div>
+    <div class="feature-card glass">
+      <div class="icon-wrap icon-lg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l2-4 4 6 2-2"/></svg>
+      </div>
+      <h4>Live Match Center</h4>
+      <p>Ball-by-ball scorecard, AI trading signals, real CricAPI data feed</p>
+    </div>
+    <div class="feature-card glass">
+      <div class="icon-wrap icon-lg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      </div>
+      <h4>Portfolio Tracker</h4>
+      <p>Positions, mark-to-market P&L, reward history, performance breakdown</p>
+    </div>
+    <div class="feature-card glass">
+      <div class="icon-wrap icon-lg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 10.33 9.33 11 8.5 11h-5C2.67 11 2 10.33 2 9.5S2.67 8 3.5 8h5c.83 0 1.5.67 1.5 1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>
+      </div>
+      <h4>Fan Wars</h4>
+      <p>Lock tokens on your team, compete against rival fans, earn boost multipliers</p>
+    </div>
+    <div class="feature-card glass">
+      <div class="icon-wrap icon-lg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93"/><path d="M12 10v12"/><path d="M8 18h8"/><circle cx="12" cy="6" r="1" fill="var(--purple)"/></svg>
+      </div>
+      <h4>AI Analytics</h4>
+      <p>RAG-powered cricket intelligence -- match analysis, trade suggestions, context-aware</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 6: ARCHITECTURE ==================== -->
+<section data-background-color="#0D1117" data-transition="convex">
+  <h2>Architecture</h2>
+  <h3>Full-stack. Four services. Production-hardened.</h3>
+  <div class="arch-grid stagger">
+    <div class="arch-box glass">
+      <div class="icon-wrap icon-lg" style="margin: 0 auto;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
+      </div>
+      <h4>Frontend</h4>
+      <span class="tech">Next.js 16 + React 19</span>
+      <p>wagmi v2, RainbowKit, Framer Motion, Aceternity UI, Tailwind</p>
+    </div>
+    <div class="arch-box glass">
+      <div class="icon-wrap icon-lg" style="margin: 0 auto;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      <h4>Backend</h4>
+      <span class="tech">Express 5 + Prisma</span>
+      <p>PostgreSQL, Socket.io real-time, CricAPI integration, adaptive polling</p>
+    </div>
+    <div class="arch-box glass">
+      <div class="icon-wrap icon-lg" style="margin: 0 auto;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      <h4>Smart Contracts</h4>
+      <span class="tech">Solidity 0.8.24</span>
+      <p>8 contracts on WireFluid, OpenZeppelin v5, 164 tests passing</p>
+    </div>
+    <div class="arch-box glass">
+      <div class="icon-wrap icon-lg" style="margin: 0 auto;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93"/><path d="M12 10v12"/><path d="M8 18h8"/><circle cx="12" cy="6" r="1" fill="var(--purple)"/></svg>
+      </div>
+      <h4>AI Engine</h4>
+      <span class="tech">Flask + LangChain</span>
+      <p>ChromaDB RAG pipeline, cricket analytics, match predictions</p>
+    </div>
+  </div>
+  <div class="arch-connector">
+    <div class="arch-line"></div>
+    <div class="arch-dot"></div>
+    <div class="arch-line"></div>
+    <div class="arch-dot"></div>
+    <div class="arch-line"></div>
+    <div class="arch-dot"></div>
+    <div class="arch-line"></div>
+  </div>
+  <div class="highlight-box" style="margin-top: 14px; text-align: center;">
+    <p style="font-size: 0.72em !important;">
+      <span class="mono blue">:3000</span> Frontend
+      <span style="color: var(--border); margin: 0 10px;">|</span>
+      <span class="mono blue">:3001</span> Backend API
+      <span style="color: var(--border); margin: 0 10px;">|</span>
+      <span class="mono blue">:5001</span> AI Engine
+      <span style="color: var(--border); margin: 0 10px;">|</span>
+      <span class="mono blue">Chain 92533</span> WireFluid
+    </p>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 7: SMART CONTRACTS ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>Smart Contracts <span class="badge badge-green">Deployed on WireFluid</span></h2>
+  <h3>8 contracts, 164 tests, all verified on-chain</h3>
+  <div class="glass" style="padding: 4px 20px; margin-top: 16px; overflow: hidden;">
+    <table class="contract-table">
+      <thead>
+        <tr><th>Contract</th><th>Purpose</th><th>Address</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>TeamTokenFactory</strong></td>
+          <td style="color: var(--muted);">Bonding curve token minting and trading</td>
+          <td class="addr">0x7FB2...3e6</td>
+        </tr>
+        <tr>
+          <td><strong>PerformanceOracle</strong></td>
+          <td style="color: var(--muted);">2-of-3 multisig live score feed</td>
+          <td class="addr">0xDd3b...5cF</td>
+        </tr>
+        <tr>
+          <td><strong>RewardDistributor</strong></td>
+          <td style="color: var(--muted);">Ranked epoch rewards distribution</td>
+          <td class="addr">0x0A1B...B68</td>
+        </tr>
+        <tr>
+          <td><strong>UpsetVault</strong></td>
+          <td style="color: var(--muted);">Multiplied payouts on underdog wins</td>
+          <td class="addr">0xFec3...DaE</td>
+        </tr>
+        <tr>
+          <td><strong>CircuitBreaker</strong></td>
+          <td style="color: var(--muted);">Auto-halt on 15% flash crash</td>
+          <td class="addr">0xF74D...016</td>
+        </tr>
+        <tr>
+          <td><strong>FanWars</strong></td>
+          <td style="color: var(--muted);">Token lock-in competitions</td>
+          <td class="addr">0xC634...b80</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top: 14px; text-align: center;">
+    <span style="font-size: 0.65em; color: var(--muted);">+ 8 team tokens: </span>
+    <span class="mono" style="font-size: 0.65em; color: var(--blue);">$IU $LQ $MS $KK $PZ $QG $HK $RW</span>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 8: SECURITY & PERFORMANCE ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>Security and Performance</h2>
+  <h3>85 audit findings resolved -- production-grade hardening</h3>
+  <div class="two-col">
+    <div class="sec-list stagger">
+      <div class="sec-item glass">
+        <div class="icon-wrap" style="flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <h4>Authentication</h4>
+          <p>Timing-safe admin auth, brute-force lockout, no fallback passwords</p>
+        </div>
+      </div>
+      <div class="sec-item glass">
+        <div class="icon-wrap" style="flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <h4>Transaction Safety</h4>
+          <p>Serializable isolation for vault ops, RepeatableRead for trades</p>
+        </div>
+      </div>
+      <div class="sec-item glass">
+        <div class="icon-wrap" style="flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        </div>
+        <div>
+          <h4>Contract Security</h4>
+          <p>24h timelock on oracle changes, ETH refund on shortfall</p>
+        </div>
+      </div>
+      <div class="sec-item glass">
+        <div class="icon-wrap" style="flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div>
+          <h4>Rate Limiting</h4>
+          <p>100/min global, 20/min trades, CSRF, scoped socket broadcasts</p>
+        </div>
+      </div>
+    </div>
+    <div class="perf-stack stagger">
+      <div class="perf-card glass glow-green pulse-card">
+        <span class="perf-val green">4ms</span>
+        <span class="perf-label">Warm page load (production build)</span>
+      </div>
+      <div class="perf-card glass glow-blue pulse-card" style="animation-delay: 1s;">
+        <span class="perf-val blue">164</span>
+        <span class="perf-label">Contract tests passing</span>
+      </div>
+      <div class="perf-card glass glow-purple pulse-card" style="animation-delay: 2s;">
+        <span class="perf-val purple">355KB</span>
+        <span class="perf-label">Total team logo assets (from 3.3MB)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 9: E2E PROOF ==================== -->
+<section data-background-color="#0D1117" data-transition="zoom">
+  <h2>It Works. On-Chain. <span class="badge badge-green">Verified</span></h2>
+  <h3>End-to-end transactions on WireFluid testnet</h3>
+  <div class="stats-grid stagger" style="grid-template-columns: repeat(3, 1fr); margin-top: 28px;">
+    <div class="stat-card glass glow-green">
+      <span class="number green">0.1</span>
+      <span class="label">WIRE spent</span>
+      <p style="font-size: 0.6em; margin-top: 8px;">77.13 $IU tokens minted via bonding curve</p>
+    </div>
+    <div class="stat-card glass glow-accent">
+      <span class="number accent">38.57</span>
+      <span class="label">$IU sold back</span>
+      <p style="font-size: 0.6em; margin-top: 8px;">0.04 WIRE returned, asymmetric spread confirmed</p>
+    </div>
+    <div class="stat-card glass glow-blue">
+      <span class="number blue">+68%</span>
+      <span class="label">Price impact</span>
+      <p style="font-size: 0.6em; margin-top: 8px;">Buy price moved 0.001 to 0.00168 WIRE</p>
+    </div>
+  </div>
+  <div class="highlight-box" style="margin-top: 24px; text-align: center;">
+    <p style="font-size: 0.7em !important;">
+      <svg style="width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px;" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span class="mono" style="font-size: 0.9em;">Explorer:</span>
+      <span class="blue">wirefluidscan.com</span>
+      <span style="color: var(--border); margin: 0 8px;">|</span>
+      All 7/7 verification checks passed
+    </p>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 10: BY THE NUMBERS ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>By The Numbers</h2>
+  <div class="counter-animate">
+    <div class="stats-grid stagger">
+      <div class="stat-card glass glow-accent">
+        <span class="number accent" data-target="14">14</span>
+        <span class="label">Frontend Pages</span>
+      </div>
+      <div class="stat-card glass glow-green">
+        <span class="number green" data-target="8">8</span>
+        <span class="label">Smart Contracts</span>
+      </div>
+      <div class="stat-card glass glow-blue">
+        <span class="number blue" data-target="164">164</span>
+        <span class="label">Tests Passing</span>
+      </div>
+      <div class="stat-card glass glow-purple">
+        <span class="number purple" data-target="85">85</span>
+        <span class="label">Audit Fixes</span>
+      </div>
+    </div>
+    <div class="stats-grid stagger" style="margin-top: 14px;">
+      <div class="stat-card glass" style="border-color: rgba(210, 153, 34, 0.3);">
+        <span class="number yellow" data-target="8">8</span>
+        <span class="label">PSL Team Tokens</span>
+      </div>
+      <div class="stat-card glass glow-green">
+        <span class="number green" data-target="4">4</span>
+        <span class="label">Microservices</span>
+      </div>
+      <div class="stat-card glass glow-blue">
+        <span class="number blue" data-target="44">44</span>
+        <span class="label">PSL Matches Synced</span>
+      </div>
+      <div class="stat-card glass glow-orange">
+        <span class="number orange">4ms</span>
+        <span class="label">Page Load Time</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 11: WHAT'S NEXT ==================== -->
+<section data-background-color="#0D1117" data-transition="slide">
+  <h2>What's Next</h2>
+  <h3>From hackathon to production</h3>
+  <div style="position: relative; margin-top: 44px;">
+    <div class="roadmap-timeline"><span></span></div>
+    <div class="roadmap-grid stagger">
+      <div class="roadmap-phase glass" style="border-top: 2px solid var(--green);">
+        <span class="phase-label green">Phase 1 -- Now</span>
+        <h4>Hackathon Launch</h4>
+        <ul>
+          <li>8 contracts deployed on WireFluid</li>
+          <li>Full platform with 14 pages</li>
+          <li>Live CricAPI integration</li>
+          <li>AI-powered cricket analytics</li>
+          <li>164 tests, 85 audit fixes</li>
+        </ul>
+      </div>
+      <div class="roadmap-phase glass" style="border-top: 2px solid var(--blue);">
+        <span class="phase-label blue">Phase 2 -- Q3 2026</span>
+        <h4>Mainnet and Growth</h4>
+        <ul>
+          <li>WireFluid mainnet deployment</li>
+          <li>PredictionPool contract launch</li>
+          <li>Mobile app (React Native)</li>
+          <li>Multi-league expansion (IPL, BBL)</li>
+          <li>Social trading features</li>
+        </ul>
+      </div>
+      <div class="roadmap-phase glass" style="border-top: 2px solid var(--purple);">
+        <span class="phase-label purple">Phase 3 -- Q1 2027</span>
+        <h4>Platform Maturity</h4>
+        <ul>
+          <li>DAO governance for token holders</li>
+          <li>Cross-chain bridge support</li>
+          <li>Pro API for institutional traders</li>
+          <li>Fantasy league integration</li>
+          <li>Revenue share model</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 12: CLOSING ==================== -->
+<section class="end-slide" data-background-color="#0D1117" data-transition="fade">
+  <div class="dot-grid"></div>
+  <h1 class="shimmer">OVERFLOW</h1>
+  <p style="font-size: 1.05em; color: var(--muted); margin-bottom: 8px; position: relative; z-index: 1;">
+    Cricket knowledge is alpha. Now you can trade it.
+  </p>
+  <div class="end-links stagger">
+    <div class="end-link glass glow-green">
+      <div class="icon-wrap icon-lg" style="margin: 0 auto;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </div>
+      <h4>Live Demo</h4>
+      <p>localhost:3000</p>
+    </div>
+    <div class="end-link glass glow-blue">
+      <div class="icon-wrap icon-lg" style="margin: 0 auto;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      </div>
+      <h4>GitHub</h4>
+      <p>kalez48ka-ui/Overflow</p>
+    </div>
+    <div class="end-link glass glow-purple">
+      <div class="icon-wrap icon-lg" style="margin: 0 auto;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </div>
+      <h4>WireFluid</h4>
+      <p>Chain ID 92533</p>
+    </div>
+  </div>
+  <p style="font-size: 1.2em; margin-top: 36px; color: var(--text); position: relative; z-index: 1; font-weight: 600;">
+    Thank You -- Questions?
+  </p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  slideNumber: 'c/t',
+  progress: true,
+  center: false,
+  width: 1280,
+  height: 720,
+  margin: 0,
+  transition: 'slide',
+  transitionSpeed: 'default',
+  backgroundTransition: 'fade',
+  controls: true,
+  controlsTutorial: false,
+  keyboard: true,
+  overview: true,
+  touch: true,
+});
+
+/* Animated number counters */
+function animateCounters(slide) {
+  var numbers = slide.querySelectorAll('.number[data-target]');
+  numbers.forEach(function(el) {
+    var target = parseInt(el.getAttribute('data-target'), 10);
+    if (isNaN(target)) return;
+    var duration = 1200;
+    var start = 0;
+    var startTime = null;
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      var progress = Math.min((ts - startTime) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * target);
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    el.textContent = '0';
+    requestAnimationFrame(step);
+  });
+}
+
+Reveal.on('slidechanged', function(event) {
+  animateCounters(event.currentSlide);
+});
+Reveal.on('ready', function(event) {
+  animateCounters(event.currentSlide);
+});
+</script>
+</body>
+</html>

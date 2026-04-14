@@ -15,7 +15,7 @@ export function MovingBorderButton({ children, borderRadius = "1.75rem", classNa
   return (
     <Component className={cn("relative h-auto w-auto overflow-hidden bg-transparent p-[1px] text-xl", containerClassName)} style={{ borderRadius }} {...otherProps}>
       <div className="absolute inset-0" style={{ borderRadius }}>
-        <div className={cn("absolute inset-[-1000%] animate-[spin_3s_linear_infinite]", borderClassName || "bg-[conic-gradient(from_90deg_at_50%_50%,#21262D_0%,#8B949E_50%,#21262D_100%)]")} />
+        <div className={cn("absolute inset-[-1000%] animate-[spin_3s_linear_infinite]", borderClassName || "bg-[conic-gradient(from_90deg_at_50%_50%,#21262D_0%,#9CA3AF_50%,#21262D_100%)]")} />
       </div>
       <div className={cn("relative flex h-full w-full items-center justify-center rounded-[calc(1.75rem-1px)] bg-[#0D1117] backdrop-blur-xl", className)} style={{ borderRadius: `calc(${borderRadius} - 1px)` }}>
         {children}

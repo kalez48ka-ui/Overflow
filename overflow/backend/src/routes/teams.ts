@@ -1,9 +1,12 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { PriceService } from '../modules/price/price.service';
 import { Timeframe } from '../common/types';
 
-function mapTeamToFrontend(team: any) {
+/** Prisma Team model (no relations needed for team list/detail). */
+type TeamRecord = Prisma.TeamGetPayload<{}>;
+
+function mapTeamToFrontend(team: TeamRecord) {
   return {
     id: team.id,
     name: team.name,

@@ -96,12 +96,16 @@ export function useSellTokens() {
     (
       tokenAddress: Address,
       tokenAmount: bigint,
-      estimatedProceeds?: bigint,
+      estimatedProceeds: bigint,
       slippageBps: number = 300,
     ) => {
-      const minProceeds = estimatedProceeds
-        ? (estimatedProceeds * BigInt(10_000 - slippageBps)) / BigInt(10_000)
-        : BigInt(0);
+      if (!estimatedProceeds || estimatedProceeds <= BigInt(0)) {
+        throw new Error(
+          "estimatedProceeds is required for sell orders to prevent sandwich attacks",
+        );
+      }
+      const minProceeds =
+        (estimatedProceeds * BigInt(10_000 - slippageBps)) / BigInt(10_000);
 
       writeContract({
         chainId: WIREFLUID_CHAIN_ID,

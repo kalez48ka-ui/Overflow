@@ -20,7 +20,7 @@ function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean
   }
   if (isExtra) {
     return (
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#484F58] text-[10px] font-bold text-[#8B949E]">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#768390] text-[10px] font-bold text-[#9CA3AF]">
         +1
       </span>
     );
@@ -31,7 +31,7 @@ function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean
       : runs === 4
       ? "bg-[#3FB950] text-white"
       : runs === 0
-      ? "bg-[#21262D] text-[#484F58]"
+      ? "bg-[#21262D] text-[#768390]"
       : "bg-[#21262D] text-[#E6EDF3]";
 
   return (
@@ -116,18 +116,18 @@ export function BallByBall({ events, simulateLive = false }: BallByBallProps) {
   return (
     <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2">
-        <span className="text-[10px] text-[#484F58] uppercase tracking-wider">Ball by Ball</span>
+        <span className="text-[10px] text-[#768390] uppercase tracking-wider">Ball by Ball</span>
         {/* Current over mini-dots */}
         {currentOverEvents.length > 0 && (
           <div className="flex items-center gap-1" aria-label={`Over ${currentOverEvents[0]?.over} balls`}>
-            <span className="text-[10px] text-[#8B949E] mr-1">
+            <span className="text-[10px] text-[#9CA3AF] mr-1">
               Ov {currentOverEvents[0]?.over}:
             </span>
             {currentOverEvents.map((e, i) => {
               const bg = e.isWicket
                 ? "#F85149"
                 : e.isExtra
-                ? "#8B949E"
+                ? "#9CA3AF"
                 : e.runs === 6
                 ? "#388BFD"
                 : e.runs === 4
@@ -190,13 +190,13 @@ export function BallByBall({ events, simulateLive = false }: BallByBallProps) {
                       ? "font-semibold text-[#F85149]"
                       : event.runs >= 4
                       ? "font-medium text-[#E6EDF3]"
-                      : "text-[#8B949E]"
+                      : "text-[#9CA3AF]"
                   )}
                 >
                   {event.description}
                 </p>
               </div>
-              <span className="shrink-0 text-[10px] font-mono tabular-nums text-[#484F58]">
+              <span className="shrink-0 text-[10px] font-mono tabular-nums text-[#768390]">
                 {event.over}.{event.ball}
               </span>
             </motion.div>

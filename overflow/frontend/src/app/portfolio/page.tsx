@@ -40,9 +40,16 @@ import {
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { NumberTicker } from "@/components/ui/number-ticker";
+import { GlitchPrice } from "@/components/effects/GlitchPrice";
+import { StaggerReveal } from "@/components/motion/StaggerReveal";
 
 const CardSpotlight = dynamic(
   () => import("@/components/ui/card-spotlight").then((m) => ({ default: m.CardSpotlight })),
+  { ssr: false },
+);
+
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
   { ssr: false },
 );
 
@@ -123,15 +130,15 @@ function TransactionRow({
             className="rounded-md px-1.5 py-0.5 text-[10px] font-bold"
             style={{
               backgroundColor: team ? `${team.color}20` : "#21262D",
-              color: team?.color ?? "#8B949E",
+              color: team?.color ?? "#9CA3AF",
             }}
           >
             {tx.teamSymbol}
           </span>
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[#8B949E]">
+        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[#9CA3AF]">
           <span>{formatTimeAgo(tx.timestamp)}</span>
-          <span className="text-[#484F58]">|</span>
+          <span className="text-[#768390]">|</span>
           <a
             href={`https://wirefluidscan.com/tx/${tx.txHash}`}
             target="_blank"
@@ -149,7 +156,7 @@ function TransactionRow({
         <p className="text-xs font-semibold font-mono tabular-nums text-[#E6EDF3]">
           {formatCurrency(tx.total)}
         </p>
-        <p className="text-[10px] font-mono tabular-nums text-[#484F58]">
+        <p className="text-[10px] font-mono tabular-nums text-[#768390]">
           {tx.amount.toLocaleString()} @ ${formatPrice(tx.price)}
         </p>
       </div>
@@ -269,13 +276,14 @@ export default function PortfolioPage() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
-      className="min-h-screen bg-[#0D1117]"
+      className="relative min-h-screen overflow-hidden bg-[#0D1117]"
     >
+      <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       {!isConnected ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <Wallet className="h-12 w-12 text-[#484F58] mb-4" />
+          <Wallet className="h-12 w-12 text-[#768390] mb-4" />
           <h2 className="text-lg font-bold text-[#E6EDF3] mb-2">Connect Your Wallet</h2>
-          <p className="text-sm text-[#8B949E] mb-6 text-center max-w-md">
+          <p className="text-sm text-[#9CA3AF] mb-6 text-center max-w-md">
             Connect your wallet to view your portfolio, positions, and trading history.
           </p>
           <SafeConnectButton />
@@ -285,18 +293,20 @@ export default function PortfolioPage() {
       {/* Header — portfolio value is the hero */}
       <div className="border-b border-[#21262D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-          <p className="text-[10px] text-[#484F58] uppercase tracking-wider mb-1">Total Value</p>
+          <p className="text-[10px] text-[#768390] uppercase tracking-wider mb-1">Total Value</p>
           <div className="min-h-[80px] flex items-baseline gap-4">
             <p className="text-4xl sm:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
               $<NumberTicker value={totalValue} decimals={2} duration={800} showArrow={false} />
             </p>
             <span
               className={cn(
-                "text-sm font-semibold tabular-nums",
                 totalPnl >= 0 ? "text-[#3FB950]" : "text-[#F85149]"
               )}
             >
-              {totalPnl >= 0 ? "+" : ""}{formatCurrency(totalPnl)} ({formatPercent(totalPnlPercent)})
+              <GlitchPrice
+                value={`${totalPnl >= 0 ? "+" : ""}${formatCurrency(totalPnl)} (${formatPercent(totalPnlPercent)})`}
+                className="text-sm font-bold tabular-nums"
+              />
             </span>
           </div>
         </div>
@@ -304,9 +314,10 @@ export default function PortfolioPage() {
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" />
-            <span className="ml-3 text-sm text-[#8B949E]">Loading portfolio...</span>
+          <div className="flex items-center justify-center py-12" role="status">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#21262D] border-t-[#9CA3AF]" />
+            <span className="ml-3 text-sm text-[#9CA3AF]">Loading portfolio...</span>
+            <span className="sr-only">Loading...</span>
           </div>
         ) : (
           <>
@@ -314,17 +325,17 @@ export default function PortfolioPage() {
             <div className="mb-6 border-b border-[#21262D]">
               <div className="flex items-center divide-x divide-[#21262D] overflow-x-auto py-2.5 text-xs font-mono">
                 <div className="shrink-0 pr-5">
-                  <span className="text-[#484F58]">P&L </span>
+                  <span className="text-[#768390]">P&L </span>
                   <span className="font-semibold tabular-nums" style={{ color: totalPnl >= 0 ? "#3FB950" : "#F85149" }}>
                     {totalPnl >= 0 ? "+" : ""}{formatCurrency(totalPnl)}
                   </span>
                 </div>
                 <div className="shrink-0 px-5">
-                  <span className="text-[#484F58]">Rewards </span>
+                  <span className="text-[#768390]">Rewards </span>
                   <span className="font-semibold tabular-nums text-[#FDB913]">{totalClaimable.toFixed(2)} WIRE</span>
                 </div>
                 <div className="shrink-0 px-5">
-                  <span className="text-[#484F58]">Positions </span>
+                  <span className="text-[#768390]">Positions </span>
                   <span className="font-semibold tabular-nums text-[#E6EDF3]">{positions.length}</span>
                 </div>
               </div>
@@ -334,16 +345,20 @@ export default function PortfolioPage() {
               {/* Main content */}
               <div className="space-y-4">
                 {/* Tab switcher */}
-                <div className="flex border-b border-[#21262D]">
+                <div className="flex border-b border-[#21262D]" role="tablist" aria-label="Portfolio sections">
                   {(["positions", "history"] as const).map((tab) => (
                     <button
                       key={tab}
+                      role="tab"
+                      id={`portfolio-tab-${tab}`}
+                      aria-selected={activeTab === tab}
+                      aria-controls={`portfolio-tabpanel-${tab}`}
                       onClick={() => setActiveTab(tab)}
                       className={cn(
                         "relative min-h-[44px] pb-3 pr-6 text-sm font-semibold capitalize transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",
                         activeTab === tab
                           ? "text-[#E6EDF3]"
-                          : "text-[#8B949E] hover:text-[#E6EDF3]"
+                          : "text-[#9CA3AF] hover:text-[#E6EDF3]"
                       )}
                     >
                       {tab}
@@ -361,12 +376,16 @@ export default function PortfolioPage() {
                 {activeTab === "positions" && (
                   <motion.div
                     key="positions"
+                    role="tabpanel"
+                    id="portfolio-tabpanel-positions"
+                    aria-labelledby="portfolio-tab-positions"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
                     className="space-y-3"
                   >
+                    <StaggerReveal staggerDelay={0.08} yOffset={16}>
                     {positions.map((position, i) => (
                       <CardSpotlight
                         key={position.teamId}
@@ -383,9 +402,10 @@ export default function PortfolioPage() {
                         />
                       </CardSpotlight>
                     ))}
+                    </StaggerReveal>
                     {positions.length === 0 && (
                       <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
-                        <p className="text-sm text-[#8B949E]">No open positions</p>
+                        <p className="text-sm text-[#9CA3AF]">No open positions</p>
                         <Link
                           href="/"
                           className="mt-4 inline-block rounded-lg bg-[#21262D] px-4 py-2 text-sm font-medium text-[#E6EDF3] hover:bg-[#21262D]/80 transition-colors"
@@ -400,6 +420,9 @@ export default function PortfolioPage() {
                 {activeTab === "history" && (
                   <motion.div
                     key="history"
+                    role="tabpanel"
+                    id="portfolio-tabpanel-history"
+                    aria-labelledby="portfolio-tab-history"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
@@ -407,13 +430,14 @@ export default function PortfolioPage() {
                   >
                   <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                     {txLoading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" />
-                        <span className="ml-3 text-sm text-[#8B949E]">Loading history...</span>
+                      <div className="flex items-center justify-center py-8" role="status">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#9CA3AF]" />
+                        <span className="ml-3 text-sm text-[#9CA3AF]">Loading history...</span>
+                        <span className="sr-only">Loading...</span>
                       </div>
                     ) : transactions.length === 0 ? (
                       <div className="py-16 text-center">
-                        <p className="text-sm text-[#8B949E]">
+                        <p className="text-sm text-[#9CA3AF]">
                           No transactions yet. Start trading to see your history.
                         </p>
                         <Link
@@ -453,8 +477,8 @@ export default function PortfolioPage() {
                               className="h-2 w-2 rounded-full"
                               style={{ backgroundColor: pos.color }}
                             />
-                            <span className="text-xs text-[#8B949E]">{pos.symbol}</span>
-                            <span className="text-[10px] font-mono tabular-nums text-[#484F58]">{pct.toFixed(1)}%</span>
+                            <span className="text-xs text-[#9CA3AF]">{pos.symbol}</span>
+                            <span className="text-[10px] font-mono tabular-nums text-[#768390]">{pct.toFixed(1)}%</span>
                           </div>
                           <div className="text-right">
                             <span className="text-xs font-semibold font-mono tabular-nums text-[#E6EDF3]">

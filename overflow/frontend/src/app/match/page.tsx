@@ -14,7 +14,7 @@ const TradingChart = dynamic(
   () => import("@/components/TradingChart").then((m) => ({ default: m.TradingChart })),
   {
     ssr: false,
-    loading: () => <div className="flex h-[280px] items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" /></div>,
+    loading: () => <div className="flex h-[280px] items-center justify-center" role="status"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#9CA3AF]" /><span className="sr-only">Loading...</span></div>,
   },
 );
 const BallByBall = dynamic(
@@ -25,6 +25,11 @@ const AIAnalysis = dynamic(
   () => import("@/components/AIAnalysis").then((m) => ({ default: m.AIAnalysis })),
   { ssr: false },
 );
+const Meteors = dynamic(
+  () => import("@/components/ui/meteors").then((m) => ({ default: m.Meteors })),
+  { ssr: false },
+);
+import { GlitchPrice } from "@/components/effects/GlitchPrice";
 import { CountUp } from "@/components/motion/CountUp";
 import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA, MOCK_FAN_WARS } from "@/lib/mockData";
 import { fanWarsApi } from "@/lib/api";
@@ -61,7 +66,7 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
               <TeamLogo teamId={team.id} color={team.color} size={24} />
               <div>
                 <span className="text-xs font-semibold text-[#E6EDF3]">{team.symbol}</span>
-                <span className="ml-1.5 text-[10px] font-mono tabular-nums text-[#8B949E]">${formatPrice(team.price)}</span>
+                <GlitchPrice value={`$${formatPrice(team.price)}`} className="ml-1.5 text-[10px] font-mono tabular-nums text-[#9CA3AF]" />
                 <span className={cn(
                   "ml-1 text-[10px] font-mono tabular-nums",
                   team.change >= 0 ? "text-[#3FB950]" : "text-[#F85149]"
@@ -100,7 +105,7 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
   return (
     <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-[#8B949E]">Upset Score</span>
+        <span className="text-xs text-[#9CA3AF]">Upset Score</span>
         <span
           className="text-[10px] font-bold font-mono"
           style={{ color: levelColor }}
@@ -113,7 +118,7 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
         <span className="text-4xl font-black font-mono tabular-nums" style={{ color: levelColor }}>
           <NumberTicker value={score} decimals={0} duration={800} showFlash={true} showArrow={false} />
         </span>
-        <span className="text-xs text-[#484F58]">/ 100</span>
+        <span className="text-xs text-[#768390]">/ 100</span>
       </div>
 
       <div className="h-1.5 overflow-hidden rounded-full bg-[#21262D] mb-3">
@@ -131,11 +136,11 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
 
       <div className="flex items-center justify-between text-xs">
         <div>
-          <span className="text-[#484F58]">Multiplier </span>
+          <span className="text-[#768390]">Multiplier </span>
           <span className="font-bold font-mono tabular-nums text-[#E6EDF3]">1.8x</span>
         </div>
         <div>
-          <span className="text-[#484F58]">Payout </span>
+          <span className="text-[#768390]">Payout </span>
           <span className="font-bold font-mono tabular-nums text-[#E6EDF3]">
             {formatCurrency(vaultBalance * 1.8)}
           </span>
@@ -190,7 +195,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
   return (
     <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs text-[#8B949E]">Fan War</span>
+          <span className="text-xs text-[#9CA3AF]">Fan War</span>
           <span className="text-[10px] font-bold font-mono text-[#F85149]">
             ACTIVE
           </span>
@@ -203,7 +208,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
               {war.totalHomeLocked.toLocaleString()}
             </span>
           </div>
-          <span className="text-[#484F58]">vs</span>
+          <span className="text-[#768390]">vs</span>
           <div className="flex items-center gap-1.5">
             <span className="font-mono tabular-nums text-[#E6EDF3]">
               {war.totalAwayLocked.toLocaleString()}
@@ -230,7 +235,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
         </div>
 
         <div className="mb-3 flex items-center justify-between text-xs">
-          <span className="text-[#484F58]">Boost Pool</span>
+          <span className="text-[#768390]">Boost Pool</span>
           <span className="font-bold font-mono tabular-nums text-[#FDB913]">
             {war.boostPool.toLocaleString()} WIRE
           </span>
@@ -562,6 +567,7 @@ export default function MatchPage() {
       transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
       className="min-h-screen bg-[#0D1117]"
     >
+      <h1 className="sr-only">Live Match</h1>
       {/* Match status header */}
       <div className="border-b border-[#21262D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6">
@@ -575,9 +581,9 @@ export default function MatchPage() {
                 LIVE
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#8B949E]">
+              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#9CA3AF]">
                 <span className="relative flex h-2 w-2">
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#8B949E]" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#9CA3AF]" />
                 </span>
                 UPCOMING
               </span>
@@ -585,7 +591,7 @@ export default function MatchPage() {
             <span className="text-sm font-semibold text-[#E6EDF3]">
               {hasLiveMatch ? matchData.matchType : upcomingMatch ? "Next Match" : "PSL 2026"}
             </span>
-            <span className="hidden sm:block text-xs text-[#8B949E]">
+            <span className="hidden sm:block text-xs text-[#9CA3AF]">
               {hasLiveMatch ? matchData.venue : upcomingMatch?.venue ?? "Pakistan Super League"}
             </span>
           </div>
@@ -594,8 +600,9 @@ export default function MatchPage() {
 
       {loading ? (
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-          <div className="flex items-center justify-center">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" />
+          <div className="flex items-center justify-center" role="status">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#9CA3AF]" />
+            <span className="sr-only">Loading...</span>
           </div>
         </div>
       ) : !hasLiveMatch ? (
@@ -616,11 +623,11 @@ export default function MatchPage() {
             return (
               <div className="mb-4 rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#484F58]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#768390]">
                     Last Result
                   </span>
                   {lastCompleted.cricApiName && (
-                    <span className="text-[10px] text-[#484F58] truncate max-w-[200px]">
+                    <span className="text-[10px] text-[#768390] truncate max-w-[200px]">
                       {lastCompleted.cricApiName}
                     </span>
                   )}
@@ -646,7 +653,7 @@ export default function MatchPage() {
                   </div>
 
                   {/* VS divider */}
-                  <span className="flex-shrink-0 text-xs font-bold text-[#484F58]">vs</span>
+                  <span className="flex-shrink-0 text-xs font-bold text-[#768390]">vs</span>
 
                   {/* Team 2 */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-row-reverse text-right">
@@ -668,7 +675,7 @@ export default function MatchPage() {
                 </div>
 
                 {/* Venue + Date */}
-                <div className="mt-3 flex items-center justify-between text-xs text-[#8B949E]">
+                <div className="mt-3 flex items-center justify-between text-xs text-[#9CA3AF]">
                   {lastCompleted.venue && (
                     <span className="truncate max-w-[60%]">{lastCompleted.venue}</span>
                   )}
@@ -685,7 +692,7 @@ export default function MatchPage() {
           })()}
 
           <div className="mb-6 rounded-xl border border-[#21262D] bg-[#161B22] p-4">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#484F58]">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#768390]">
               No live match
             </p>
             {upcomingMatch ? (
@@ -693,7 +700,7 @@ export default function MatchPage() {
                 <h2 className="text-lg font-bold text-[#E6EDF3]">
                   Next match: {upcomingMatch.team1Name} vs {upcomingMatch.team2Name}
                 </h2>
-                <p className="mt-1 text-sm text-[#8B949E]">
+                <p className="mt-1 text-sm text-[#9CA3AF]">
                   {upcomingMatch.venue
                     ? `${upcomingMatch.venue} — `
                     : ""}
@@ -717,7 +724,7 @@ export default function MatchPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
             <div className="space-y-4">
               {lastCompleted && (
-                <div className="rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-2 text-xs text-[#484F58]">
+                <div className="rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-2 text-xs text-[#768390]">
                   Scorecard shows the last completed match above. Live scorecard will appear when a match is in progress.
                 </div>
               )}
@@ -732,7 +739,7 @@ export default function MatchPage() {
                           "rounded px-2.5 py-1 text-xs font-semibold transition-all",
                           activeChart === id
                             ? "text-white"
-                            : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
+                            : "bg-transparent text-[#9CA3AF] hover:text-[#E6EDF3]"
                         )}
                         style={activeChart === id ? { backgroundColor: t?.color ?? "#58A6FF" } : {}}
                       >
@@ -781,7 +788,10 @@ export default function MatchPage() {
                 borderWidth={1}
                 containerClassName="rounded-xl"
               >
-                <LiveScorecard match={matchData} />
+                <div className="relative overflow-hidden">
+                  <Meteors number={6} className="opacity-30" />
+                  <LiveScorecard match={matchData} />
+                </div>
               </AnimatedGradientBorder>
 
               {/* Price chart with team switcher */}
@@ -796,7 +806,7 @@ export default function MatchPage() {
                           "rounded px-2.5 py-1 text-xs font-semibold transition-all",
                           activeChart === id
                             ? "text-white"
-                            : "bg-transparent text-[#8B949E] hover:text-[#E6EDF3]"
+                            : "bg-transparent text-[#9CA3AF] hover:text-[#E6EDF3]"
                         )}
                         style={
                           activeChart === id

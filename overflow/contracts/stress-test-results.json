@@ -1,0 +1,1267 @@
+{
+  "timestamp": "2026-04-14T17:05:06.526Z",
+  "deployer": "0xE342e5cB60b985ee48E8a44d76b07130D57F5BA8",
+  "wireSpent": "0.503277826040868483",
+  "wireRemaining": "8.463466244692233206",
+  "passCount": 138,
+  "failCount": 19,
+  "totalTx": 157,
+  "transactions": [
+    {
+      "category": "read",
+      "action": "Factory.owner()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0xE342e5cB60b985ee48E8a44d76b07130D57F5BA8",
+      "timestamp": "2026-04-14T16:59:04.417Z"
+    },
+    {
+      "category": "read",
+      "action": "Factory.getTeamTokenCount()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "8",
+      "timestamp": "2026-04-14T16:59:04.601Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.owner()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0xE342e5cB60b985ee48E8a44d76b07130D57F5BA8",
+      "timestamp": "2026-04-14T16:59:04.784Z"
+    },
+    {
+      "category": "read",
+      "action": "Rewards.owner()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0xE342e5cB60b985ee48E8a44d76b07130D57F5BA8",
+      "timestamp": "2026-04-14T16:59:04.968Z"
+    },
+    {
+      "category": "read",
+      "action": "Rewards.currentEpoch()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0",
+      "timestamp": "2026-04-14T16:59:05.151Z"
+    },
+    {
+      "category": "read",
+      "action": "Rewards.performanceRewardPool()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0 WIRE",
+      "timestamp": "2026-04-14T16:59:05.335Z"
+    },
+    {
+      "category": "read",
+      "action": "Vault.owner()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0xE342e5cB60b985ee48E8a44d76b07130D57F5BA8",
+      "timestamp": "2026-04-14T16:59:05.520Z"
+    },
+    {
+      "category": "read",
+      "action": "Vault.totalEarmarked()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0 WIRE",
+      "timestamp": "2026-04-14T16:59:05.705Z"
+    },
+    {
+      "category": "read",
+      "action": "Vault.getVaultBalance()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0 WIRE",
+      "timestamp": "2026-04-14T16:59:05.890Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.owner()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0xE342e5cB60b985ee48E8a44d76b07130D57F5BA8",
+      "timestamp": "2026-04-14T16:59:06.074Z"
+    },
+    {
+      "category": "read",
+      "action": "FanWars.owner()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0xE342e5cB60b985ee48E8a44d76b07130D57F5BA8",
+      "timestamp": "2026-04-14T16:59:06.257Z"
+    },
+    {
+      "category": "read",
+      "action": "FanWars.boostPoolBalance()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0 WIRE",
+      "timestamp": "2026-04-14T16:59:06.441Z"
+    },
+    {
+      "category": "read",
+      "action": "IU.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Islamabad United",
+      "timestamp": "2026-04-14T16:59:06.626Z"
+    },
+    {
+      "category": "read",
+      "action": "IU.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "IU",
+      "timestamp": "2026-04-14T16:59:06.809Z"
+    },
+    {
+      "category": "read",
+      "action": "IU.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "42.406818941410839839",
+      "timestamp": "2026-04-14T16:59:06.992Z"
+    },
+    {
+      "category": "read",
+      "action": "IU.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001276155402552638 WIRE",
+      "timestamp": "2026-04-14T16:59:07.174Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(IU)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:07.358Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(IU)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:07.542Z"
+    },
+    {
+      "category": "read",
+      "action": "LQ.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Lahore Qalandars",
+      "timestamp": "2026-04-14T16:59:07.726Z"
+    },
+    {
+      "category": "read",
+      "action": "LQ.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "LQ",
+      "timestamp": "2026-04-14T16:59:07.909Z"
+    },
+    {
+      "category": "read",
+      "action": "LQ.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0",
+      "timestamp": "2026-04-14T16:59:08.099Z"
+    },
+    {
+      "category": "read",
+      "action": "LQ.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T16:59:08.283Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(LQ)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:08.465Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(LQ)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:08.649Z"
+    },
+    {
+      "category": "read",
+      "action": "MS.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Multan Sultans",
+      "timestamp": "2026-04-14T16:59:08.834Z"
+    },
+    {
+      "category": "read",
+      "action": "MS.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "MS",
+      "timestamp": "2026-04-14T16:59:09.017Z"
+    },
+    {
+      "category": "read",
+      "action": "MS.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0",
+      "timestamp": "2026-04-14T16:59:09.202Z"
+    },
+    {
+      "category": "read",
+      "action": "MS.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T16:59:09.387Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(MS)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:09.571Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(MS)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:09.755Z"
+    },
+    {
+      "category": "read",
+      "action": "KK.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Karachi Kings",
+      "timestamp": "2026-04-14T16:59:09.941Z"
+    },
+    {
+      "category": "read",
+      "action": "KK.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "KK",
+      "timestamp": "2026-04-14T16:59:10.123Z"
+    },
+    {
+      "category": "read",
+      "action": "KK.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0",
+      "timestamp": "2026-04-14T16:59:10.305Z"
+    },
+    {
+      "category": "read",
+      "action": "KK.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T16:59:10.491Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(KK)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:10.675Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(KK)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:10.858Z"
+    },
+    {
+      "category": "read",
+      "action": "PZ.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Peshawar Zalmi",
+      "timestamp": "2026-04-14T16:59:11.041Z"
+    },
+    {
+      "category": "read",
+      "action": "PZ.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "PZ",
+      "timestamp": "2026-04-14T16:59:11.225Z"
+    },
+    {
+      "category": "read",
+      "action": "PZ.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0",
+      "timestamp": "2026-04-14T16:59:11.408Z"
+    },
+    {
+      "category": "read",
+      "action": "PZ.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T16:59:11.591Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(PZ)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:11.775Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(PZ)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:11.959Z"
+    },
+    {
+      "category": "read",
+      "action": "QG.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Quetta Gladiators",
+      "timestamp": "2026-04-14T16:59:12.143Z"
+    },
+    {
+      "category": "read",
+      "action": "QG.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "QG",
+      "timestamp": "2026-04-14T16:59:12.326Z"
+    },
+    {
+      "category": "read",
+      "action": "QG.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0",
+      "timestamp": "2026-04-14T16:59:12.510Z"
+    },
+    {
+      "category": "read",
+      "action": "QG.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T16:59:12.693Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(QG)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:12.875Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(QG)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:13.058Z"
+    },
+    {
+      "category": "read",
+      "action": "HK.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Hyderabad Kingsmen",
+      "timestamp": "2026-04-14T16:59:13.243Z"
+    },
+    {
+      "category": "read",
+      "action": "HK.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "HK",
+      "timestamp": "2026-04-14T16:59:13.426Z"
+    },
+    {
+      "category": "read",
+      "action": "HK.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0",
+      "timestamp": "2026-04-14T16:59:13.610Z"
+    },
+    {
+      "category": "read",
+      "action": "HK.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T16:59:13.796Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(HK)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:13.979Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(HK)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:14.160Z"
+    },
+    {
+      "category": "read",
+      "action": "RW.name()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Rawalpindiz",
+      "timestamp": "2026-04-14T16:59:14.344Z"
+    },
+    {
+      "category": "read",
+      "action": "RW.symbol()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "RW",
+      "timestamp": "2026-04-14T16:59:14.525Z"
+    },
+    {
+      "category": "read",
+      "action": "RW.totalSupply()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0",
+      "timestamp": "2026-04-14T16:59:14.710Z"
+    },
+    {
+      "category": "read",
+      "action": "RW.buyPrice()",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T16:59:14.896Z"
+    },
+    {
+      "category": "read",
+      "action": "Oracle.score(RW)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "50",
+      "timestamp": "2026-04-14T16:59:15.079Z"
+    },
+    {
+      "category": "read",
+      "action": "Breaker.isPaused(RW)",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "false",
+      "timestamp": "2026-04-14T16:59:15.263Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy IU (0.01 WIRE)",
+      "status": "PASS",
+      "txHash": "0xe09b02816c19b5be94443e47f684c366bb0db94988be6f9b75ee3ae73c7dfcb8",
+      "detail": "gas: 792565",
+      "timestamp": "2026-04-14T16:59:22.912Z"
+    },
+    {
+      "category": "buy",
+      "action": "IU tokens received",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "7.463003735607565447 $IU",
+      "timestamp": "2026-04-14T16:59:23.094Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy LQ (0.01 WIRE)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T16:59:25.936Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy MS (0.01 WIRE)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T16:59:33.572Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy KK (0.01 WIRE)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T16:59:38.043Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy PZ (0.01 WIRE)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T16:59:45.679Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy QG (0.01 WIRE)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T16:59:50.174Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy HK (0.01 WIRE)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T16:59:54.764Z"
+    },
+    {
+      "category": "buy",
+      "action": "Buy RW (0.01 WIRE)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:00:02.467Z"
+    },
+    {
+      "category": "bonding",
+      "action": "IU new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001352173550625431 WIRE",
+      "timestamp": "2026-04-14T17:00:02.654Z"
+    },
+    {
+      "category": "bonding",
+      "action": "LQ new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T17:00:02.837Z"
+    },
+    {
+      "category": "bonding",
+      "action": "MS new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T17:00:03.023Z"
+    },
+    {
+      "category": "bonding",
+      "action": "KK new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T17:00:03.212Z"
+    },
+    {
+      "category": "bonding",
+      "action": "PZ new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T17:00:03.393Z"
+    },
+    {
+      "category": "bonding",
+      "action": "QG new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T17:00:03.579Z"
+    },
+    {
+      "category": "bonding",
+      "action": "HK new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T17:00:03.765Z"
+    },
+    {
+      "category": "bonding",
+      "action": "RW new buyPrice",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.001 WIRE",
+      "timestamp": "2026-04-14T17:00:03.949Z"
+    },
+    {
+      "category": "sell",
+      "action": "Approve IU",
+      "status": "PASS",
+      "txHash": "0x23099c3c3001dc602904a079e48032f025e79e1de46327439c0a313952aa89af",
+      "detail": "gas: 50000",
+      "timestamp": "2026-04-14T17:00:17.809Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell half IU (5.651637586914830325)",
+      "status": "PASS",
+      "txHash": "0x9930d9e06e9352109ee76787215874d69b55c19b1946930b3c9b69b9c8bbeb2b",
+      "detail": "gas: 577662",
+      "timestamp": "2026-04-14T17:00:25.266Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell LQ — skip",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "No balance",
+      "timestamp": "2026-04-14T17:00:25.450Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell MS — skip",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "No balance",
+      "timestamp": "2026-04-14T17:00:25.633Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell KK — skip",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "No balance",
+      "timestamp": "2026-04-14T17:00:25.816Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell PZ — skip",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "No balance",
+      "timestamp": "2026-04-14T17:00:26.000Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell QG — skip",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "No balance",
+      "timestamp": "2026-04-14T17:00:26.186Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell HK — skip",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "No balance",
+      "timestamp": "2026-04-14T17:00:26.371Z"
+    },
+    {
+      "category": "sell",
+      "action": "Sell RW — skip",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "No balance",
+      "timestamp": "2026-04-14T17:00:26.555Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #1",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:00:29.215Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #2",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:00:36.680Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #3",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:00:40.930Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #4",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:00:48.379Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #5",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:00:52.800Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #6",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:01:00.331Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #7",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:01:04.585Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #8",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:01:12.038Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #9",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:01:16.289Z"
+    },
+    {
+      "category": "rapid",
+      "action": "IU micro-buy #10",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:01:20.537Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #1",
+      "status": "PASS",
+      "txHash": "0x630af7a8898f6ecbf77e45614d15a9bf620822c7ac72b247e74c9aa821af0dc3",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:01:27.992Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #2",
+      "status": "PASS",
+      "txHash": "0x280d23886d48df2548d9198d1db5aa6505e4e3d916bbb2dd016c763c1470fa22",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:01:32.248Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #3",
+      "status": "PASS",
+      "txHash": "0xce0187140dd5e3b4f7b64a58f65a4d8b8c8673a75be0ea768a67514074753805",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:01:39.713Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #4",
+      "status": "PASS",
+      "txHash": "0x55ea8fea55f183be8cea714ea465f8ced96b2cbe3def6b3552bddd453bcd59c3",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:01:43.970Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #5",
+      "status": "PASS",
+      "txHash": "0x678c875e18593c8e53987470ecd4dbf5491e3f05dc278b712c43043a6a9b9435",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:01:51.491Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #6",
+      "status": "PASS",
+      "txHash": "0x9b4b209d704e18c34890b8984e1cf17ffc1adf917efede4caf0bc62e6cc50748",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:01:55.761Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #7",
+      "status": "PASS",
+      "txHash": "0x18c437175ee082558b77ac49da6e29f3fcc3100935932afb7c6e143f8daa6643",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:02:03.218Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #8",
+      "status": "PASS",
+      "txHash": "0x2a61d95e06a0bbb2c6e6f99a111975614de74e3556b5de185f654090334e0a34",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:02:07.477Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #9",
+      "status": "PASS",
+      "txHash": "0x5fc0c3572efc55def727b9303b82fb4f83ff99a2d67917a2cee21768e9946b4e",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:02:14.935Z"
+    },
+    {
+      "category": "rapid",
+      "action": "LQ micro-buy #10",
+      "status": "PASS",
+      "txHash": "0x877992a6d642df6e2316c1f0df8318fa4fb2639c63bf7ed91ac0bd5d98672f55",
+      "detail": "gas: 500000",
+      "timestamp": "2026-04-14T17:02:17.602Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "Approve IU (full)",
+      "status": "PASS",
+      "txHash": "0x619bab7c0ce3e5103c3a261b3656a4a99e56f5f3ee2d4c74e87f345146a45547",
+      "detail": "gas: 50000",
+      "timestamp": "2026-04-14T17:02:25.244Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "Sell all IU (5.651637586914830325)",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:02:29.501Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "Approve LQ (full)",
+      "status": "PASS",
+      "txHash": "0x556c2808e52ae03b40997a6ff8a7bca2e2056454ace0c3fef58c68e9d70b9c95",
+      "detail": "gas: 50000",
+      "timestamp": "2026-04-14T17:02:37.166Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "Sell all LQ (18.976596573708322159)",
+      "status": "PASS",
+      "txHash": "0xac56fd2438ae0323fb7b9b68957620daa2ac12109aeb0ad19018a7746e710ce2",
+      "detail": "gas: 671944",
+      "timestamp": "2026-04-14T17:02:41.442Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "MS — no balance",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Skip",
+      "timestamp": "2026-04-14T17:02:41.627Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "KK — no balance",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Skip",
+      "timestamp": "2026-04-14T17:02:41.812Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "PZ — no balance",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Skip",
+      "timestamp": "2026-04-14T17:02:42.002Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "QG — no balance",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Skip",
+      "timestamp": "2026-04-14T17:02:42.189Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "HK — no balance",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Skip",
+      "timestamp": "2026-04-14T17:02:42.374Z"
+    },
+    {
+      "category": "cleanup",
+      "action": "RW — no balance",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "Skip",
+      "timestamp": "2026-04-14T17:02:42.558Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy IU",
+      "status": "FAIL",
+      "txHash": null,
+      "detail": "transaction execution reverted (action=\"sendTransaction\", data=null, reason=null, invocation=null, revert=null, transaction={ \"data\": \"\", \"from\": \"0xE",
+      "timestamp": "2026-04-14T17:02:46.816Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy LQ",
+      "status": "PASS",
+      "txHash": "0x47a2a7946ca0eb35af2e43bf0f7437bb610dc67203925c0ecc7882488a4b7c45",
+      "detail": "gas: 637188",
+      "timestamp": "2026-04-14T17:02:54.318Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy MS",
+      "status": "PASS",
+      "txHash": "0x042d477237c4c4bec9a0ee4579f94b2006ad324273699acd65056cede7af7ed0",
+      "detail": "gas: 657101",
+      "timestamp": "2026-04-14T17:02:58.613Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy KK",
+      "status": "PASS",
+      "txHash": "0x25f3e21e1e9479f29bb978518e94df4fce0ab4c9ba0a247d92f798ed65e09857",
+      "detail": "gas: 657077",
+      "timestamp": "2026-04-14T17:03:06.069Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy PZ",
+      "status": "PASS",
+      "txHash": "0x8d6896604d5b501b9312f124986c6123f2e799ad549c046ac6a0c2e8033e74a9",
+      "detail": "gas: 657101",
+      "timestamp": "2026-04-14T17:03:10.335Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy QG",
+      "status": "PASS",
+      "txHash": "0xd44c97d24f2a87dd56ac46a3f14a9004bc7d31272acfdb46d7ec8f3577ac3219",
+      "detail": "gas: 657101",
+      "timestamp": "2026-04-14T17:03:17.790Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy HK",
+      "status": "PASS",
+      "txHash": "0xd05a7b29d783f0c68a8833eedabca20cce70013d6c35d1ef26e22eb75674f958",
+      "detail": "gas: 657101",
+      "timestamp": "2026-04-14T17:03:20.461Z"
+    },
+    {
+      "category": "spree",
+      "action": "R1 Buy RW",
+      "status": "PASS",
+      "txHash": "0x359ee437f969dada638c31ce46c9aa9914a8dcbd066b330acaf873712f4f620b",
+      "detail": "gas: 657101",
+      "timestamp": "2026-04-14T17:03:27.926Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy IU",
+      "status": "PASS",
+      "txHash": "0xdad6ce3130d909e0c61504716482767b49ca63eafbd39fafc1b0c7aaa1d8ecc5",
+      "detail": "gas: 521795",
+      "timestamp": "2026-04-14T17:03:32.207Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy LQ",
+      "status": "PASS",
+      "txHash": "0xf25381887d5ba349c57acdac5f337ff66c5fe84f8cf238743fa3dd23fdbebbc2",
+      "detail": "gas: 621746",
+      "timestamp": "2026-04-14T17:03:39.675Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy MS",
+      "status": "PASS",
+      "txHash": "0x90ace5f3c4d23f180e2b5f23546ac32a2e82440cbca417b4434fbd22e63239c9",
+      "detail": "gas: 570459",
+      "timestamp": "2026-04-14T17:03:43.945Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy KK",
+      "status": "PASS",
+      "txHash": "0xf1a141b714d2696c0c66066b47f9df7c99b970340b69fd1e51b36e6556b7f606",
+      "detail": "gas: 570435",
+      "timestamp": "2026-04-14T17:03:51.485Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy PZ",
+      "status": "PASS",
+      "txHash": "0x63ea5124cff8b1d3fa1cfbcad4f45d5d438b94ac5abda8fdb81216b0d4046525",
+      "detail": "gas: 570459",
+      "timestamp": "2026-04-14T17:03:55.814Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy QG",
+      "status": "PASS",
+      "txHash": "0xa0df4b284cb5c8d97dd02ac3eea5e1bc56b8dbf50bac255617bf544dc90e2bf1",
+      "detail": "gas: 570459",
+      "timestamp": "2026-04-14T17:04:03.347Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy HK",
+      "status": "PASS",
+      "txHash": "0xfba532374ead7a19b127fb3c1c0552708f8a5b53662fdc6cbcfa02df1aadb78b",
+      "detail": "gas: 570459",
+      "timestamp": "2026-04-14T17:04:07.609Z"
+    },
+    {
+      "category": "spree",
+      "action": "R2 Buy RW",
+      "status": "PASS",
+      "txHash": "0x13a2adb7f47ae51f1d46c9dd0dce9c8fa09f0ee26c8111f06caf5afdb52df3d0",
+      "detail": "gas: 570459",
+      "timestamp": "2026-04-14T17:04:15.078Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy IU",
+      "status": "PASS",
+      "txHash": "0x497267c80af5af3468f67c4a0ed6906c4e5b3e437faab04438ac510a8b606673",
+      "detail": "gas: 518827",
+      "timestamp": "2026-04-14T17:04:17.764Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy LQ",
+      "status": "PASS",
+      "txHash": "0x8f7e2d994bf63055ad8ed8f161535d056cf3ca41f21211b829734636baa3274c",
+      "detail": "gas: 626089",
+      "timestamp": "2026-04-14T17:04:25.253Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy MS",
+      "status": "PASS",
+      "txHash": "0x63eb497c3676c92cb2b8ab656c8a0a6a75f71de0e188d575183c1606ba780f7a",
+      "detail": "gas: 574802",
+      "timestamp": "2026-04-14T17:04:29.597Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy KK",
+      "status": "PASS",
+      "txHash": "0x8932666f5104edf94225ab19ebc7998dcbfc0e1fb06ce6751cbe0fcaa9796ce3",
+      "detail": "gas: 574778",
+      "timestamp": "2026-04-14T17:04:37.307Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy PZ",
+      "status": "PASS",
+      "txHash": "0x7abaa7ec3388aee5b35339ebbccf3ed9c48b2d989559252bc49e70fbff97fe44",
+      "detail": "gas: 574802",
+      "timestamp": "2026-04-14T17:04:41.825Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy QG",
+      "status": "PASS",
+      "txHash": "0x55738d7a43ea827f9edf989be5e83c22994068ac124e61b353a609c3b4c0f275",
+      "detail": "gas: 574802",
+      "timestamp": "2026-04-14T17:04:49.461Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy HK",
+      "status": "PASS",
+      "txHash": "0x50e22a245fa91da8fd87509ee4555d3391038147d837c3894aa011a5d7ca5f3c",
+      "detail": "gas: 574802",
+      "timestamp": "2026-04-14T17:04:52.338Z"
+    },
+    {
+      "category": "spree",
+      "action": "R3 Buy RW",
+      "status": "PASS",
+      "txHash": "0x962348a91f2e7683286b06e8979bf9d7dee7cb1f089d5b6b2123d1affe9c5e23",
+      "detail": "gas: 574802",
+      "timestamp": "2026-04-14T17:04:59.865Z"
+    },
+    {
+      "category": "final",
+      "action": "IU: bal=13.01323146282901085, supply=51.579778966017755486, price=0.001370441142603437",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:00.425Z"
+    },
+    {
+      "category": "final",
+      "action": "LQ: bal=14.388592065167278908, supply=14.388592065167278908, price=0.001054579235712423",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:01.023Z"
+    },
+    {
+      "category": "final",
+      "action": "MS: bal=14.388592065167278908, supply=14.388592065167278908, price=0.001054579235712423",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:01.634Z"
+    },
+    {
+      "category": "final",
+      "action": "KK: bal=14.388592065167278908, supply=14.388592065167278908, price=0.001054579235712423",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:02.253Z"
+    },
+    {
+      "category": "final",
+      "action": "PZ: bal=14.388592065167278908, supply=14.388592065167278908, price=0.001054579235712423",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:02.848Z"
+    },
+    {
+      "category": "final",
+      "action": "QG: bal=14.388592065167278908, supply=14.388592065167278908, price=0.001054579235712423",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:03.438Z"
+    },
+    {
+      "category": "final",
+      "action": "HK: bal=14.388592065167278908, supply=14.388592065167278908, price=0.001054579235712423",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:04.003Z"
+    },
+    {
+      "category": "final",
+      "action": "RW: bal=14.388592065167278908, supply=14.388592065167278908, price=0.001054579235712423",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "",
+      "timestamp": "2026-04-14T17:05:04.597Z"
+    },
+    {
+      "category": "final",
+      "action": "Factory ETH balance",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.175663483263028599 WIRE",
+      "timestamp": "2026-04-14T17:05:04.985Z"
+    },
+    {
+      "category": "final",
+      "action": "IU reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.072512431954693057 WIRE",
+      "timestamp": "2026-04-14T17:05:05.175Z"
+    },
+    {
+      "category": "final",
+      "action": "LQ reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.014951051308335542 WIRE",
+      "timestamp": "2026-04-14T17:05:05.361Z"
+    },
+    {
+      "category": "final",
+      "action": "MS reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0147 WIRE",
+      "timestamp": "2026-04-14T17:05:05.555Z"
+    },
+    {
+      "category": "final",
+      "action": "KK reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0147 WIRE",
+      "timestamp": "2026-04-14T17:05:05.755Z"
+    },
+    {
+      "category": "final",
+      "action": "PZ reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0147 WIRE",
+      "timestamp": "2026-04-14T17:05:05.949Z"
+    },
+    {
+      "category": "final",
+      "action": "QG reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0147 WIRE",
+      "timestamp": "2026-04-14T17:05:06.140Z"
+    },
+    {
+      "category": "final",
+      "action": "HK reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0147 WIRE",
+      "timestamp": "2026-04-14T17:05:06.339Z"
+    },
+    {
+      "category": "final",
+      "action": "RW reserves",
+      "status": "PASS",
+      "txHash": null,
+      "detail": "0.0147 WIRE",
+      "timestamp": "2026-04-14T17:05:06.526Z"
+    }
+  ]
+}

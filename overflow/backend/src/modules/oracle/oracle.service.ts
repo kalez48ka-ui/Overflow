@@ -1,11 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { ethers } from 'ethers';
 import { Server as SocketServer } from 'socket.io';
 import { config } from '../../config';
 import { VaultService } from '../vault/vault.service';
 import { FanWarsService } from '../fanwars/fanwars.service';
 import { MarginType } from '../../common/types';
-import { SELL_TAX_BY_RANK } from '../../common/constants';
+import { SELL_TAX_BY_RANK, WIN_SCORE_DELTA, LOSS_SCORE_DELTA, UPSET_THRESHOLD } from '../../common/constants';
 
 /**
  * ABI matching the deployed PerformanceOracle.sol contract.
@@ -71,66 +71,83 @@ export class OracleService {
   }
 
   async processMatchResult(matchId: string, winnerId: string): Promise<void> {
-    const match = await this.prisma.match.findUnique({
-      where: { id: matchId },
-      include: { homeTeam: true, awayTeam: true },
-    });
+    const txResult = await this.prisma.$transaction(
+      async (tx) => {
+        const match = await tx.match.findUnique({
+          where: { id: matchId },
+          include: { homeTeam: true, awayTeam: true },
+        });
 
-    if (!match) {
-      console.error(`[OracleService] Match ${matchId} not found`);
-      return;
-    }
+        if (!match) {
+          console.error(`[OracleService] Match ${matchId} not found`);
+          return null;
+        }
 
-    const winner = winnerId === match.homeTeamId ? match.homeTeam : match.awayTeam;
-    const loser = winnerId === match.homeTeamId ? match.awayTeam : match.homeTeam;
+        const winner = winnerId === match.homeTeamId ? match.homeTeam : match.awayTeam;
+        const loser = winnerId === match.homeTeamId ? match.awayTeam : match.homeTeam;
 
-    const winnerNewScore = Math.min(100, winner.performanceScore + 8);
-    const loserNewScore = Math.max(0, loser.performanceScore - 5);
+        const winnerNewScore = Math.min(100, Number(winner.performanceScore) + WIN_SCORE_DELTA);
+        const loserNewScore = Math.max(0, Number(loser.performanceScore) - LOSS_SCORE_DELTA);
 
-    await Promise.all([
-      this.prisma.team.update({
-        where: { id: winner.id },
-        data: {
-          performanceScore: winnerNewScore,
-          wins: winner.wins + 1,
-        },
-      }),
-      this.prisma.team.update({
-        where: { id: loser.id },
-        data: {
-          performanceScore: loserNewScore,
-          losses: loser.losses + 1,
-        },
-      }),
-    ]);
+        await Promise.all([
+          tx.team.update({
+            where: { id: winner.id },
+            data: {
+              performanceScore: winnerNewScore,
+              wins: { increment: 1 },
+            },
+          }),
+          tx.team.update({
+            where: { id: loser.id },
+            data: {
+              performanceScore: loserNewScore,
+              losses: { increment: 1 },
+            },
+          }),
+        ]);
 
+        const upsetScore = this.calculateUpsetScore(winner, loser);
+        if (upsetScore >= UPSET_THRESHOLD) {
+          await tx.match.update({
+            where: { id: matchId },
+            data: {
+              winnerId,
+              status: 'COMPLETED',
+              endTime: new Date(),
+              isUpset: true,
+              upsetScore,
+            },
+          });
+        } else {
+          await tx.match.update({
+            where: { id: matchId },
+            data: {
+              winnerId,
+              status: 'COMPLETED',
+              endTime: new Date(),
+            },
+          });
+        }
+
+        return { winner, loser, winnerNewScore, loserNewScore, upsetScore };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      }
+    );
+
+    if (!txResult) return;
+
+    const { winner, loser, winnerNewScore, loserNewScore, upsetScore } = txResult;
+
+    // On-chain updates and side effects outside the transaction
     await this.updateOnChainScore(winner.symbol, winnerNewScore);
     await this.updateOnChainScore(loser.symbol, loserNewScore);
 
     await this.recalculateRankings();
 
-    const upsetScore = this.calculateUpsetScore(winner, loser);
-    if (upsetScore >= 20) {
-      await this.prisma.match.update({
-        where: { id: matchId },
-        data: {
-          winnerId,
-          status: 'COMPLETED',
-          endTime: new Date(),
-          isUpset: true,
-          upsetScore,
-        },
-      });
+    if (upsetScore >= UPSET_THRESHOLD) {
       await this.vaultService.processUpsetEvent(matchId, winner.symbol, loser.symbol, upsetScore);
-    } else {
-      await this.prisma.match.update({
-        where: { id: matchId },
-        data: {
-          winnerId,
-          status: 'COMPLETED',
-          endTime: new Date(),
-        },
-      });
     }
 
     await this.updateSellTaxes();
@@ -151,21 +168,23 @@ export class OracleService {
    * NORMAL: everything in between
    */
   private deriveMarginType(
-    winner: { ranking: number; performanceScore: number },
-    loser: { ranking: number; performanceScore: number }
+    winner: { ranking: number; performanceScore: number | { toNumber?: () => number } },
+    loser: { ranking: number; performanceScore: number | { toNumber?: () => number } }
   ): MarginType {
-    const scoreDiff = Math.abs(winner.performanceScore - loser.performanceScore);
+    const scoreDiff = Math.abs(Number(winner.performanceScore) - Number(loser.performanceScore));
     if (scoreDiff <= 5) return 'CLOSE';
     if (scoreDiff >= 20) return 'DOMINANT';
     return 'NORMAL';
   }
 
   private calculateUpsetScore(
-    winner: { ranking: number; performanceScore: number },
-    loser: { ranking: number; performanceScore: number }
+    winner: { ranking: number; performanceScore: number | { toNumber?: () => number } },
+    loser: { ranking: number; performanceScore: number | { toNumber?: () => number } }
   ): number {
     const rankDiff = winner.ranking - loser.ranking;
-    const scoreDiff = loser.performanceScore - winner.performanceScore;
+    const winnerScore = typeof winner.performanceScore === 'number' ? winner.performanceScore : Number(winner.performanceScore);
+    const loserScore = typeof loser.performanceScore === 'number' ? loser.performanceScore : Number(loser.performanceScore);
+    const scoreDiff = loserScore - winnerScore;
 
     if (rankDiff <= 0) return 0;
 
@@ -222,23 +241,25 @@ export class OracleService {
   }
 
   async recalculateRankings(): Promise<void> {
-    const teams = await this.prisma.team.findMany({
-      orderBy: [
-        { wins: 'desc' },
-        { nrr: 'desc' },
-        { performanceScore: 'desc' },
-      ],
-    });
+    await this.prisma.$transaction(async (tx) => {
+      const teams = await tx.team.findMany({
+        orderBy: [
+          { wins: 'desc' },
+          { nrr: 'desc' },
+          { performanceScore: 'desc' },
+        ],
+      });
 
-    // All ranking updates target independent rows — parallelize them
-    await Promise.all(
-      teams.map((team, i) =>
-        this.prisma.team.update({
-          where: { id: team.id },
-          data: { ranking: i + 1 },
-        })
-      )
-    );
+      // All ranking updates target independent rows — parallelize them
+      await Promise.all(
+        teams.map((team, i) =>
+          tx.team.update({
+            where: { id: team.id },
+            data: { ranking: i + 1 },
+          })
+        )
+      );
+    });
   }
 
   private async updateSellTaxes(): Promise<void> {
@@ -246,7 +267,7 @@ export class OracleService {
     const updates = teams
       .filter((team) => {
         const newTax = SELL_TAX_BY_RANK[team.ranking] ?? 5;
-        return team.sellTaxRate !== newTax;
+        return Number(team.sellTaxRate) !== newTax;
       })
       .map((team) =>
         this.prisma.team.update({

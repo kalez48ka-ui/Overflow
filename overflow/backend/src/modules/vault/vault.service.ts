@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Server as SocketServer } from 'socket.io';
 import { UpsetEventData, VaultInfo } from '../../common/types';
+import { getMultiplier, VAULT_INITIAL_BALANCE } from '../../common/constants';
 
 export class VaultService {
   private prisma: PrismaClient;
@@ -15,20 +16,16 @@ export class VaultService {
   }
 
   async getVaultState(): Promise<VaultInfo> {
-    let vault = await this.prisma.vaultState.findUnique({
+    const vault = await this.prisma.vaultState.upsert({
       where: { id: 'vault' },
+      create: {
+        id: 'vault',
+        balance: VAULT_INITIAL_BALANCE,
+        totalIn: VAULT_INITIAL_BALANCE,
+        totalOut: 0,
+      },
+      update: {},
     });
-
-    if (!vault) {
-      vault = await this.prisma.vaultState.create({
-        data: {
-          id: 'vault',
-          balance: 1000,
-          totalIn: 1000,
-          totalOut: 0,
-        },
-      });
-    }
 
     return {
       balance: Number(vault.balance),
@@ -38,20 +35,27 @@ export class VaultService {
     };
   }
 
+  /**
+   * Add funds to the vault using upsert to prevent race conditions on first call.
+   * Atomically creates the vault record if it doesn't exist, or increments if it does.
+   */
   async addToVault(amount: number): Promise<void> {
-    // Ensure vault record exists before atomic increment
-    await this.getVaultState();
-
-    const updated = await this.prisma.vaultState.update({
+    const updated = await this.prisma.vaultState.upsert({
       where: { id: 'vault' },
-      data: {
+      create: {
+        id: 'vault',
+        balance: VAULT_INITIAL_BALANCE + amount,
+        totalIn: VAULT_INITIAL_BALANCE + amount,
+        totalOut: 0,
+      },
+      update: {
         balance: { increment: amount },
         totalIn: { increment: amount },
       },
     });
 
     if (this.io) {
-      this.io.emit('vault:update', {
+      this.io.to('vault:subscribers').emit('vault:update', {
         balance: updated.balance,
         change: amount,
         type: 'deposit',
@@ -95,7 +99,7 @@ export class VaultService {
       }
 
       // 3. Compute payout
-      const multiplier = this.getMultiplier(upsetScore);
+      const multiplier = getMultiplier(upsetScore);
       const releasePercent = Math.min(50, upsetScore * 0.5 * multiplier);
       let vaultRelease = Number(vault.balance) * (releasePercent / 100);
 
@@ -191,8 +195,8 @@ export class VaultService {
         holdersCount,
         avgHolderPayout: totalHeld > 0 ? totalPayout / holdersCount : 0,
       };
-      this.io.emit('upset:triggered', eventData);
-      this.io.emit('vault:update', {
+      this.io.to('vault:subscribers').emit('upset:triggered', eventData);
+      this.io.to('vault:subscribers').emit('vault:update', {
         balance: updatedVaultBalance,
         change: -vaultRelease,
         type: 'upset_payout',
@@ -205,17 +209,11 @@ export class VaultService {
     );
   }
 
-  private getMultiplier(upsetScore: number): number {
-    if (upsetScore >= 80) return 5;
-    if (upsetScore >= 60) return 4;
-    if (upsetScore >= 40) return 3;
-    if (upsetScore >= 20) return 2;
-    return 1;
-  }
-
-  async getUpsetEvents() {
+  async getUpsetEvents(limit = 50, offset = 0) {
     return this.prisma.upsetEvent.findMany({
       orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
     });
   }
 }

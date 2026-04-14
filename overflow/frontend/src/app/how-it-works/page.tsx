@@ -2,6 +2,7 @@
 
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useRef, useState, type ReactNode } from "react";
+import { useReducedMotion, useMotionProps } from "@/hooks/useReducedMotion";
 import dynamic from "next/dynamic";
 import {
   ArrowRight,
@@ -52,26 +53,23 @@ const AnimatedGradientBorder = dynamic(
 /*  Shared animation presets                                           */
 /* ------------------------------------------------------------------ */
 
-const sectionReveal = {
-  initial: { opacity: 0, y: 32 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: "-10%" as const },
-  transition: { duration: 0.6, ease: "easeOut" as const },
-};
+// sectionReveal is now generated per-component via useMotionProps hook
+// to respect prefers-reduced-motion. See HowItWorksPage below.
 
 /* ------------------------------------------------------------------ */
 /*  Animated section divider                                           */
 /* ------------------------------------------------------------------ */
 
 function AnimatedDivider() {
+  const prefersReduced = useReducedMotion();
   return (
     <div className="py-4">
       <motion.div
         className="mx-auto h-px max-w-2xl bg-gradient-to-r from-transparent via-[#21262D] to-transparent"
-        initial={{ scaleX: 0 }}
+        initial={prefersReduced ? { scaleX: 1 } : { scaleX: 0 }}
         whileInView={{ scaleX: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
+        transition={prefersReduced ? { duration: 0 } : { duration: 0.6 }}
       />
     </div>
   );
@@ -105,7 +103,7 @@ function SectionHeader({
       <h2 className="text-2xl font-black tracking-tight text-[#E6EDF3] sm:text-3xl">
         {title}
       </h2>
-      <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#8B949E]">
+      <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#9CA3AF]">
         {description}
       </p>
     </div>
@@ -232,8 +230,8 @@ function BondingCurveSVG() {
         animate={isInView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.5, delay: 2 }}
       >
-        <line x1={230} y1={102} x2={230} y2={126} stroke="#484F58" strokeWidth={1} strokeDasharray="2 2" />
-        <text x={238} y={118} className="fill-[#8B949E] text-[9px] font-medium">spread</text>
+        <line x1={230} y1={102} x2={230} y2={126} stroke="#768390" strokeWidth={1} strokeDasharray="2 2" />
+        <text x={238} y={118} className="fill-[#9CA3AF] text-[9px] font-medium">spread</text>
       </motion.g>
 
       {/* Axis labels */}
@@ -241,7 +239,7 @@ function BondingCurveSVG() {
         x={200}
         y={245}
         textAnchor="middle"
-        className="fill-[#8B949E] text-[11px] font-medium"
+        className="fill-[#9CA3AF] text-[11px] font-medium"
         initial={{ opacity: 0 }}
         animate={isInView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.4, delay: 1.8 }}
@@ -252,7 +250,7 @@ function BondingCurveSVG() {
         x={14}
         y={120}
         textAnchor="middle"
-        className="fill-[#8B949E] text-[11px] font-medium"
+        className="fill-[#9CA3AF] text-[11px] font-medium"
         transform="rotate(-90, 14, 120)"
         initial={{ opacity: 0 }}
         animate={isInView ? { opacity: 1 } : { opacity: 0 }}
@@ -360,7 +358,7 @@ function DonutChart() {
         ) : (
           <div>
             <p className="text-xl font-black text-[#E6EDF3]">100%</p>
-            <p className="mt-0.5 text-[10px] text-[#8B949E]">Fee Split</p>
+            <p className="mt-0.5 text-[10px] text-[#9CA3AF]">Fee Split</p>
           </div>
         )}
       </div>
@@ -373,7 +371,7 @@ function DonutChart() {
 /* ------------------------------------------------------------------ */
 
 const upsetTiers = [
-  { tier: "Normal", range: "0 - 3", multiplier: 1, release: 0, color: "#484F58", bg: "#161B22", barWidth: 10 },
+  { tier: "Normal", range: "0 - 3", multiplier: 1, release: 0, color: "#768390", bg: "#161B22", barWidth: 10 },
   { tier: "Big Upset", range: "4 - 6", multiplier: 3, release: 15, color: "#3FB950", bg: "#0D1F14", barWidth: 40 },
   { tier: "Huge Upset", range: "7 - 9", multiplier: 5, release: 30, color: "#FDB913", bg: "#1A1608", barWidth: 65 },
   { tier: "GIANT KILLER", range: "10 - 13", multiplier: 10, release: 60, color: "#E4002B", bg: "#1A0A0E", barWidth: 100 },
@@ -449,11 +447,11 @@ function TaxTierCard({
 
 const rewardPositions = [
   { pos: "1st", share: 35, color: "#FDB913", height: 100, medal: "gold" },
-  { pos: "2nd", share: 25, color: "#8B949E", height: 72, medal: "silver" },
+  { pos: "2nd", share: 25, color: "#9CA3AF", height: 72, medal: "silver" },
   { pos: "3rd", share: 20, color: "#CD7F32", height: 57, medal: "bronze" },
   { pos: "4th", share: 12, color: "#58A6FF", height: 34, medal: null },
-  { pos: "5th", share: 5, color: "#484F58", height: 14, medal: null },
-  { pos: "6th", share: 3, color: "#484F58", height: 9, medal: null },
+  { pos: "5th", share: 5, color: "#768390", height: 14, medal: null },
+  { pos: "6th", share: 3, color: "#768390", height: 9, medal: null },
   { pos: "7th", share: 0, color: "#30363D", height: 2, medal: null },
   { pos: "8th", share: 0, color: "#30363D", height: 2, medal: null },
 ];
@@ -494,7 +492,7 @@ function NavPill({ label, href, index }: { label: string; href: string; index: n
   return (
     <motion.a
       href={href}
-      className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-[#21262D] bg-[#161B22]/80 px-4 py-2 text-xs font-semibold text-[#8B949E] backdrop-blur-sm transition-all duration-300 hover:border-[#E4002B]/40 hover:text-[#E6EDF3] hover:bg-[#E4002B]/5"
+      className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-[#21262D] bg-[#161B22]/80 px-4 py-2 text-xs font-semibold text-[#9CA3AF] backdrop-blur-sm transition-all duration-300 hover:border-[#E4002B]/40 hover:text-[#E6EDF3] hover:bg-[#E4002B]/5"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.8 + index * 0.05 }}
@@ -511,6 +509,7 @@ function NavPill({ label, href, index }: { label: string; href: string; index: n
 /* ------------------------------------------------------------------ */
 
 export default function HowItWorksPage() {
+  const { sectionReveal } = useMotionProps();
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -568,7 +567,7 @@ export default function HowItWorksPage() {
           />
 
           {/* Subtitle */}
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#8B949E] sm:text-lg">
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-[#9CA3AF] sm:text-lg">
             <TextGenerateEffect
               text="Trade PSL team tokens backed by real match performance. From bonding curves to upset payouts, every mechanic explained."
               staggerDelay={0.03}
@@ -602,7 +601,7 @@ export default function HowItWorksPage() {
               initial={{}}
             >
               <motion.div
-                className="mx-auto mt-1.5 h-2 w-1 rounded-full bg-[#8B949E]"
+                className="mx-auto mt-1.5 h-2 w-1 rounded-full bg-[#9CA3AF]"
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
               />
@@ -655,7 +654,7 @@ export default function HowItWorksPage() {
                   <code className="mt-3 block rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 font-mono text-sm text-[#E4002B]">
                     price = 0.001 WIRE * supply ^ 1.5
                   </code>
-                  <p className="mt-3 text-xs leading-relaxed text-[#8B949E]">
+                  <p className="mt-3 text-xs leading-relaxed text-[#9CA3AF]">
                     Rises steeply as more tokens are purchased. Early buyers get the best price. Higher exponent means accelerating cost.
                   </p>
                 </div>
@@ -674,14 +673,14 @@ export default function HowItWorksPage() {
                   <code className="mt-3 block rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 font-mono text-sm text-[#3FB950]">
                     price = 0.001 WIRE * supply ^ 1.2
                   </code>
-                  <p className="mt-3 text-xs leading-relaxed text-[#8B949E]">
+                  <p className="mt-3 text-xs leading-relaxed text-[#9CA3AF]">
                     Rises more gently. The gap between buy and sell curves creates the spread, which funds the ecosystem.
                   </p>
                 </div>
               </CardSpotlight>
 
               <div className="rounded-xl border border-dashed border-[#FDB913]/30 bg-[#FDB913]/5 px-5 py-3.5">
-                <p className="text-xs text-[#8B949E]">
+                <p className="text-xs text-[#9CA3AF]">
                   <span className="font-bold text-[#FDB913]">Quick flips lose money.</span>{" "}
                   Base price starts at 0.001 WIRE. A 2% buy fee applies to every purchase.
                 </p>
@@ -732,7 +731,7 @@ export default function HowItWorksPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.5 }}
           >
-            <p className="text-xs text-[#8B949E]">
+            <p className="text-xs text-[#9CA3AF]">
               <span className="font-bold text-[#C9D1D9]">Formula</span>{" "}
               <code className="rounded-md bg-[#0D1117] px-2 py-1 text-[#58A6FF] font-mono">
                 sellTaxBps = 200 + (rank - 1) * 260
@@ -782,7 +781,7 @@ export default function HowItWorksPage() {
                         </span>
                         <div>
                           <span className="text-sm font-semibold text-[#C9D1D9]">{slice.label}</span>
-                          <p className="text-[11px] text-[#8B949E]">{slice.desc}</p>
+                          <p className="text-[11px] text-[#9CA3AF]">{slice.desc}</p>
                         </div>
                       </div>
                       <span className="font-mono tabular-nums text-xl font-black" style={{ color: slice.color }}>
@@ -844,7 +843,7 @@ export default function HowItWorksPage() {
               <p className="text-4xl font-black text-[#E6EDF3] tabular-nums font-mono sm:text-5xl tracking-tight">
                 1,000 WIRE
               </p>
-              <p className="mt-2 text-sm text-[#8B949E]">
+              <p className="mt-2 text-sm text-[#9CA3AF]">
                 15% of all fees flow into the Upset Vault continuously
               </p>
             </div>
@@ -868,7 +867,7 @@ export default function HowItWorksPage() {
 
                   <div className="flex items-baseline justify-between">
                     <span className="text-sm font-black" style={{ color }}>{tier}</span>
-                    <span className="rounded-md border border-[#21262D] px-2 py-0.5 font-mono tabular-nums text-[10px] text-[#8B949E]">
+                    <span className="rounded-md border border-[#21262D] px-2 py-0.5 font-mono tabular-nums text-[10px] text-[#9CA3AF]">
                       score {range}
                     </span>
                   </div>
@@ -887,13 +886,13 @@ export default function HowItWorksPage() {
 
                   <div className="mt-4 grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-[#8B949E]">Multiplier</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-[#9CA3AF]">Multiplier</p>
                       <p className="mt-1 text-3xl font-black tabular-nums font-mono tracking-tight text-[#E6EDF3]">
                         <CountUp value={multiplier} suffix="x" />
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.15em] text-[#8B949E]">Vault Release</p>
+                      <p className="text-[10px] uppercase tracking-[0.15em] text-[#9CA3AF]">Vault Release</p>
                       <p className="mt-1 text-3xl font-black tabular-nums font-mono tracking-tight" style={{ color }}>
                         <CountUp value={release} suffix="%" />
                       </p>
@@ -916,30 +915,30 @@ export default function HowItWorksPage() {
               <h3 className="text-sm font-bold text-[#FDB913]">Example Scenario</h3>
             </div>
             <div className="p-5">
-              <p className="text-sm text-[#8B949E]">
+              <p className="text-sm text-[#9CA3AF]">
                 If the vault holds <span className="font-bold text-[#E6EDF3] font-mono tabular-nums">1,000 WIRE</span> and a <span className="font-bold text-[#3FB950]">Big Upset</span> happens:
               </p>
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="rounded-lg bg-[#0D1117] border border-[#21262D] p-3 text-center">
-                  <p className="text-[10px] uppercase tracking-wider text-[#8B949E]">Vault</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF]">Vault</p>
                   <p className="mt-1 text-lg font-black text-[#E6EDF3] font-mono tabular-nums">
                     <CountUp value={1000} prefix="" suffix="" />
                   </p>
-                  <p className="text-[10px] text-[#8B949E]">WIRE</p>
+                  <p className="text-[10px] text-[#9CA3AF]">WIRE</p>
                 </div>
                 <div className="rounded-lg bg-[#0D1117] border border-[#21262D] p-3 text-center">
-                  <p className="text-[10px] uppercase tracking-wider text-[#8B949E]">Release</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF]">Release</p>
                   <p className="mt-1 text-lg font-black text-[#3FB950] font-mono tabular-nums">
                     <CountUp value={15} suffix="%" />
                   </p>
-                  <p className="text-[10px] text-[#8B949E]">Big Upset</p>
+                  <p className="text-[10px] text-[#9CA3AF]">Big Upset</p>
                 </div>
                 <div className="rounded-lg bg-[#0D1117] border border-[#3FB950]/30 p-3 text-center">
-                  <p className="text-[10px] uppercase tracking-wider text-[#8B949E]">Payout</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF]">Payout</p>
                   <p className="mt-1 text-lg font-black text-[#3FB950] font-mono tabular-nums">
                     <CountUp value={150} prefix="" suffix="" />
                   </p>
-                  <p className="text-[10px] text-[#8B949E]">WIRE released</p>
+                  <p className="text-[10px] text-[#9CA3AF]">WIRE released</p>
                 </div>
               </div>
             </div>
@@ -952,7 +951,7 @@ export default function HowItWorksPage() {
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.5 }}
           >
-            <p className="text-xs text-[#8B949E]">
+            <p className="text-xs text-[#9CA3AF]">
               <span className="font-bold text-[#A855F7]">Upset Score</span>{" "}
               <code className="rounded-md bg-[#161B22] px-2 py-1 text-[#A855F7] font-mono">
                 winner&apos;s sell tax - loser&apos;s sell tax
@@ -1011,12 +1010,12 @@ export default function HowItWorksPage() {
                         </motion.div>
                       </div>
                     </div>
-                    <span className="hidden text-[11px] text-[#8B949E] sm:block w-24">{label}</span>
+                    <span className="hidden text-[11px] text-[#9CA3AF] sm:block w-24">{label}</span>
                   </motion.div>
                 );
               })}
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-[#8B949E]">
+            <div className="mt-3 flex items-center gap-2 text-xs text-[#9CA3AF]">
               <Timer className="h-3 w-3 text-[#3FB950]" />
               <span>Hold longer, pay less. Diamond hands are rewarded.</span>
             </div>
@@ -1045,7 +1044,7 @@ export default function HowItWorksPage() {
                   </span>
                   <div>
                     <p className="text-sm font-bold text-[#C9D1D9]">{title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-[#8B949E]">{desc}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#9CA3AF]">{desc}</p>
                   </div>
                 </div>
               </CardSpotlight>
@@ -1075,7 +1074,7 @@ export default function HowItWorksPage() {
                 const podiumHeight = [120, 160, 90][visualIdx]; // 2nd, 1st, 3rd heights
                 const medalColors: Record<string, { bg: string; border: string }> = {
                   gold: { bg: "#FDB913", border: "#FDB913" },
-                  silver: { bg: "#8B949E", border: "#8B949E" },
+                  silver: { bg: "#9CA3AF", border: "#9CA3AF" },
                   bronze: { bg: "#CD7F32", border: "#CD7F32" },
                 };
                 const medal = pos.medal ? medalColors[pos.medal] : null;
@@ -1223,14 +1222,14 @@ export default function HowItWorksPage() {
                               <StepIcon className="h-4 w-4" style={{ color }} />
                             </span>
                             <div className="flex items-center gap-2">
-                              <span className="font-mono tabular-nums text-[10px] text-[#8B949E]">{step}</span>
+                              <span className="font-mono tabular-nums text-[10px] text-[#9CA3AF]">{step}</span>
                               <p className="text-sm font-bold text-[#E6EDF3]">{title}</p>
                             </div>
                             <span className="ml-auto rounded-full border border-[#3FB950]/30 bg-[#3FB950]/10 px-2 py-0.5 text-[10px] font-bold text-[#3FB950]">
                               CURRENT
                             </span>
                           </div>
-                          <p className="text-xs leading-relaxed text-[#8B949E]">{desc}</p>
+                          <p className="text-xs leading-relaxed text-[#9CA3AF]">{desc}</p>
                         </div>
                       </AnimatedGradientBorder>
                     ) : (
@@ -1243,11 +1242,11 @@ export default function HowItWorksPage() {
                             <StepIcon className="h-4 w-4" style={{ color }} />
                           </span>
                           <div className="flex items-center gap-2">
-                            <span className="font-mono tabular-nums text-[10px] text-[#8B949E]">{step}</span>
+                            <span className="font-mono tabular-nums text-[10px] text-[#9CA3AF]">{step}</span>
                             <p className="text-sm font-bold text-[#E6EDF3]">{title}</p>
                           </div>
                         </div>
-                        <p className="text-xs leading-relaxed text-[#8B949E]">{desc}</p>
+                        <p className="text-xs leading-relaxed text-[#9CA3AF]">{desc}</p>
                       </div>
                     )}
                   </motion.div>
@@ -1272,15 +1271,15 @@ export default function HowItWorksPage() {
             <StaggerReveal className="grid grid-cols-2 gap-px bg-[#21262D] sm:grid-cols-4" staggerDelay={0.1} yOffset={14}>
               {[
                 { place: "Champion", share: 50, color: "#FDB913" },
-                { place: "Runner-up", share: 25, color: "#8B949E" },
+                { place: "Runner-up", share: 25, color: "#9CA3AF" },
                 { place: "3rd / 4th", share: 15, color: "#CD7F32" },
-                { place: "5th - 8th", share: 10, color: "#484F58" },
+                { place: "5th - 8th", share: 10, color: "#768390" },
               ].map(({ place, share, color }) => (
                 <div key={place} className="bg-[#161B22] px-4 py-6 text-center">
                   <p className="text-3xl font-black tabular-nums font-mono tracking-tight" style={{ color }}>
                     <CountUp value={share} suffix="%" />
                   </p>
-                  <p className="mt-1.5 text-[11px] text-[#8B949E]">{place}</p>
+                  <p className="mt-1.5 text-[11px] text-[#9CA3AF]">{place}</p>
                 </div>
               ))}
             </StaggerReveal>
@@ -1303,7 +1302,7 @@ export default function HowItWorksPage() {
             <h2 className="text-3xl font-black tracking-tight text-[#E6EDF3] sm:text-4xl">
               Ready to Trade?
             </h2>
-            <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-[#8B949E]">
+            <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-[#9CA3AF]">
               Pick a team, ride the bonding curve, and earn from upsets. The vault is waiting.
             </p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

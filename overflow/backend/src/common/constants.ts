@@ -50,3 +50,49 @@ export const SELL_TAX_BY_RANK: Record<number, number> = {
   7: 15,
   8: 15,
 };
+
+// ---------------------------------------------------------------------------
+// Vault constants
+// ---------------------------------------------------------------------------
+
+/** Initial vault balance on creation (in WIRE) */
+export const VAULT_INITIAL_BALANCE = 1000;
+
+// ---------------------------------------------------------------------------
+// Oracle / performance score constants
+// ---------------------------------------------------------------------------
+
+/** Performance score delta added to the winner after a match */
+export const WIN_SCORE_DELTA = 8;
+
+/** Performance score delta subtracted from the loser after a match */
+export const LOSS_SCORE_DELTA = 5;
+
+/** Minimum upset score threshold to trigger vault payout */
+export const UPSET_THRESHOLD = 20;
+
+// ---------------------------------------------------------------------------
+// Bonding curve constants
+// ---------------------------------------------------------------------------
+
+/** Bonding curve steepness coefficient */
+export const BONDING_CURVE_K = 0.0001;
+
+/** Base price floor for all team tokens (in WIRE) */
+export const BASE_PRICE = 1.0;
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Map an upset score to its payout multiplier.
+ * Used by VaultService and admin trigger-upset endpoint.
+ */
+export function getMultiplier(upsetScore: number): number {
+  if (upsetScore >= 80) return 5;
+  if (upsetScore >= 60) return 4;
+  if (upsetScore >= 40) return 3;
+  if (upsetScore >= 20) return 2;
+  return 1;
+}

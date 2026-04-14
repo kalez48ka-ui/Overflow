@@ -15,6 +15,10 @@ export function createAiRouter(prisma: PrismaClient): Router {
   router.get('/analysis/:matchId', async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
+      if (!/^[a-zA-Z0-9_-]{1,128}$/.test(matchId)) {
+        res.status(400).json({ error: 'Invalid matchId format' });
+        return;
+      }
 
       const match = await prisma.match.findUnique({
         where: { id: matchId },
@@ -25,7 +29,7 @@ export function createAiRouter(prisma: PrismaClient): Router {
       });
 
       if (!match) {
-        res.status(404).json({ success: false, error: 'Match not found' });
+        res.status(404).json({ error: 'Match not found' });
         return;
       }
 
@@ -41,8 +45,8 @@ export function createAiRouter(prisma: PrismaClient): Router {
         const analysis = generateMockAnalysis(
           match.homeTeam.name,
           match.awayTeam.name,
-          match.homeTeam.performanceScore,
-          match.awayTeam.performanceScore,
+          Number(match.homeTeam.performanceScore),
+          Number(match.awayTeam.performanceScore),
           match.venue || 'TBD'
         );
         res.json({ success: true, data: { matchId, analysis, fallback: true } });
@@ -68,8 +72,8 @@ export function createAiRouter(prisma: PrismaClient): Router {
         analysis = generateMockAnalysis(
           match.homeTeam.name,
           match.awayTeam.name,
-          match.homeTeam.performanceScore,
-          match.awayTeam.performanceScore,
+          Number(match.homeTeam.performanceScore),
+          Number(match.awayTeam.performanceScore),
           match.venue || 'TBD'
         );
       } finally {
@@ -84,7 +88,7 @@ export function createAiRouter(prisma: PrismaClient): Router {
       res.json({ success: true, data: { matchId, analysis } });
     } catch (err) {
       console.error('[AI] GET /analysis/:matchId error:', err);
-      res.status(500).json({ success: false, error: 'Failed to fetch AI analysis' });
+      res.status(500).json({ error: 'Failed to fetch AI analysis' });
     }
   });
 
@@ -99,7 +103,7 @@ export function createAiRouter(prisma: PrismaClient): Router {
         res.json({ success: true, data: fallbackSignals, fallback: true });
       } catch (fallbackErr) {
         console.error('[AI] Fallback signals error:', fallbackErr);
-        res.status(503).json({ success: false, error: 'AI service busy' });
+        res.status(503).json({ error: 'AI service busy' });
       }
       return;
     }
@@ -191,7 +195,7 @@ export function createAiRouter(prisma: PrismaClient): Router {
       res.json({ success: true, data: signals });
     } catch (err) {
       console.error('[AI] GET /signals error:', err);
-      res.status(500).json({ success: false, error: 'Failed to generate signals' });
+      res.status(500).json({ error: 'Failed to generate signals' });
     } finally {
       activeAIRequests--;
     }
@@ -200,7 +204,6 @@ export function createAiRouter(prisma: PrismaClient): Router {
   router.post('/query', async (req: Request, res: Response) => {
     if (activeAIRequests >= MAX_CONCURRENT_AI) {
       res.status(503).json({
-        success: false,
         error: 'AI service busy — too many concurrent requests. Please try again shortly.',
       });
       return;
@@ -211,7 +214,12 @@ export function createAiRouter(prisma: PrismaClient): Router {
       const { question } = req.body;
 
       if (!question || typeof question !== 'string') {
-        res.status(400).json({ success: false, error: 'Missing "question" in request body' });
+        res.status(400).json({ error: 'Missing "question" in request body' });
+        return;
+      }
+
+      if (question.length > 5000) {
+        res.status(400).json({ error: 'Question exceeds maximum length of 5000 characters' });
         return;
       }
 
@@ -224,7 +232,7 @@ export function createAiRouter(prisma: PrismaClient): Router {
       res.json({ success: true, data: response.data });
     } catch (err) {
       console.error('[AI] POST /query error:', err);
-      res.status(500).json({ success: false, error: 'AI query failed' });
+      res.status(500).json({ error: 'AI query failed' });
     } finally {
       activeAIRequests--;
     }
@@ -235,7 +243,7 @@ export function createAiRouter(prisma: PrismaClient): Router {
       const response = await axios.get(`${AI_ENGINE_URL}/api/ai/health`, { timeout: 5000 });
       res.json({ success: true, data: response.data });
     } catch {
-      res.json({ success: false, error: 'AI engine unreachable' });
+      res.json({ error: 'AI engine unreachable' });
     }
   });
 
@@ -244,42 +252,46 @@ export function createAiRouter(prisma: PrismaClient): Router {
 
 function generateFallbackSignal(team: {
   symbol: string;
-  performanceScore: number;
-  priceChange24h: number;
+  performanceScore: number | { toString(): string };
+  priceChange24h: number | { toString(): string };
   ranking: number;
   wins: number;
   losses: number;
-  sellTaxRate: number;
+  sellTaxRate: number | { toString(): string };
 }): AiSignal {
+  const perfScore = Number(team.performanceScore);
+  const change24h = Number(team.priceChange24h);
+  const taxRate = Number(team.sellTaxRate);
+
   let signal: 'BUY' | 'SELL' | 'HOLD';
   let confidence: number;
   let reason: string;
 
-  if (team.performanceScore >= 70 && team.priceChange24h < 5) {
+  if (perfScore >= 70 && change24h < 5) {
     signal = 'BUY';
-    confidence = Math.min(0.95, 0.6 + (team.performanceScore - 70) * 0.01);
-    reason = `Strong performance (${team.performanceScore.toFixed(0)}) with room for price growth. ` +
+    confidence = Math.min(0.95, 0.6 + (perfScore - 70) * 0.01);
+    reason = `Strong performance (${perfScore.toFixed(0)}) with room for price growth. ` +
       `Currently ranked #${team.ranking} with ${team.wins}W-${team.losses}L record.`;
-  } else if (team.performanceScore <= 35 && team.priceChange24h > 0) {
+  } else if (perfScore <= 35 && change24h > 0) {
     signal = 'SELL';
-    confidence = Math.min(0.9, 0.5 + (35 - team.performanceScore) * 0.015);
-    reason = `Weak performance (${team.performanceScore.toFixed(0)}) suggests price correction incoming. ` +
-      `Sell tax at ${team.sellTaxRate}% — consider exiting before further losses.`;
-  } else if (team.priceChange24h > 15) {
+    confidence = Math.min(0.9, 0.5 + (35 - perfScore) * 0.015);
+    reason = `Weak performance (${perfScore.toFixed(0)}) suggests price correction incoming. ` +
+      `Sell tax at ${taxRate}% — consider exiting before further losses.`;
+  } else if (change24h > 15) {
     signal = 'SELL';
     confidence = 0.65;
-    reason = `Price surged ${team.priceChange24h.toFixed(1)}% in 24h — potential overbought. ` +
+    reason = `Price surged ${change24h.toFixed(1)}% in 24h — potential overbought. ` +
       `Consider taking profits.`;
-  } else if (team.priceChange24h < -15) {
+  } else if (change24h < -15) {
     signal = 'BUY';
     confidence = 0.6;
-    reason = `Price dropped ${team.priceChange24h.toFixed(1)}% in 24h — potential oversold. ` +
-      `Performance score at ${team.performanceScore.toFixed(0)} suggests value.`;
+    reason = `Price dropped ${change24h.toFixed(1)}% in 24h — potential oversold. ` +
+      `Performance score at ${perfScore.toFixed(0)} suggests value.`;
   } else {
     signal = 'HOLD';
     confidence = 0.5;
-    reason = `Stable conditions. Performance score: ${team.performanceScore.toFixed(0)}, ` +
-      `24h change: ${team.priceChange24h.toFixed(1)}%. Wait for clearer signal.`;
+    reason = `Stable conditions. Performance score: ${perfScore.toFixed(0)}, ` +
+      `24h change: ${change24h.toFixed(1)}%. Wait for clearer signal.`;
   }
 
   return {

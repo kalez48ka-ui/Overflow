@@ -21,6 +21,11 @@ import {
 import { formatNumber, shortenAddress } from "@/lib/utils";
 import { NumberTicker } from "@/components/ui/number-ticker";
 
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
+  { ssr: false },
+);
+
 const AnimatedGradientBorder = dynamic(
   () => import("@/components/ui/animated-gradient-border").then((m) => ({ default: m.AnimatedGradientBorder })),
   { ssr: false },
@@ -117,19 +122,20 @@ export default function FanWarsPage() {
       className="min-h-screen bg-[#0D1117]"
     >
       {/* Hero Header */}
-      <div className="border-b border-[#21262D]">
+      <div className="relative overflow-hidden border-b border-[#21262D]">
+        <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
           <h1 className="text-3xl font-black text-[#E6EDF3] sm:text-4xl">
             Fan Wars
           </h1>
-          <p className="mt-2 text-sm text-[#8B949E]">
+          <p className="mt-2 text-sm text-[#9CA3AF]">
             Lock your team tokens. Both sides earn boost. Nobody loses.
           </p>
 
           {/* Stats */}
           <div className="mt-6 flex items-center gap-6">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
+              <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Total Boost Pool
               </p>
               <p className="text-2xl font-black tabular-nums text-[#FDB913]">
@@ -138,7 +144,7 @@ export default function FanWarsPage() {
             </div>
             <div className="h-8 w-px bg-[#21262D]" />
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
+              <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Active Wars
               </p>
               <p className="text-2xl font-black tabular-nums text-[#E6EDF3]">
@@ -151,18 +157,19 @@ export default function FanWarsPage() {
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-16" role="status">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#21262D] border-t-[#E4002B]" />
-            <span className="ml-3 text-sm text-[#8B949E]">
+            <span className="ml-3 text-sm text-[#9CA3AF]">
               Loading fan wars...
             </span>
+            <span className="sr-only">Loading...</span>
           </div>
         ) : (
           <div className="space-y-10">
             {/* Empty state when no wars exist */}
             {activeWars.length === 0 && settledWars.length === 0 && (
               <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
-                <p className="text-sm text-[#8B949E]">
+                <p className="text-sm text-[#9CA3AF]">
                   No fan wars scheduled yet. Check back before the next match.
                 </p>
               </div>
@@ -175,7 +182,7 @@ export default function FanWarsPage() {
                   <h2 className="text-lg font-semibold text-[#E6EDF3]">
                     Active Fan Wars
                   </h2>
-                  <span className="text-xs text-[#8B949E]">
+                  <span className="text-xs text-[#9CA3AF]">
                     {activeWars.length} war{activeWars.length !== 1 ? "s" : ""}{" "}
                     open
                   </span>
@@ -244,29 +251,29 @@ export default function FanWarsPage() {
             <section>
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-[#8B949E]" />
+                  <Users className="h-4 w-4 text-[#9CA3AF]" />
                   <h2 className="text-lg font-semibold text-[#E6EDF3]">
                     Top Participants
                   </h2>
                 </div>
-                <span className="text-xs text-[#8B949E]">
+                <span className="text-xs text-[#9CA3AF]">
                   By total boost earned
                 </span>
               </div>
               <div className="overflow-hidden rounded-lg border border-[#21262D]">
-                <table className="w-full">
+                <table className="w-full" aria-label="Fan wars leaderboard">
                   <thead>
                     <tr className="border-b border-[#21262D] bg-[#161B22]">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#8B949E]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Rank
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#8B949E]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Wallet
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-[#8B949E]">
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF]">
                         Total Boost
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#8B949E] sm:table-cell">
+                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] sm:table-cell">
                         Wars Won
                       </th>
                     </tr>
@@ -286,7 +293,7 @@ export default function FanWarsPage() {
                                   ? "text-[#C9D1D9]"
                                   : entry.rank === 3
                                     ? "text-[#CD7F32]"
-                                    : "text-[#8B949E]"
+                                    : "text-[#9CA3AF]"
                             }`}
                           >
                             #{entry.rank}
@@ -298,7 +305,7 @@ export default function FanWarsPage() {
                         <td className="px-4 py-3 text-right text-xs font-bold tabular-nums text-[#3FB950]">
                           {entry.totalBoost.toLocaleString()} WIRE
                         </td>
-                        <td className="hidden px-4 py-3 text-right text-xs text-[#8B949E] sm:table-cell">
+                        <td className="hidden px-4 py-3 text-right text-xs text-[#9CA3AF] sm:table-cell">
                           {entry.warsWon}
                         </td>
                       </tr>
@@ -313,7 +320,7 @@ export default function FanWarsPage() {
               <h2 className="text-lg font-semibold text-[#E6EDF3]">
                 How Fan Wars Work
               </h2>
-              <ul className="mt-4 space-y-3 text-sm text-[#8B949E]">
+              <ul className="mt-4 space-y-3 text-sm text-[#9CA3AF]">
                 <li>
                   <span className="font-semibold text-[#E6EDF3]">Lock tokens before the deadline.</span>{" "}
                   Pick your side and commit your team tokens to the war.
@@ -351,7 +358,7 @@ function UserLockRow({ lock }: { lock: FanWarLock }) {
           <p className="text-sm font-semibold text-[#E6EDF3]">
             {lock.teamName}
           </p>
-          <p className="text-xs text-[#8B949E]">
+          <p className="text-xs text-[#9CA3AF]">
             vs {lock.opponentTeam} &middot;{" "}
             <span
               className={`font-semibold ${
@@ -377,7 +384,7 @@ function UserLockRow({ lock }: { lock: FanWarLock }) {
           </p>
         )}
         {lock.claimed && (
-          <p className="text-[10px] text-[#8B949E]">Claimed</p>
+          <p className="text-[10px] text-[#9CA3AF]">Claimed</p>
         )}
       </div>
     </div>

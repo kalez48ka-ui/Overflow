@@ -1,9 +1,17 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`[Config] Required environment variable ${name} is not set. Server cannot start.`);
+  }
+  return value;
+}
+
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
-  databaseUrl: process.env.DATABASE_URL || 'postgresql://user:pass@localhost:5432/overflow',
+  databaseUrl: requireEnv('DATABASE_URL'),
   cricketApi: {
     key: process.env.CRICKET_API_KEY || '',
     url: process.env.CRICKET_API_URL || 'https://api.cricapi.com/v1',

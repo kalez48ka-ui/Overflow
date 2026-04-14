@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { SafeConnectButton } from "@/components/WalletProvider";
 import {
   ArrowRight,
@@ -22,6 +24,7 @@ import { StaggerReveal } from "@/components/motion/StaggerReveal";
 import { LayoutGrid } from "@/components/motion/LayoutGrid";
 import { PSL_TEAMS, GLOBAL_STATS } from "@/lib/mockData";
 import { api } from "@/lib/api";
+import { mapApiTeamToFrontend } from "@/lib/teamMapper";
 import type { PSLTeam } from "@/types";
 import type { VaultState } from "@/lib/api";
 import { formatCurrency, formatNumber } from "@/lib/utils";
@@ -42,6 +45,12 @@ const TextGenerateEffect = dynamic(
 );
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { RevealText } from "@/components/effects/RevealText";
+import { GlitchPrice } from "@/components/effects/GlitchPrice";
+
+const Meteors = dynamic(
+  () => import("@/components/ui/meteors").then((m) => ({ default: m.Meteors })),
+  { ssr: false },
+);
 
 function FeaturePill({
   icon: Icon,
@@ -59,8 +68,6 @@ function FeaturePill({
 }
 
 export default function LandingPage() {
-  const [teams, setTeams] = useState<PSLTeam[]>(PSL_TEAMS);
-  const [loading, setLoading] = useState(true);
   const [vaultState, setVaultState] = useState<VaultState | null>(null);
   const [hasLiveMatch, setHasLiveMatch] = useState(false);
   const [liveMatchLabel, setLiveMatchLabel] = useState<string | null>(null);
@@ -68,7 +75,25 @@ export default function LandingPage() {
   const [sortBy, setSortBy] = useState<"rank" | "price" | "change24h" | "volume" | "marketCap">("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+  // React Query for teams — cached between navigations (staleTime: 60s from provider)
+  const { data: teamsData, isLoading: teamsLoading } = useQuery({
+    queryKey: ["teams"],
+    queryFn: ({ signal }) => api.teams.getAll(signal),
+    staleTime: 60_000,
+  });
+
+  const teams: PSLTeam[] = useMemo(() => {
+    if (teamsData && teamsData.length > 0) {
+      return teamsData.map((t) => mapApiTeamToFrontend(t));
+    }
+    return PSL_TEAMS;
+  }, [teamsData]);
+
   const prefersReduced = useReducedMotion();
+
+  // Reduced-motion-safe animation helpers
+  const instantTransition = { duration: 0 };
+  const noMotionInitial = { opacity: 1, y: 0, x: 0, scale: 1 };
 
   // Hero parallax — headline moves slower than background on scroll
   const heroRef = useRef<HTMLElement>(null);
@@ -124,64 +149,28 @@ export default function LandingPage() {
     return sorted;
   }, [teams, searchQuery, sortBy, sortDir]);
 
+  // Fetch vault state and live matches (teams handled by useQuery above)
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
 
     (async () => {
-      // Fetch teams, vault state, and live matches in parallel
-      const [teamsResult, vaultResult, liveResult] = await Promise.allSettled([
-        api.teams.getAll(controller.signal),
+      const [vaultResult, liveResult] = await Promise.allSettled([
         api.vault.getState(controller.signal),
         api.matches.getLive(controller.signal),
       ]);
 
       if (cancelled) return;
 
-      if (teamsResult.status === "fulfilled" && teamsResult.value && teamsResult.value.length > 0) {
-        const mapped: PSLTeam[] = teamsResult.value.map((t) => {
-          const mock = PSL_TEAMS.find(
-            (m) => m.id === t.symbol?.replace("$", "") || m.symbol === t.symbol
-          );
-          return {
-            id: t.symbol?.replace("$", "") || t.id,
-            name: t.name,
-            symbol: t.symbol.startsWith("$") ? t.symbol : `$${t.symbol}`,
-            color: mock?.color || "#58A6FF",
-            secondaryColor: mock?.secondaryColor || "#1C1C1C",
-            // Backend may return currentPrice or price — handle both
-            price: (t as typeof t & { currentPrice?: number }).currentPrice ?? t.price,
-            change24h: (t as typeof t & { priceChange24h?: number }).priceChange24h ?? t.change24h,
-            volume24h: t.volume24h,
-            marketCap: t.marketCap,
-            sellTax: t.sellTax,
-            buyTax: t.buyTax,
-            contractAddress: t.contractAddress,
-            wins: t.wins,
-            losses: t.losses,
-            nrr: t.nrr,
-            performanceScore: t.performanceScore,
-            ranking: t.ranking,
-            sparklineData: mock?.sparklineData || [],
-          };
-        });
-        setTeams(mapped);
-      }
-      // API failed for teams — PSL_TEAMS default already set in useState
-
       if (vaultResult.status === "fulfilled" && vaultResult.value) {
         setVaultState(vaultResult.value);
       }
-      // API failed for vault — StatsBar will use GLOBAL_STATS defaults
 
-      // Live match ticker — now fetched in parallel instead of sequentially
       if (liveResult.status === "fulfilled" && liveResult.value && liveResult.value.length > 0) {
         setHasLiveMatch(true);
         const m = liveResult.value[0];
         setLiveMatchLabel(`${m.team1Name} vs ${m.team2Name}`);
       }
-
-      setLoading(false);
     })();
 
     return () => { cancelled = true; controller.abort(); };
@@ -215,8 +204,9 @@ export default function LandingPage() {
         >
           {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: -12 }}
+            initial={prefersReduced ? noMotionInitial : { opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={prefersReduced ? instantTransition : undefined}
             className="mb-8 flex justify-center"
           >
             <div className="flex items-center gap-2 rounded-full border border-[#E4002B]/40 bg-[#E4002B]/10 px-4 py-1.5 text-xs font-medium text-[#E4002B] backdrop-blur-sm">
@@ -230,16 +220,18 @@ export default function LandingPage() {
 
           {/* Headline */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={prefersReduced ? noMotionInitial : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={prefersReduced ? instantTransition : { delay: 0.1 }}
             className="text-center"
           >
-            <RevealText
-              lines={["From Betting", "to Building Wealth."]}
-              className="mx-auto max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
-            />
-            <p className="mx-auto mt-5 max-w-xl text-base text-[#8B949E] sm:text-lg">
+            <h1>
+              <RevealText
+                lines={["From Betting", "to Building Wealth."]}
+                className="mx-auto max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
+              />
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-base text-[#9CA3AF] sm:text-lg">
               <TextGenerateEffect
                 text="Own PSL team tokens. Prices move with every ball. No gambling — real assets, real exits, real rewards."
                 staggerDelay={0.04}
@@ -249,9 +241,9 @@ export default function LandingPage() {
 
           {/* CTA buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={prefersReduced ? noMotionInitial : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={prefersReduced ? instantTransition : { delay: 0.2 }}
             className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center"
           >
             <div className="rounded-xl border border-[#E4002B]/40 bg-[#E4002B]/10 px-5 py-3 text-sm font-bold text-[#E6EDF3] transition-all duration-200 ease-out hover:bg-[#E4002B]/20 hover:border-[#E4002B]/60">
@@ -270,9 +262,9 @@ export default function LandingPage() {
 
           {/* Live FOMO ticker */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={prefersReduced ? noMotionInitial : { opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={prefersReduced ? instantTransition : { delay: 0.3 }}
             className="mt-8 flex justify-center"
           >
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#21262D]/60 bg-[#161B22]/60 px-5 py-2 text-xs backdrop-blur-md">
@@ -285,20 +277,20 @@ export default function LandingPage() {
                     </span>
                     LIVE
                   </span>
-                  <span className="text-[#8B949E]">{liveMatchLabel}</span>
-                  <span className="text-[#484F58]">|</span>
+                  <span className="text-[#9CA3AF]">{liveMatchLabel}</span>
+                  <span className="text-[#768390]">|</span>
                 </>
               )}
               <span className="text-[#E6EDF3] font-semibold">
-                <CountUp
-                  value={vaultBalance}
-                  formatter={(n) => formatCurrency(n)}
-                  duration={2}
+                <GlitchPrice
+                  value={formatCurrency(vaultBalance)}
+                  className="font-semibold text-[#E6EDF3]"
+                  autoScrambleInterval={12000}
                 />
                 {" "}in Upset Vault
               </span>
-              <span className="text-[#484F58]">|</span>
-              <span className="text-[#8B949E]">
+              <span className="text-[#768390]">|</span>
+              <span className="text-[#9CA3AF]">
                 <span className="text-[#3FB950] font-semibold tabular-nums">
                   <CountUp
                     value={GLOBAL_STATS.activeTraders}
@@ -312,9 +304,9 @@ export default function LandingPage() {
 
           {/* Trust signal pills */}
           <motion.div
-            initial={{ opacity: 0 }}
+            initial={prefersReduced ? noMotionInitial : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
+            transition={prefersReduced ? instantTransition : { delay: 0.4 }}
             className="mt-6 flex flex-wrap items-center justify-center gap-2"
           >
             <FeaturePill icon={Trophy} label="8 Teams" />
@@ -337,14 +329,14 @@ export default function LandingPage() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-[#E6EDF3]">PSL Team Tokens</h2>
-            <p className="text-sm text-[#8B949E]">
+            <p className="text-sm text-[#9CA3AF]">
               {teams.length} teams, {teams.length} tokens — trade the tournament
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-4">
             <Link
               href="/leaderboard"
-              className="flex items-center gap-1.5 text-sm text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
+              className="flex items-center gap-1.5 text-sm text-[#9CA3AF] hover:text-[#E6EDF3] transition-colors"
             >
               <Trophy className="h-3.5 w-3.5" />
               Leaderboard
@@ -355,13 +347,15 @@ export default function LandingPage() {
         {/* Search & sort controls */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8B949E]" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9CA3AF]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search teams..."
-              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all duration-200 ease-out focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 sm:w-56"
+              aria-label="Search teams"
+              maxLength={100}
+              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] py-2 pl-9 pr-3 text-sm text-[#E6EDF3] placeholder-[#9CA3AF] outline-none transition-all duration-200 ease-out focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 sm:w-56"
             />
           </div>
 
@@ -390,7 +384,7 @@ export default function LandingPage() {
                   className={`flex items-center gap-1 rounded-full border px-3 py-2 text-xs font-medium transition-colors min-h-[44px] sm:min-h-0 sm:py-1.5 ${
                     isActive
                       ? "border-[#58A6FF] bg-[#161B22] text-[#E6EDF3]"
-                      : "border-[#21262D] text-[#8B949E] hover:border-[#58A6FF]/50"
+                      : "border-[#21262D] text-[#9CA3AF] hover:border-[#58A6FF]/50"
                   }`}
                 >
                   {label}
@@ -406,7 +400,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {loading ? (
+        {teamsLoading ? (
           <div className="min-h-[400px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: PSL_TEAMS.length }).map((_, i) => (
               <div
@@ -417,7 +411,7 @@ export default function LandingPage() {
           </div>
         ) : displayTeams.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
-            <p className="text-sm text-[#8B949E]">
+            <p className="text-sm text-[#9CA3AF]">
               No teams match &quot;{searchQuery}&quot;
             </p>
           </div>
@@ -434,19 +428,19 @@ export default function LandingPage() {
 
       {/* How it works */}
       <section className="relative overflow-hidden">
-        <div className="border-t border-[#21262D]" />
+        <div className="gradient-divider" />
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
           <motion.div
             className="mb-16 text-center"
-            initial={{ opacity: 0, y: 16 }}
+            initial={prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={prefersReduced ? instantTransition : { duration: 0.6 }}
           >
             <h2 className="text-2xl font-black text-[#E6EDF3] sm:text-3xl">
               How It Works
             </h2>
-            <p className="mt-3 text-sm text-[#8B949E]">
+            <p className="mt-3 text-sm text-[#9CA3AF]">
               From wallet to payout in under a minute
             </p>
           </motion.div>
@@ -457,10 +451,10 @@ export default function LandingPage() {
             <div className="pointer-events-none absolute top-[52px] left-[calc(12.5%+24px)] right-[calc(12.5%+24px)] hidden lg:block">
               <motion.div
                 className="h-px w-full bg-[#21262D]"
-                initial={{ scaleX: 0 }}
+                initial={prefersReduced ? { scaleX: 1 } : { scaleX: 0 }}
                 whileInView={{ scaleX: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
+                transition={prefersReduced ? instantTransition : { duration: 1, delay: 0.4, ease: "easeOut" }}
                 style={{ transformOrigin: "left" }}
               />
             </div>
@@ -469,10 +463,10 @@ export default function LandingPage() {
             <div className="pointer-events-none absolute top-[52px] bottom-[52px] left-6 w-px lg:hidden">
               <motion.div
                 className="h-full w-full bg-[#21262D]"
-                initial={{ scaleY: 0 }}
+                initial={prefersReduced ? { scaleY: 1 } : { scaleY: 0 }}
                 whileInView={{ scaleY: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+                transition={prefersReduced ? instantTransition : { duration: 1, delay: 0.3, ease: "easeOut" }}
                 style={{ transformOrigin: "top" }}
               />
             </div>
@@ -506,18 +500,18 @@ export default function LandingPage() {
               ].map(({ step, title, desc, icon: StepIcon }, idx) => (
                 <motion.div
                   key={title}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.15 }}
+                  transition={prefersReduced ? instantTransition : { duration: 0.5, delay: idx * 0.15 }}
                   className="group relative flex items-start gap-5 py-4 lg:flex-col lg:items-center lg:text-center lg:px-4 lg:py-0"
                 >
                   {/* Step dot + number */}
                   <div className="relative z-10 flex flex-col items-center gap-2">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#21262D] bg-[#0D1117] transition-all group-hover:border-[#E6EDF3]/20 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.04)]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#21262D] bg-[#0D1117] transition-all group-hover:border-[#E6EDF3]/20 group-hover:shadow-[0_0_24px_rgba(228,0,43,0.12)]">
                       <StepIcon className="h-5 w-5 text-[#E6EDF3] transition-transform group-hover:scale-110" />
                     </div>
-                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-[#484F58]">
+                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-[#768390]">
                       {step}
                     </span>
                   </div>
@@ -527,7 +521,7 @@ export default function LandingPage() {
                     <h3 className="text-sm font-bold text-[#E6EDF3] mb-1">
                       {title}
                     </h3>
-                    <p className="text-xs leading-relaxed text-[#8B949E] max-w-[220px] lg:mx-auto">
+                    <p className="text-xs leading-relaxed text-[#9CA3AF] max-w-[220px] lg:mx-auto">
                       {desc}
                     </p>
                   </div>
@@ -538,9 +532,12 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <div className="gradient-divider" />
+
       {/* Upset Vault explainer */}
       <section className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <div className="relative overflow-hidden rounded-xl border border-[#21262D] bg-[#161B22]">
+          <Meteors number={8} className="opacity-40" />
 
           {/* Vault balance — the hero of this section */}
           <div className="px-6 pt-10 pb-6 sm:px-10 text-center">
@@ -548,14 +545,14 @@ export default function LandingPage() {
               <Flame className="h-3 w-3" />
               Upset Vault
             </div>
-            <p className="vault-glow mt-2 text-5xl font-black text-[#E6EDF3] sm:text-6xl md:text-7xl tabular-nums tracking-tight">
-              <CountUp
-                value={vaultBalance}
-                formatter={(n) => formatCurrency(n)}
-                duration={2}
+            <div className="vault-glow mt-2">
+              <GlitchPrice
+                value={formatCurrency(vaultBalance)}
+                className="vault-glow text-5xl font-black sm:text-6xl md:text-7xl tabular-nums tracking-tight"
+                autoScrambleInterval={8000}
               />
-            </p>
-            <p className="mt-3 text-sm text-[#8B949E]">
+            </div>
+            <p className="mt-3 text-sm text-[#9CA3AF]">
               2% of every trade fee. Underdogs win, you split the pot.
             </p>
           </div>
@@ -576,7 +573,7 @@ export default function LandingPage() {
                 ].map(({ label, multiplier, width }) => (
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-[#8B949E]">{label}</span>
+                      <span className="text-xs text-[#9CA3AF]">{label}</span>
                       <span className="text-xs font-black text-[#E4002B]">
                         {multiplier}
                       </span>
@@ -584,10 +581,10 @@ export default function LandingPage() {
                     <div className="h-1 rounded-full bg-[#21262D] overflow-hidden">
                       <motion.div
                         className="h-full rounded-full bg-[#E4002B]"
-                        initial={{ width: 0 }}
+                        initial={prefersReduced ? { width } : { width: 0 }}
                         whileInView={{ width }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        transition={prefersReduced ? instantTransition : { duration: 0.8, ease: "easeOut" }}
                       />
                     </div>
                   </div>
@@ -624,7 +621,7 @@ export default function LandingPage() {
                         duration={1.8}
                       />
                     </p>
-                    <p className="text-[10px] text-[#8B949E] mt-0.5">{label}</p>
+                    <p className="text-[10px] text-[#9CA3AF] mt-0.5">{label}</p>
                   </div>
                 ))}
               </StaggerReveal>

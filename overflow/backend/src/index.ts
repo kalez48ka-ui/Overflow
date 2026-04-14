@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import crypto from 'crypto';
 import http from 'http';
+import path from 'path';
 import rateLimit from 'express-rate-limit';
 import { Server as SocketServer } from 'socket.io';
 import { PrismaClient } from '@prisma/client';
@@ -26,18 +28,18 @@ import { createPredictionsRouter } from './routes/predictions';
 const prisma = new PrismaClient();
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy for X-Forwarded-For (rate limiter + brute-force IP tracking)
 const server = http.createServer(app);
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://149.102.129.143:3000',
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
 const io = new SocketServer(server, {
   cors: {
     origin: allowedOrigins,
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   },
   maxHttpBufferSize: 1e6,      // 1 MB max message size
@@ -86,11 +88,14 @@ const adminLimiter = rateLimit({
   message: { error: 'Admin rate limit exceeded' },
 });
 
+// Serve static presentation files
+app.use('/presentation', express.static(path.join(__dirname, '../public'), { dotfiles: 'deny', index: false }));
+
 // Middleware
 app.use(helmet());
 app.use(cors({
   origin: allowedOrigins,
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'x-admin-token'],
   maxAge: 600, // preflight cache 10 minutes
@@ -98,6 +103,14 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(globalLimiter);
+
+// X-Request-ID for request tracing
+app.use((req, res, next) => {
+  const requestId = crypto.randomUUID();
+  res.setHeader('X-Request-ID', requestId);
+  req.requestId = requestId;
+  next();
+});
 
 // Request timeout — prevent slow upstream calls from tying up connections
 app.use((req, res, next) => {
@@ -149,9 +162,15 @@ app.use('/api/leaderboard', createLeaderboardRouter(prisma));
 app.use('/api/fanwars', createFanWarsRouter(fanWarsService));
 app.use('/api/predictions', createPredictionsRouter(predictionsService));
 
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check with DB connectivity verification
+app.get('/api/health', async (_req, res) => {
+  const dbOk = await prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
+  const status = dbOk ? 'ok' : 'degraded';
+  res.status(dbOk ? 200 : 503).json({
+    status,
+    db: dbOk,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Socket.io connection handler
@@ -188,6 +207,15 @@ io.on('connection', (socket) => {
     console.log(`[Socket] ${socket.id} subscribed to fanwar:${matchId}`);
   });
 
+  socket.on('subscribe:vault', () => {
+    socket.join('vault:subscribers');
+  });
+
+  socket.on('subscribe:markets', () => {
+    socket.join('markets');
+    console.log(`[Socket] ${socket.id} subscribed to markets`);
+  });
+
   socket.on('subscribe:prediction', (matchId: unknown) => {
     if (typeof matchId !== 'string' || !ALPHANUMERIC_PATTERN.test(matchId)) {
       socket.emit('error', { message: 'Invalid match ID format' });
@@ -211,8 +239,6 @@ async function bootstrap(): Promise<void> {
     const adminSecret = process.env.ADMIN_SECRET;
     if (!adminSecret) {
       console.warn('[Security] WARNING: ADMIN_SECRET is not set. Admin panel will be inaccessible.');
-    } else if (adminSecret === 'overflow2026') {
-      console.warn('[Security] WARNING: ADMIN_SECRET is set to the known default "overflow2026". Change it immediately.');
     }
 
     cricketService.startPolling();

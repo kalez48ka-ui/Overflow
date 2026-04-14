@@ -1,15 +1,21 @@
+import { requireWalletAuth } from '../middleware/walletAuth';
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Server as SocketServer } from 'socket.io';
 import { PriceService } from '../modules/price/price.service';
 import { VaultService } from '../modules/vault/vault.service';
+
+/** Prisma Trade with the `team` relation included (symbol, name, color). */
+type TradeWithTeam = Prisma.TradeGetPayload<{
+  include: { team: { select: { symbol: true; name: true; color: true } } };
+}>;
 
 /**
  * Maps a Prisma trade record (with included team relation) to the frontend
  * TradeRecord shape: { id, wallet, teamSymbol, side, amount, price, total, txHash, timestamp }
  */
-function mapTradeToFrontend(trade: any) {
-  const teamSymbol = trade.team?.symbol ?? trade.teamSymbol ?? '';
+function mapTradeToFrontend(trade: TradeWithTeam) {
+  const teamSymbol = trade.team?.symbol ?? '';
   return {
     id: trade.id,
     wallet: trade.wallet,
@@ -31,7 +37,7 @@ export function createTradesRouter(
 ): Router {
   const router = Router();
 
-  router.post('/', async (req: Request, res: Response) => {
+  router.post('/', requireWalletAuth('trade'), async (req: Request, res: Response) => {
     try {
       const body = req.body;
 
@@ -42,7 +48,7 @@ export function createTradesRouter(
       }
 
       const { teamSymbol, amount, price, txHash } = body;
-      let wallet: string | undefined = body.wallet;
+      let wallet: string | undefined = req.verifiedWallet;
 
       if (!teamSymbol || !wallet || !type || !amount || !price) {
         res.status(400).json({
@@ -121,10 +127,12 @@ export function createTradesRouter(
         }
 
         // Use market price (team.currentPrice) for economic calculations, not user-supplied price
-        const marketPrice = Number(team.currentPrice);
-        const taxRate = type === 'SELL' ? Number(team.sellTaxRate) : 0;
-        const totalValue = amount * marketPrice;
-        const fee = totalValue * (taxRate / 100);
+        // Keep calculations in Decimal space to avoid JS Number precision loss
+        const marketPrice = team.currentPrice; // Prisma Decimal
+        const decAmount = new Prisma.Decimal(amount);
+        const taxRate = type === 'SELL' ? team.sellTaxRate : new Prisma.Decimal(0);
+        const totalValue = decAmount.mul(marketPrice);
+        const fee = totalValue.mul(taxRate).div(100);
 
         const trade = await tx.trade.create({
           data: {
@@ -133,9 +141,9 @@ export function createTradesRouter(
             type: type!,
             amount,
             price: marketPrice,
-            totalValue,
-            fee,
-            taxRate,
+            totalValue: totalValue,
+            fee: fee,
+            taxRate: taxRate,
             txHash: txHash || null,
           },
         });
@@ -146,9 +154,12 @@ export function createTradesRouter(
           });
 
           if (existing) {
-            const newAmount = Number(existing.amount) + amount;
-            const newAvg =
-              (Number(existing.avgBuyPrice) * Number(existing.amount) + marketPrice * amount) / newAmount;
+            const existingAmount = new Prisma.Decimal(existing.amount);
+            const newAmount = existingAmount.add(decAmount);
+            const newAvg = new Prisma.Decimal(existing.avgBuyPrice)
+              .mul(existingAmount)
+              .add(marketPrice.mul(decAmount))
+              .div(newAmount);
             await tx.position.update({
               where: { id: existing.id },
               data: { amount: newAmount, avgBuyPrice: newAvg },
@@ -158,7 +169,7 @@ export function createTradesRouter(
               data: {
                 wallet: wallet!,
                 teamId: team.id,
-                amount,
+                amount: decAmount,
                 avgBuyPrice: marketPrice,
               },
             });
@@ -175,8 +186,8 @@ export function createTradesRouter(
             } as const;
           }
 
-          const newAmount = Number(existing.amount) - amount;
-          if (newAmount <= 0) {
+          const newAmount = new Prisma.Decimal(existing.amount).sub(decAmount);
+          if (newAmount.lte(0)) {
             await tx.position.delete({ where: { id: existing.id } });
           } else {
             await tx.position.update({
@@ -197,12 +208,17 @@ export function createTradesRouter(
 
       const { trade, team, marketPrice, totalValue, fee } = result;
 
+      // Convert Decimals to numbers for side-effects that expect Number
+      const numFee = Number(fee);
+      const numMarketPrice = Number(marketPrice);
+      const numTotalValue = Number(totalValue);
+
       // Side effects outside the transaction (vault, price updates, websocket)
-      if (fee > 0) {
-        await vaultService.addToVault(fee);
+      if (numFee > 0) {
+        await vaultService.addToVault(numFee);
       }
 
-      await priceService.updatePriceAfterTrade(team.id, type as 'BUY' | 'SELL', amount, Number(marketPrice));
+      await priceService.updatePriceAfterTrade(team.id, type as 'BUY' | 'SELL', amount, numMarketPrice);
 
       io.to(`team:${team.symbol}`).emit('trade:new', {
         id: trade.id,
@@ -210,9 +226,9 @@ export function createTradesRouter(
         teamName: team.name,
         type,
         amount,
-        price: marketPrice,
-        totalValue,
-        fee,
+        price: numMarketPrice,
+        totalValue: numTotalValue,
+        fee: numFee,
         wallet: wallet.slice(0, 6) + '...' + wallet.slice(-4),
         timestamp: trade.createdAt,
       });

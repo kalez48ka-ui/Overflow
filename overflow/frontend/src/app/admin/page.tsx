@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import {
   Shield,
@@ -29,12 +29,48 @@ import type {
 
 const TOKEN_STORAGE_KEY = "overflow_admin_token";
 
+/** Idle timeout in ms — auto-logout after 30 minutes of inactivity. */
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
 function useAdminAuth() {
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /** Clear the admin token and mark as unauthenticated. */
+  const clearSession = useCallback(() => {
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    setAuthenticated(false);
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+  }, []);
+
+  /** Reset the idle timer — called on any user interaction. */
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      clearSession();
+    }, IDLE_TIMEOUT_MS);
+  }, [clearSession]);
+
+  // Set up idle listeners when authenticated
   useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (!authenticated) return;
+    const events = ["mousedown", "keydown", "scroll", "touchstart"] as const;
+    const handler = () => resetIdleTimer();
+    events.forEach((evt) => window.addEventListener(evt, handler, { passive: true }));
+    resetIdleTimer(); // start the timer
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, handler));
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [authenticated, resetIdleTimer]);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem(TOKEN_STORAGE_KEY);
     if (stored) {
       adminApi
         .verifyToken()
@@ -42,11 +78,11 @@ function useAdminAuth() {
           if (valid) {
             setAuthenticated(true);
           } else {
-            localStorage.removeItem(TOKEN_STORAGE_KEY);
+            sessionStorage.removeItem(TOKEN_STORAGE_KEY);
           }
         })
         .catch(() => {
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
+          sessionStorage.removeItem(TOKEN_STORAGE_KEY);
         })
         .finally(() => setChecking(false));
     } else {
@@ -55,25 +91,24 @@ function useAdminAuth() {
   }, []);
 
   const login = useCallback(async (password: string): Promise<boolean> => {
-    localStorage.setItem(TOKEN_STORAGE_KEY, password);
+    sessionStorage.setItem(TOKEN_STORAGE_KEY, password);
     try {
       const valid = await adminApi.verifyToken();
       if (valid) {
         setAuthenticated(true);
         return true;
       }
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
       return false;
     } catch {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
       return false;
     }
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    setAuthenticated(false);
-  }, []);
+    clearSession();
+  }, [clearSession]);
 
   return { authenticated, checking, login, logout };
 }
@@ -121,7 +156,7 @@ function SelectField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-xs font-medium text-[#8B949E]">{label}</label>
+      <label htmlFor={id} className="text-xs font-medium text-[#9CA3AF]">{label}</label>
       <div className="relative">
         <select
           id={id}
@@ -140,7 +175,7 @@ function SelectField({
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8B949E]" />
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9CA3AF]" />
       </div>
     </div>
   );
@@ -167,7 +202,7 @@ function NumberInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-xs font-medium text-[#8B949E]">{label}</label>
+      <label htmlFor={id} className="text-xs font-medium text-[#9CA3AF]">{label}</label>
       <input
         id={id}
         type="number"
@@ -177,7 +212,7 @@ function NumberInput({
         max={max}
         step={step}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#484F58] focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
+        className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#768390] focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
       />
     </div>
   );
@@ -223,12 +258,12 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
       <table className="w-full text-left text-xs">
         <thead>
           <tr className="border-b border-[#21262D] bg-[#0D1117]">
-            <th className="px-3 py-2 font-medium text-[#8B949E]">#</th>
-            <th className="px-3 py-2 font-medium text-[#8B949E]">Team</th>
-            <th className="px-3 py-2 font-medium text-[#8B949E]">W/L</th>
-            <th className="px-3 py-2 font-medium text-[#8B949E]">Score</th>
-            <th className="px-3 py-2 font-medium text-[#8B949E]">Price</th>
-            <th className="px-3 py-2 font-medium text-[#8B949E]">Sell Tax</th>
+            <th className="px-3 py-2 font-medium text-[#9CA3AF]">#</th>
+            <th className="px-3 py-2 font-medium text-[#9CA3AF]">Team</th>
+            <th className="px-3 py-2 font-medium text-[#9CA3AF]">W/L</th>
+            <th className="px-3 py-2 font-medium text-[#9CA3AF]">Score</th>
+            <th className="px-3 py-2 font-medium text-[#9CA3AF]">Price</th>
+            <th className="px-3 py-2 font-medium text-[#9CA3AF]">Sell Tax</th>
           </tr>
         </thead>
         <tbody>
@@ -244,7 +279,7 @@ function RankingsTable({ rankings }: { rankings: AdminRankingEntry[] }) {
                 <span className="font-semibold text-[#E6EDF3]">
                   {team.name}
                 </span>
-                <span className="ml-1.5 text-[#8B949E]">${team.symbol}</span>
+                <span className="ml-1.5 text-[#9CA3AF]">${team.symbol}</span>
               </td>
               <td className="px-3 py-2 text-[#C9D1D9]">
                 {team.wins}/{team.losses}
@@ -289,7 +324,7 @@ function getUpsetTier(score: number): {
   if (score >= 60) return { tier: "EPIC", multiplier: 4, color: "#6A0DAD" };
   if (score >= 40) return { tier: "MAJOR", multiplier: 3, color: "#E4002B" };
   if (score >= 20) return { tier: "MODERATE", multiplier: 2, color: "#58A6FF" };
-  return { tier: "MINOR", multiplier: 1, color: "#8B949E" };
+  return { tier: "MINOR", multiplier: 1, color: "#9CA3AF" };
 }
 
 // ---------------------------------------------------------------------------
@@ -327,13 +362,13 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
           <h1 className="text-lg font-semibold text-[#E6EDF3]">
             Admin Panel
           </h1>
-          <p className="text-xs text-[#8B949E]">
+          <p className="text-xs text-[#9CA3AF]">
             Oracle + Vault control for hackathon demo
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="admin-login-password" className="text-xs font-medium text-[#8B949E]">
+          <label htmlFor="admin-login-password" className="text-xs font-medium text-[#9CA3AF]">
             Password
           </label>
           <div className="relative">
@@ -343,8 +378,9 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
+              maxLength={128}
               autoFocus
-              className={`w-full rounded-lg border px-3 py-2.5 pr-10 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#484F58] focus:ring-1 ${
+              className={`w-full rounded-lg border px-3 py-2.5 pr-10 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#768390] focus:ring-1 ${
                 error
                   ? "border-[#E4002B] bg-[#E4002B]/10 focus:ring-[#E4002B]/30"
                   : "border-[#21262D] bg-[#0D1117] focus:border-[#58A6FF] focus:ring-[#58A6FF]/30"
@@ -353,7 +389,7 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
             <button
               type="button"
               onClick={() => setShowPw(!showPw)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8B949E] hover:text-[#E6EDF3]"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#E6EDF3]"
             >
               {showPw ? (
                 <EyeOff className="h-4 w-4" />
@@ -363,7 +399,7 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
             </button>
           </div>
           {error && (
-            <p className="text-xs text-[#E4002B]">Invalid password</p>
+            <p role="alert" className="text-xs text-[#E4002B]">Invalid password</p>
           )}
         </div>
 
@@ -605,19 +641,19 @@ function TriggerUpsetSection({
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[#8B949E]">Tier</span>
+              <span className="text-[#9CA3AF]">Tier</span>
               <span className="font-bold" style={{ color: preview.color }}>
                 {preview.tier}
               </span>
             </div>
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-[#8B949E]">Multiplier</span>
+              <span className="text-[#9CA3AF]">Multiplier</span>
               <span className="font-mono text-[#E6EDF3]">
                 {preview.multiplier}x
               </span>
             </div>
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-[#8B949E]">Vault Release</span>
+              <span className="text-[#9CA3AF]">Vault Release</span>
               <span className="font-mono text-[#3FB950]">
                 {releasePercent.toFixed(1)}%
               </span>
@@ -666,7 +702,7 @@ function RecalculateSection() {
       icon={RefreshCw}
       iconColor="#58A6FF"
     >
-      <p className="mb-3 text-xs leading-relaxed text-[#8B949E]">
+      <p className="mb-3 text-xs leading-relaxed text-[#9CA3AF]">
         Re-sorts all teams by wins, NRR, and performance score. Updates sell
         taxes based on new ranking positions.
       </p>
@@ -767,10 +803,10 @@ function PriceUpdateSection({ teams }: { teams: TeamData[] }) {
           <div className="mt-2 rounded-lg border border-[#21262D] bg-[#0D1117] p-3 text-xs">
             <p className="font-semibold text-[#E6EDF3]">{result.name}</p>
             <div className="mt-1.5 flex items-center gap-3">
-              <span className="text-[#8B949E]">
+              <span className="text-[#9CA3AF]">
                 {result.oldPrice.toFixed(4)}
               </span>
-              <ArrowUpRight className="h-3.5 w-3.5 text-[#8B949E]" />
+              <ArrowUpRight className="h-3.5 w-3.5 text-[#9CA3AF]" />
               <span className="font-mono font-bold text-[#E6EDF3]">
                 {result.newPrice.toFixed(4)}
               </span>
@@ -844,13 +880,13 @@ export default function AdminPage() {
           <h1 className="text-lg font-semibold text-[#E6EDF3]">
             Oracle Panel
           </h1>
-          <p className="text-xs text-[#8B949E]">
+          <p className="text-xs text-[#9CA3AF]">
             Match results, upsets, rankings, and price control
           </p>
         </div>
         <button
           onClick={logout}
-          className="rounded-lg border border-[#21262D] px-3 py-1.5 text-xs font-medium text-[#8B949E] transition hover:border-[#E4002B]/40 hover:text-[#E4002B]"
+          className="rounded-lg border border-[#21262D] px-3 py-1.5 text-xs font-medium text-[#9CA3AF] transition hover:border-[#E4002B]/40 hover:text-[#E4002B]"
         >
           Sign Out
         </button>

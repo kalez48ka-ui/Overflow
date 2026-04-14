@@ -87,7 +87,7 @@ export class ErrorBoundary extends React.Component<
           {/* Error message */}
           <p
             className="max-w-md text-center text-sm"
-            style={{ color: "#8B949E" }}
+            style={{ color: "#9CA3AF" }}
           >
             An unexpected error occurred while rendering this section. You can
             try again, or refresh the page if the problem persists.

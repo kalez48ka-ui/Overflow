@@ -1,3 +1,4 @@
+import { requireWalletAuth } from '../middleware/walletAuth';
 import { Router, Request, Response } from 'express';
 import { FanWarsService } from '../modules/fanwars/fanwars.service';
 
@@ -47,7 +48,9 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
         return;
       }
 
-      const locks = await fanWarsService.getUserLocks(wallet);
+      const limit = Math.min(Math.max(1, parseInt(String(req.query.limit || '50')) || 50), 200);
+      const offset = Math.max(0, parseInt(String(req.query.offset || '0')) || 0);
+      const locks = await fanWarsService.getUserLocks(wallet, limit, offset);
       res.json(locks);
     } catch (err) {
       console.error('[FanWars] GET /user/:wallet error:', err);
@@ -86,7 +89,7 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
    * Lock tokens for a team in a fan war.
    * Body: { wallet: string, teamId: string, amount: number }
    */
-  router.post('/:matchId/lock', async (req: Request, res: Response) => {
+  router.post('/:matchId/lock', requireWalletAuth('fanwar:lock'), async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
 
@@ -95,19 +98,15 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
         return;
       }
 
-      const { wallet, teamId, amount } = req.body;
+      const { teamId, amount } = req.body;
+      const wallet = req.verifiedWallet;
 
       if (!wallet || !teamId || amount === undefined) {
         res.status(400).json({ error: 'Missing required fields: wallet, teamId, amount' });
         return;
       }
 
-      const normalizedWallet = String(wallet).toLowerCase();
-
-      if (!/^0x[a-fA-F0-9]{40}$/.test(normalizedWallet)) {
-        res.status(400).json({ error: 'Invalid wallet address format' });
-        return;
-      }
+      const normalizedWallet = wallet!;
 
       const numAmount = Number(amount);
       if (!Number.isFinite(numAmount) || numAmount <= 0 || numAmount > 1_000_000) {
@@ -146,7 +145,7 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
    * Claim boost rewards after a fan war has settled.
    * Body: { wallet: string }
    */
-  router.post('/:matchId/claim', async (req: Request, res: Response) => {
+  router.post('/:matchId/claim', requireWalletAuth('fanwar:claim'), async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
 
@@ -155,19 +154,7 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
         return;
       }
 
-      const { wallet } = req.body;
-
-      if (!wallet) {
-        res.status(400).json({ error: 'Missing required field: wallet' });
-        return;
-      }
-
-      const normalizedWallet = String(wallet).toLowerCase();
-
-      if (!/^0x[a-fA-F0-9]{40}$/.test(normalizedWallet)) {
-        res.status(400).json({ error: 'Invalid wallet address format' });
-        return;
-      }
+      const normalizedWallet = req.verifiedWallet!;
 
       const result = await fanWarsService.claimBoost(matchId, normalizedWallet);
       res.json(result);

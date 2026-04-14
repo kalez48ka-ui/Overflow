@@ -27,8 +27,10 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
           onComplete();
         }
       }}
+      role="status"
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#0D1117]"
     >
+      <span className="sr-only">Loading Overflow</span>
       {/* Main content — centered */}
       <div className="relative flex flex-col items-center">
         {/* Cricket ball animation */}

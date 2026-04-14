@@ -20,6 +20,12 @@ import type { PredictionPoolStatus, PredictionLeaderboardEntry } from "@/lib/api
 import { formatNumber, shortenAddress } from "@/lib/utils";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { NumberTicker } from "@/components/ui/number-ticker";
+import { GlitchPrice } from "@/components/effects/GlitchPrice";
+
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
+  { ssr: false },
+);
 
 const AnimatedGradientBorder = dynamic(
   () => import("@/components/ui/animated-gradient-border").then((m) => ({ default: m.AnimatedGradientBorder })),
@@ -157,34 +163,30 @@ export default function PredictionsPage() {
       )}
 
       {/* Hero Header */}
-      <div className="border-b border-[#21262D]">
+      <div className="relative overflow-hidden border-b border-[#21262D]">
+        <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
           <h1 className="text-3xl font-black text-[#E6EDF3] sm:text-4xl">
             Predict & Earn
           </h1>
-          <p className="mt-2 text-sm text-[#8B949E]">
+          <p className="mt-2 text-sm text-[#9CA3AF]">
             Test your cricket IQ. Answer match questions. Win from the prize pool.
           </p>
 
           {/* Stats */}
           <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
+              <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Total Prizes
               </p>
-              <p className="text-2xl font-black tabular-nums text-[#FDB913]">
-                <NumberTicker
-                  value={totalPrizePool}
-                  decimals={0}
-                  duration={800}
-                  showArrow={false}
-                />{" "}
-                WIRE
-              </p>
+              <GlitchPrice
+                value={`${formatNumber(totalPrizePool)} WIRE`}
+                className="text-2xl font-black tabular-nums text-[#FDB913]"
+              />
             </div>
             <div className="hidden sm:block h-8 w-px bg-[#21262D]" />
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
+              <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Active Pools
               </p>
               <p className="text-2xl font-black tabular-nums text-[#E6EDF3]">
@@ -193,7 +195,7 @@ export default function PredictionsPage() {
             </div>
             <div className="hidden sm:block h-8 w-px bg-[#21262D]" />
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
+              <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Top Accuracy
               </p>
               <p className="text-2xl font-black tabular-nums text-[#3FB950]">
@@ -210,19 +212,20 @@ export default function PredictionsPage() {
 
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-16" role="status">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#21262D] border-t-[#E4002B]" />
-            <span className="ml-3 text-sm text-[#8B949E]">
+            <span className="ml-3 text-sm text-[#9CA3AF]">
               Loading predictions...
             </span>
+            <span className="sr-only">Loading...</span>
           </div>
         ) : (
           <div className="space-y-10">
             {/* Empty state */}
             {activePools.length === 0 && settledPools.length === 0 && (
               <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
-                <Brain className="mx-auto h-10 w-10 text-[#484F58]" />
-                <p className="mt-3 text-sm text-[#8B949E]">
+                <Brain className="mx-auto h-10 w-10 text-[#768390]" />
+                <p className="mt-3 text-sm text-[#9CA3AF]">
                   No prediction pools available yet. Check back before the next match.
                 </p>
               </div>
@@ -238,7 +241,7 @@ export default function PredictionsPage() {
                       Active Pools
                     </h2>
                   </div>
-                  <span className="text-xs text-[#8B949E]">
+                  <span className="text-xs text-[#9CA3AF]">
                     {activePools.length} pool{activePools.length !== 1 ? "s" : ""}{" "}
                     open
                   </span>
@@ -301,35 +304,35 @@ export default function PredictionsPage() {
             <section>
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-[#8B949E]" />
+                  <Users className="h-4 w-4 text-[#9CA3AF]" />
                   <h2 className="text-lg font-semibold text-[#E6EDF3]">
                     Top Predictors
                   </h2>
                 </div>
-                <span className="text-xs text-[#8B949E]">
+                <span className="text-xs text-[#9CA3AF]">
                   By average accuracy
                 </span>
               </div>
               <div className="overflow-hidden rounded-lg border border-[#21262D]">
-                <table className="w-full">
+                <table className="w-full" aria-label="Prediction pools">
                   <thead>
                     <tr className="border-b border-[#21262D] bg-[#161B22]">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#8B949E]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Rank
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#8B949E]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Wallet
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-[#8B949E]">
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF]">
                         Avg Score
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#8B949E] sm:table-cell">
+                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] sm:table-cell">
                         Profit
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#8B949E] md:table-cell">
+                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] md:table-cell">
                         Matches
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#8B949E] md:table-cell">
+                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] md:table-cell">
                         Best
                       </th>
                     </tr>
@@ -349,7 +352,7 @@ export default function PredictionsPage() {
                                   ? "text-[#C9D1D9]"
                                   : idx === 2
                                     ? "text-[#CD7F32]"
-                                    : "text-[#8B949E]"
+                                    : "text-[#9CA3AF]"
                             }`}
                           >
                             #{idx + 1}
@@ -364,7 +367,7 @@ export default function PredictionsPage() {
                         <td className="hidden px-4 py-3 text-right text-xs font-bold tabular-nums text-[#3FB950] sm:table-cell">
                           {Number((entry as unknown as Record<string, unknown>).totalEarnings ?? entry.totalProfit ?? 0).toLocaleString()} WIRE
                         </td>
-                        <td className="hidden px-4 py-3 text-right text-xs text-[#8B949E] md:table-cell">
+                        <td className="hidden px-4 py-3 text-right text-xs text-[#9CA3AF] md:table-cell">
                           {String((entry as unknown as Record<string, unknown>).totalPools ?? entry.matchesPlayed ?? 0)}
                         </td>
                         <td className="hidden px-4 py-3 text-right text-xs font-bold tabular-nums text-[#FDB913] md:table-cell">
@@ -382,7 +385,7 @@ export default function PredictionsPage() {
               <h2 className="text-lg font-semibold text-[#E6EDF3]">
                 How Predict & Earn Works
               </h2>
-              <ul className="mt-4 space-y-3 text-sm text-[#8B949E]">
+              <ul className="mt-4 space-y-3 text-sm text-[#9CA3AF]">
                 <li>
                   <span className="font-semibold text-[#E6EDF3]">
                     Pay the entry fee, answer match questions.
@@ -431,7 +434,7 @@ function UserPredictionRow({
           <p className="text-sm font-semibold text-[#E6EDF3]">
             {prediction.homeTeamSymbol} vs {prediction.awayTeamSymbol}
           </p>
-          <p className="text-xs text-[#8B949E]">
+          <p className="text-xs text-[#9CA3AF]">
             {prediction.matchVenue} &middot;{" "}
             <span
               className={`font-semibold ${
@@ -457,7 +460,7 @@ function UserPredictionRow({
             </p>
           )}
         {prediction.status === "SETTLED" && (
-          <p className="text-xs text-[#8B949E]">
+          <p className="text-xs text-[#9CA3AF]">
             {correctCount}/{totalQuestions} correct
           </p>
         )}
@@ -469,7 +472,7 @@ function UserPredictionRow({
             </p>
           )}
         {prediction.userEntry?.claimed && (
-          <p className="text-[10px] text-[#8B949E]">Claimed</p>
+          <p className="text-[10px] text-[#9CA3AF]">Claimed</p>
         )}
       </div>
     </div>

@@ -19,7 +19,7 @@
   /* ── Text ──────────────────────────────────────────────────── */
   --text-primary: #E6EDF3;
   --text-secondary: #C9D1D9;
-  --text-muted: #8B949E;
+  --text-muted: #9CA3AF;
 
   /* ── Status / Accent ───────────────────────────────────────── */
   --green: #3FB950;
@@ -167,7 +167,7 @@ input[type="number"] {
 /* ── Card border glow — GPU-accelerated box-shadow shimmer ─────── */
 @keyframes borderGlow {
   0%, 100% { box-shadow: 0 0 0 1px rgba(33, 38, 45, 1); }
-  50% { box-shadow: 0 0 0 1px rgba(139, 148, 158, 0.3); }
+  50% { box-shadow: 0 0 0 1px rgba(156, 163, 175, 0.3); }
 }
 
 .card-border-glow {
@@ -264,7 +264,27 @@ input[type="number"] {
   animation: spotlight 2s ease .75s 1 forwards;
 }
 
-/* ── Meteor shower — removed ─────────────────────────────────── */
+/* ── Meteor shower ──────────────────────────────────────────── */
+@keyframes meteor-effect {
+  0% { transform: rotate(215deg) translateX(0); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: rotate(215deg) translateX(-500px); opacity: 0; }
+}
+.animate-meteor-effect {
+  animation: meteor-effect linear infinite;
+}
+
+/* ── Footer gradient sweep ──────────────────────────────────── */
+@keyframes gradient-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.footer-border-glow {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(228, 0, 43, 0.3) 25%, rgba(255, 255, 255, 0.15) 50%, rgba(228, 0, 43, 0.3) 75%, transparent 100%);
+  background-size: 200% 100%;
+  animation: gradient-sweep 10s linear infinite;
+}
 
 .font-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
@@ -274,6 +294,35 @@ input[type="number"] {
 :focus-visible {
   outline: 2px solid var(--blue);
   outline-offset: 2px;
+}
+
+/* Screen-reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Marquee scroll ─────────────────────────────────────────── */
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-100% - var(--gap))); }
+}
+@keyframes marquee-right {
+  from { transform: translateX(calc(-100% - var(--gap))); }
+  to { transform: translateX(0); }
+}
+.animate-marquee-left {
+  animation: marquee-left linear infinite;
+}
+.animate-marquee-right {
+  animation: marquee-right linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

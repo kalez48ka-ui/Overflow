@@ -73,7 +73,7 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
         res.status(400).json({ error: 'Invalid wallet address format' });
         return;
       }
-      const days = Math.min(parseInt(String(req.query.days || '30')) || 30, 365);
+      const days = Math.min(Math.max(1, parseInt(String(req.query.days || '30')) || 30), 365);
 
       // Return portfolio value history as mark-to-market snapshots at each trade.
       // For each trade, we reconstruct what positions the user held, then value
