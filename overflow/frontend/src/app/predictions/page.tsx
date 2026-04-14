@@ -174,14 +174,14 @@ export default function PredictionsPage() {
           </p>
 
           {/* Stats */}
-          <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6">
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:items-center sm:gap-6">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Total Prizes
               </p>
               <GlitchPrice
                 value={`${formatNumber(totalPrizePool)} WIRE`}
-                className="text-2xl font-black tabular-nums text-[#FDB913]"
+                className="text-xl sm:text-2xl font-black tabular-nums text-[#FDB913]"
               />
             </div>
             <div className="hidden sm:block h-8 w-px bg-[#21262D]" />
@@ -189,7 +189,7 @@ export default function PredictionsPage() {
               <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Active Pools
               </p>
-              <p className="text-2xl font-black tabular-nums text-[#E6EDF3]">
+              <p className="text-xl sm:text-2xl font-black tabular-nums text-[#E6EDF3]">
                 <CountUp value={activePools.length} duration={1} />
               </p>
             </div>
@@ -198,7 +198,7 @@ export default function PredictionsPage() {
               <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Top Accuracy
               </p>
-              <p className="text-2xl font-black tabular-nums text-[#3FB950]">
+              <p className="text-xl sm:text-2xl font-black tabular-nums text-[#3FB950]">
                 <CountUp
                   value={topAccuracy}
                   formatter={(n) => `${n.toFixed(1)}%`}

@@ -408,7 +408,7 @@ export function Navbar() {
                     href={href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      "flex items-center gap-2.5 rounded-lg px-3 py-3 min-h-[44px] text-sm font-medium transition-colors",
                       isActive
                         ? "bg-[#161B22] text-[#E6EDF3]"
                         : "text-[#9CA3AF] hover:bg-[#161B22] hover:text-[#E6EDF3]"

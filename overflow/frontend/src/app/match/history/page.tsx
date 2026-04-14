@@ -125,24 +125,31 @@ function MatchRow({ match }: { match: MatchInfo }) {
   const team2Color = match.team2Color ?? lookupTeamColor(match.team2Symbol, match.team2Name);
 
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3 transition-colors hover:bg-[#21262D]/40 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-1.5 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3 transition-colors hover:bg-[#21262D]/40 sm:flex-row sm:items-center sm:justify-between">
       {/* Left: status + teams + score */}
       <div className="flex items-center gap-3 min-w-0">
         <StatusDot status={match.status} />
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: team1Color }} />
-          <span className="text-sm font-medium text-[#E6EDF3] truncate">{match.team1Name}</span>
+          <span className="text-sm font-medium text-[#E6EDF3] truncate max-w-[100px] sm:max-w-none">{match.team1Name}</span>
           <span className="text-xs text-[#768390]">vs</span>
-          <span className="text-sm font-medium text-[#E6EDF3] truncate">{match.team2Name}</span>
+          <span className="text-sm font-medium text-[#E6EDF3] truncate max-w-[100px] sm:max-w-none">{match.team2Name}</span>
           <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: team2Color }} />
         </div>
         {/* Score inline for completed */}
         {(match.score1 != null || match.score2 != null) && (
-          <span className="text-xs font-mono tabular-nums text-[#9CA3AF] shrink-0">
+          <span className="hidden sm:inline text-xs font-mono tabular-nums text-[#9CA3AF] shrink-0">
             {match.score1 ?? "---"} vs {match.score2 ?? "---"}
           </span>
         )}
       </div>
+
+      {/* Score on mobile — own line */}
+      {(match.score1 != null || match.score2 != null) && (
+        <div className="sm:hidden pl-7 text-[11px] font-mono tabular-nums text-[#9CA3AF]">
+          {match.score1 ?? "---"} vs {match.score2 ?? "---"}
+        </div>
+      )}
 
       {/* Right: date + venue */}
       <div className="flex items-center gap-3 text-xs text-[#9CA3AF] shrink-0 pl-7 sm:pl-0">

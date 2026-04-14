@@ -294,8 +294,8 @@ export default function PortfolioPage() {
       <div className="border-b border-[#21262D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <p className="text-[10px] text-[#768390] uppercase tracking-wider mb-1">Total Value</p>
-          <div className="min-h-[80px] flex items-baseline gap-4">
-            <p className="text-4xl sm:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
+          <div className="min-h-[80px] flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
+            <p className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
               $<NumberTicker value={totalValue} decimals={2} duration={800} showArrow={false} />
             </p>
             <span
@@ -323,7 +323,7 @@ export default function PortfolioPage() {
           <>
             {/* Summary strip */}
             <div className="mb-6 border-b border-[#21262D]">
-              <div className="flex items-center divide-x divide-[#21262D] overflow-x-auto py-2.5 text-xs font-mono">
+              <div className="flex items-center divide-x divide-[#21262D] overflow-x-auto py-2.5 text-xs font-mono scrollbar-none">
                 <div className="shrink-0 pr-5">
                   <span className="text-[#768390]">P&L </span>
                   <span className="font-semibold tabular-nums" style={{ color: totalPnl >= 0 ? "#3FB950" : "#F85149" }}>

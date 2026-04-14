@@ -1,6 +1,10 @@
 import { signAction, type WalletSignature } from "./walletSign";
 import type { WalletClient } from "viem";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+// Use proxy path on HTTPS (Vercel) to avoid mixed-content, direct URL on HTTP (dev)
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+const API_URL = isHttps ? "/proxy" : RAW_API_URL;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -22,6 +26,10 @@ export interface TeamData {
   nrr: number;
   performanceScore: number;
   ranking: number;
+  /** Backend may return currentPrice alongside price. */
+  currentPrice?: number;
+  /** Backend may return priceChange24h alongside change24h. */
+  priceChange24h?: number;
 }
 
 export interface PricePoint {
@@ -240,7 +248,7 @@ async function signedPost<T>(
   url: string,
   walletClient: WalletClient,
   action: string,
-  body: Record<string, unknown>,
+  body: object,
 ): Promise<T> {
   const { signature, nonce } = await signAction(walletClient, action);
   return fetchJSON<T>(url, {
@@ -281,7 +289,7 @@ export const api = {
           `${API_URL}/api/trades`,
           walletClient,
           "trade",
-          trade as unknown as Record<string, unknown>,
+          trade,
         );
       }
       return fetchJSON(`${API_URL}/api/trades`, {
@@ -556,7 +564,7 @@ export const fanWarsApi = {
         `${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/lock`,
         walletClient,
         "fanwar:lock",
-        body as unknown as Record<string, unknown>,
+        body,
       );
     }
     return fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/lock`, {
@@ -575,7 +583,7 @@ export const fanWarsApi = {
         `${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/claim`,
         walletClient,
         "fanwar:claim",
-        body as unknown as Record<string, unknown>,
+        body,
       );
     }
     return fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}/claim`, {
@@ -663,7 +671,7 @@ export const predictionsApi = {
         `${API_URL}/api/predictions/${encodeURIComponent(matchId)}/enter`,
         walletClient,
         "prediction:enter",
-        body as unknown as Record<string, unknown>,
+        body,
       );
     }
     return fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/enter`, { method: "POST", body: JSON.stringify(body) });
@@ -675,7 +683,7 @@ export const predictionsApi = {
         `${API_URL}/api/predictions/${encodeURIComponent(matchId)}/live-answer`,
         walletClient,
         "prediction:live-answer",
-        body as unknown as Record<string, unknown>,
+        body,
       );
     }
     return fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/live-answer`, { method: "POST", body: JSON.stringify(body) });
@@ -687,7 +695,7 @@ export const predictionsApi = {
         `${API_URL}/api/predictions/${encodeURIComponent(matchId)}/claim`,
         walletClient,
         "prediction:claim",
-        body as unknown as Record<string, unknown>,
+        body,
       );
     }
     return fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/claim`, { method: "POST", body: JSON.stringify(body) });

@@ -38,7 +38,7 @@ function UpsetHistoryRow({
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-4 text-xs shrink-0">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs shrink-0">
         <span className="tabular-nums text-[#9CA3AF]">
           Score <span className="font-medium text-[#E6EDF3]">{event.upsetScore}/100</span>
         </span>
@@ -176,19 +176,19 @@ export default function VaultPage() {
               <Meteors number={10} className="opacity-30" />
               <h1 className="sr-only">Upset Vault</h1>
               <p className="relative z-10 mb-2 text-sm font-medium text-[#9CA3AF]">Upset Vault Balance</p>
-              <GlitchPrice value={formatCurrency(currentBalance)} className="relative z-10 text-5xl sm:text-6xl font-black font-mono tabular-nums text-[#E6EDF3]" autoScrambleInterval={8000} />
-              <div className="mt-4 flex items-center justify-center gap-6 text-xs text-[#9CA3AF]">
+              <GlitchPrice value={formatCurrency(currentBalance)} className="relative z-10 text-4xl sm:text-5xl md:text-6xl font-black font-mono tabular-nums text-[#E6EDF3]" autoScrambleInterval={8000} />
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[#9CA3AF]">
                 <span>
                   All-time payouts{" "}
                   <span className="tabular-nums font-semibold text-[#3FB950]">{formatCurrency(totalPayouts)}</span>
                 </span>
-                <span className="text-[#21262D]">|</span>
+                <span className="hidden sm:inline text-[#21262D]">|</span>
                 <span>
                   {upsetEvents.length} upsets this season
                 </span>
-                <span className="text-[#21262D]">|</span>
+                <span className="hidden sm:inline text-[#21262D]">|</span>
                 <span>
-                  Current multiplier{" "}
+                  Multiplier{" "}
                   <span className="tabular-nums font-bold text-[#E4002B]">{currentMultiplier.toFixed(1)}x</span>
                 </span>
               </div>

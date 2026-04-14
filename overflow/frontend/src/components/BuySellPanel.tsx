@@ -270,7 +270,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
             <button
               key={qa}
               onClick={() => setAmount(qa.toString())}
-              className="rounded-md bg-[#21262D] px-2 py-1.5 text-xs font-medium text-[#9CA3AF] hover:bg-[#21262D]/80 hover:text-[#E6EDF3] transition-colors"
+              className="rounded-md bg-[#21262D] px-2 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-[#9CA3AF] hover:bg-[#21262D]/80 hover:text-[#E6EDF3] transition-colors"
             >
               {isBuy ? qa : qa >= 1000 ? `${qa / 1000}K` : qa}
             </button>

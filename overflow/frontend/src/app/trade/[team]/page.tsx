@@ -273,8 +273,8 @@ export default function TradePage({ params }: PageProps) {
                 <h1 className="text-sm font-medium text-[#9CA3AF]">{team.name}</h1>
                 <span className="text-xs text-[#768390]">{team.symbol}</span>
               </div>
-              <div className="flex items-baseline gap-3 pl-[52px]">
-                <GlitchPrice value={`$${formatPrice(team.price)}`} className="text-4xl sm:text-5xl font-black tabular-nums text-[#E6EDF3]" />
+              <div className="flex items-baseline gap-3 pl-10 sm:pl-[52px]">
+                <GlitchPrice value={`$${formatPrice(team.price)}`} className="text-3xl sm:text-4xl md:text-5xl font-black tabular-nums text-[#E6EDF3]" />
                 <span
                   className={cn(
                     "text-base sm:text-lg font-semibold tabular-nums",
@@ -344,10 +344,11 @@ export default function TradePage({ params }: PageProps) {
                     {timeframe === "1h" ? "1m" : timeframe === "24h" ? "5m" : "1h"}
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" role="radiogroup" aria-label="Chart timeframe">
                   {(["1h", "24h", "7d"] as const).map((tf) => (
                     <button
                       key={tf}
+                      aria-pressed={timeframe === tf}
                       onClick={() => setTimeframe(tf)}
                       className={cn(
                         "rounded px-2.5 py-1 min-h-[44px] sm:min-h-0 text-xs font-medium transition-colors",

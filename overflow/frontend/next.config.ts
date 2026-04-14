@@ -38,11 +38,10 @@ const securityHeaders = [
       if (process.env.NEXT_PUBLIC_AI_URL) {
         connectSources.push(process.env.NEXT_PUBLIC_AI_URL);
       }
-      // WebSocket: wss only in production, ws allowed in dev
+      // WebSocket: allow both ws: and wss: since backend may be HTTP or HTTPS
+      connectSources.push("ws:", "wss:");
       if (isDev) {
-        connectSources.push("ws:", "wss:", "http://localhost:3001", "http://localhost:5001");
-      } else {
-        connectSources.push("wss:");
+        connectSources.push("http://localhost:3001", "http://localhost:5001");
       }
 
       const directives: string[] = [
@@ -79,6 +78,20 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+    ];
+  },
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    const aiUrl = process.env.NEXT_PUBLIC_AI_URL || "http://localhost:5001";
+    return [
+      {
+        source: "/proxy/api/:path*",
+        destination: `${apiUrl}/api/:path*`,
+      },
+      {
+        source: "/proxy/ai/:path*",
+        destination: `${aiUrl}/api/ai/:path*`,
       },
     ];
   },

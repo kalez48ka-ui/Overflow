@@ -78,13 +78,13 @@ function MatchTradingButtons({ team1Id, team2Id }: { team1Id: string; team2Id: s
             <div className="grid grid-cols-2 gap-1">
               <Link
                 href={`/trade/${team.symbol.replace('$', '').toLowerCase()}`}
-                className="rounded bg-[#238636] py-2 text-center text-xs font-bold text-white hover:bg-[#2EA043] transition-colors"
+                className="rounded bg-[#238636] py-2.5 min-h-[44px] flex items-center justify-center text-center text-xs font-bold text-white hover:bg-[#2EA043] transition-colors"
               >
                 Buy
               </Link>
               <Link
                 href={`/trade/${team.symbol.replace('$', '').toLowerCase()}`}
-                className="rounded bg-[#DA3633] py-2 text-center text-xs font-bold text-white hover:bg-[#F85149] transition-colors"
+                className="rounded bg-[#DA3633] py-2.5 min-h-[44px] flex items-center justify-center text-center text-xs font-bold text-white hover:bg-[#F85149] transition-colors"
               >
                 Sell
               </Link>
@@ -172,7 +172,8 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
         if (match) {
           setWar(match);
         }
-      } catch {
+      } catch (err) {
+        console.warn('[Match] fetch error:', err);
         // Fallback to mock data
         const mock = MOCK_FAN_WARS.find(
           (w) =>
@@ -396,21 +397,21 @@ export default function MatchPage() {
           if (upcoming && upcoming.length > 0) {
             setUpcomingMatch(upcoming[0]);
           }
-        } catch {
-          // Upcoming fetch failed — non-critical
+        } catch (err) {
+          console.warn('[Match] fetch error:', err);
         }
         try {
           const completed = await api.matches.getCompleted();
           if (completed && completed.length > 0) {
             setLastCompleted(completed[0]);
           }
-        } catch {
-          // Completed fetch failed — non-critical
+        } catch (err) {
+          console.warn('[Match] fetch error:', err);
         }
         return false;
       }
-    } catch {
-      // API down — keep existing state
+    } catch (err) {
+      console.warn('[Match] fetch error:', err);
       return false;
     }
   }, []);
@@ -645,7 +646,7 @@ export default function MatchPage() {
                         {lastCompleted.team1Name}
                       </p>
                       {lastCompleted.score1 && (
-                        <p className="text-lg font-bold font-mono tabular-nums text-[#E6EDF3]">
+                        <p className="text-base sm:text-lg font-bold font-mono tabular-nums text-[#E6EDF3] truncate">
                           {lastCompleted.score1}
                         </p>
                       )}
@@ -666,7 +667,7 @@ export default function MatchPage() {
                         {lastCompleted.team2Name}
                       </p>
                       {lastCompleted.score2 && (
-                        <p className="text-lg font-bold font-mono tabular-nums text-[#E6EDF3]">
+                        <p className="text-base sm:text-lg font-bold font-mono tabular-nums text-[#E6EDF3] truncate">
                           {lastCompleted.score2}
                         </p>
                       )}
@@ -697,7 +698,7 @@ export default function MatchPage() {
             </p>
             {upcomingMatch ? (
               <>
-                <h2 className="text-lg font-bold text-[#E6EDF3]">
+                <h2 className="text-base sm:text-lg font-bold text-[#E6EDF3] break-words">
                   Next match: {upcomingMatch.team1Name} vs {upcomingMatch.team2Name}
                 </h2>
                 <p className="mt-1 text-sm text-[#9CA3AF]">
@@ -736,7 +737,7 @@ export default function MatchPage() {
                         key={id}
                         onClick={() => setActiveChart(id)}
                         className={cn(
-                          "rounded px-2.5 py-1 text-xs font-semibold transition-all",
+                          "rounded px-2.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold transition-all",
                           activeChart === id
                             ? "text-white"
                             : "bg-transparent text-[#9CA3AF] hover:text-[#E6EDF3]"
@@ -803,7 +804,7 @@ export default function MatchPage() {
                         key={id}
                         onClick={() => setActiveChart(id)}
                         className={cn(
-                          "rounded px-2.5 py-1 text-xs font-semibold transition-all",
+                          "rounded px-2.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold transition-all",
                           activeChart === id
                             ? "text-white"
                             : "bg-transparent text-[#9CA3AF] hover:text-[#E6EDF3]"

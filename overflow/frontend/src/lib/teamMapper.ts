@@ -2,18 +2,12 @@ import { PSL_TEAMS } from "@/lib/mockData";
 import type { TeamData } from "@/lib/api";
 import type { PSLTeam } from "@/types";
 
-/** Backend may return additional fields not in the base TeamData interface. */
-type TeamApiResponse = TeamData & {
-  currentPrice?: number;
-  priceChange24h?: number;
-};
-
 /**
  * Maps a backend team API response to the frontend PSLTeam shape.
  * Handles both field naming conventions (currentPrice vs price, priceChange24h vs change24h)
  * and fills in mock color/sparkline data when not available from the API.
  */
-export function mapApiTeamToFrontend(t: TeamApiResponse): PSLTeam {
+export function mapApiTeamToFrontend(t: TeamData): PSLTeam {
   const symbol = t.symbol;
   const mock = PSL_TEAMS.find(
     (m) => m.id === symbol?.replace("$", "") || m.symbol === symbol

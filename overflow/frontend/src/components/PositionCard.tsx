@@ -95,7 +95,7 @@ export const PositionCard = React.memo(function PositionCard({ position, index =
           </div>
           <button
             onClick={handleShare}
-            title="Share position"
+            aria-label="Share position"
             className="flex h-9 w-9 items-center justify-center rounded border border-[#21262D] text-[#768390] hover:text-[#9CA3AF] transition-colors"
           >
             <Share2 className="h-3 w-3" />
@@ -104,8 +104,8 @@ export const PositionCard = React.memo(function PositionCard({ position, index =
       </div>
 
       {/* Row 2: Details */}
-      <div className="mt-3 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-4 font-mono tabular-nums">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-y-2 text-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono tabular-nums">
           <span className="text-[#9CA3AF]">{position.amount.toLocaleString()} tokens</span>
           <span className="text-[#768390]">avg ${formatPrice(position.avgBuyPrice)}</span>
           <span className="text-[#E6EDF3]">now ${formatPrice(position.currentPrice)}</span>
@@ -114,7 +114,7 @@ export const PositionCard = React.memo(function PositionCard({ position, index =
           <span className="font-semibold font-mono tabular-nums text-[#E6EDF3]">{formatCurrency(position.value)}</span>
           <button
             onClick={() => onTrade?.(position.teamId)}
-            className="rounded border border-[#21262D] px-2.5 py-1 text-[10px] font-medium text-[#9CA3AF] hover:border-[#9CA3AF] hover:text-[#E6EDF3] transition-colors"
+            className="rounded border border-[#21262D] px-2.5 py-1.5 min-h-[44px] sm:min-h-0 sm:py-1 text-[10px] font-medium text-[#9CA3AF] hover:border-[#9CA3AF] hover:text-[#E6EDF3] transition-colors"
           >
             Trade
           </button>

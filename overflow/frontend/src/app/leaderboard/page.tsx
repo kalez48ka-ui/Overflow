@@ -81,11 +81,13 @@ function WalletCell({ wallet }: { wallet: string }) {
 function SkeletonRow() {
   return (
     <tr className="border-b border-[#21262D]/50">
-      {Array.from({ length: 7 }).map((_, i) => (
-        <td key={i} className="px-4 py-3">
-          <div className="h-4 w-16 animate-pulse rounded bg-[#21262D]" />
-        </td>
-      ))}
+      <td className="px-4 py-3"><div className="h-4 w-8 animate-pulse rounded bg-[#21262D]" /></td>
+      <td className="px-4 py-3"><div className="h-4 w-24 animate-pulse rounded bg-[#21262D]" /></td>
+      <td className="px-4 py-3"><div className="h-4 w-16 animate-pulse rounded bg-[#21262D]" /></td>
+      <td className="px-4 py-3"><div className="h-4 w-12 animate-pulse rounded bg-[#21262D]" /></td>
+      <td className="hidden sm:table-cell px-4 py-3"><div className="h-4 w-16 animate-pulse rounded bg-[#21262D]" /></td>
+      <td className="hidden sm:table-cell px-4 py-3"><div className="h-4 w-12 animate-pulse rounded bg-[#21262D]" /></td>
+      <td className="hidden md:table-cell px-4 py-3"><div className="h-4 w-12 animate-pulse rounded bg-[#21262D]" /></td>
     </tr>
   );
 }
@@ -178,9 +180,10 @@ export default function LeaderboardPage() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
         >
+        <p className="mb-2 text-[10px] text-[#9CA3AF] sm:hidden">Swipe to see all columns</p>
         <div className="rounded-lg border border-[#21262D] overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left" aria-label="Trading leaderboard">
+            <table className="w-full min-w-[600px] text-left" aria-label="Trading leaderboard">
               <thead>
                 <tr className="border-b border-[#21262D]">
                   <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] w-16">
@@ -195,13 +198,13 @@ export default function LeaderboardPage() {
                   <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Trades
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
+                  <th className="hidden sm:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Volume
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-center">
+                  <th className="hidden sm:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-center">
                     Favorite
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
+                  <th className="hidden md:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Win Rate
                   </th>
                 </tr>
@@ -301,12 +304,12 @@ export default function LeaderboardPage() {
                             {entry.tradeCount}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="hidden sm:table-cell px-4 py-3 text-right">
                           <span className="text-xs tabular-nums text-[#E6EDF3]">
                             {formatCurrency(entry.totalVolume)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="hidden sm:table-cell px-4 py-3 text-center">
                           {entry.favoriteTeam ? (
                             <span
                               className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold"
@@ -323,7 +326,7 @@ export default function LeaderboardPage() {
                             <span className="text-xs text-[#768390]">&mdash;</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="hidden md:table-cell px-4 py-3 text-right">
                           <span
                             className={cn(
                               "text-xs font-medium tabular-nums",

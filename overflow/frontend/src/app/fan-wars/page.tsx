@@ -133,12 +133,12 @@ export default function FanWarsPage() {
           </p>
 
           {/* Stats */}
-          <div className="mt-6 flex items-center gap-6">
+          <div className="mt-6 flex items-center gap-4 sm:gap-6">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Total Boost Pool
               </p>
-              <p className="text-2xl font-black tabular-nums text-[#FDB913]">
+              <p className="text-xl sm:text-2xl font-black tabular-nums text-[#FDB913]">
                 <NumberTicker value={totalBoostPool} decimals={0} duration={800} showArrow={false} /> WIRE
               </p>
             </div>
@@ -147,7 +147,7 @@ export default function FanWarsPage() {
               <p className="text-[10px] uppercase tracking-widest text-[#9CA3AF]">
                 Active Wars
               </p>
-              <p className="text-2xl font-black tabular-nums text-[#E6EDF3]">
+              <p className="text-xl sm:text-2xl font-black tabular-nums text-[#E6EDF3]">
                 <CountUp value={activeWars.length} duration={1} />
               </p>
             </div>

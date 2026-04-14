@@ -326,6 +326,15 @@ input[type="number"] {
   animation: marquee-right linear infinite;
 }
 
+/* ── Hide scrollbar while keeping scroll functional ────────── */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

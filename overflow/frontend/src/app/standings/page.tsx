@@ -12,6 +12,7 @@ import {
 import { CountUp } from "@/components/motion/CountUp";
 import { PSL_TEAMS } from "@/lib/mockData";
 import { api, type MatchInfo } from "@/lib/api";
+import { mapApiTeamToFrontend } from "@/lib/teamMapper";
 import { cn, formatPrice } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
 import type { PSLTeam } from "@/types";
@@ -74,34 +75,7 @@ export default function StandingsPage() {
       .then((data) => {
         if (cancelled || !data || data.length === 0) return;
 
-        const mapped: PSLTeam[] = data.map((t) => {
-          const mock = PSL_TEAMS.find(
-            (m) => m.id === t.symbol?.replace("$", "") || m.symbol === t.symbol,
-          );
-          return {
-            id: t.symbol?.replace("$", "") || t.id,
-            name: t.name,
-            symbol: t.symbol.startsWith("$") ? t.symbol : `$${t.symbol}`,
-            color: mock?.color || "#58A6FF",
-            secondaryColor: mock?.secondaryColor || "#1C1C1C",
-            price:
-              (t as typeof t & { currentPrice?: number }).currentPrice ?? t.price,
-            change24h:
-              (t as typeof t & { priceChange24h?: number }).priceChange24h ??
-              t.change24h,
-            volume24h: t.volume24h,
-            marketCap: t.marketCap,
-            sellTax: t.sellTax,
-            buyTax: t.buyTax,
-            contractAddress: t.contractAddress,
-            wins: t.wins,
-            losses: t.losses,
-            nrr: t.nrr,
-            performanceScore: t.performanceScore,
-            ranking: t.ranking,
-            sparklineData: mock?.sparklineData || [],
-          };
-        });
+        const mapped: PSLTeam[] = data.map((t) => mapApiTeamToFrontend(t));
 
         setTeams(mapped);
       })
@@ -231,11 +205,11 @@ export default function StandingsPage() {
         {/* Season banner — compact single line */}
         <CardSpotlight className="mb-6 rounded-lg border border-[#21262D] bg-[#161B22]" color="228, 0, 43" opacity={0.05} radius={300}>
         <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className="font-bold text-[#E6EDF3]">PSL 2026</span>
-            <span className="text-[#768390]">&middot;</span>
+            <span className="hidden sm:inline text-[#768390]">&middot;</span>
             <span className="text-[#9CA3AF]">{seasonStage}</span>
-            <span className="text-[#768390]">&middot;</span>
+            <span className="hidden sm:inline text-[#768390]">&middot;</span>
             <span className="tabular-nums text-[#9CA3AF]">
               {matchesLoading ? "..." : `${completedMatches}/${Math.max(allMatches.length, totalScheduledMatches)} matches`}
             </span>
