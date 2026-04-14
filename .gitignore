@@ -37,3 +37,8 @@ private-key.txt
 *.bin
 *.sqlite3
 *.pdf
+
+# Test artifacts
+stress-test-results.json
+mega-stress-results.json
+e2e-test.js

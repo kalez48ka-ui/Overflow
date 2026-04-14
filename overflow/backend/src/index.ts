@@ -179,7 +179,7 @@ app.get('/api/health', async (_req, res) => {
 const ALPHANUMERIC_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
 
 io.on('connection', (socket) => {
-  console.log(`[Socket] Client connected: ${socket.id}`);
+  // Connection logging disabled in production to reduce I/O
 
   socket.on('subscribe:team', (symbol: unknown) => {
     if (typeof symbol !== 'string' || !ALPHANUMERIC_PATTERN.test(symbol)) {
@@ -188,7 +188,7 @@ io.on('connection', (socket) => {
     }
     const sanitized = symbol.toUpperCase();
     socket.join(`team:${sanitized}`);
-    console.log(`[Socket] ${socket.id} subscribed to team:${sanitized}`);
+    // verbose logging removed for production
   });
 
   socket.on('subscribe:match', (matchId: unknown) => {
@@ -197,7 +197,7 @@ io.on('connection', (socket) => {
       return;
     }
     socket.join(`match:${matchId}`);
-    console.log(`[Socket] ${socket.id} subscribed to match:${matchId}`);
+    // verbose logging removed for production
   });
 
   socket.on('subscribe:fanwar', (matchId: unknown) => {
@@ -206,7 +206,7 @@ io.on('connection', (socket) => {
       return;
     }
     socket.join(`fanwar:${matchId}`);
-    console.log(`[Socket] ${socket.id} subscribed to fanwar:${matchId}`);
+    // verbose logging removed for production
   });
 
   socket.on('subscribe:vault', () => {
@@ -215,7 +215,7 @@ io.on('connection', (socket) => {
 
   socket.on('subscribe:markets', () => {
     socket.join('markets');
-    console.log(`[Socket] ${socket.id} subscribed to markets`);
+    // verbose logging removed for production
   });
 
   socket.on('subscribe:prediction', (matchId: unknown) => {
@@ -224,11 +224,11 @@ io.on('connection', (socket) => {
       return;
     }
     socket.join(`prediction:${matchId}`);
-    console.log(`[Socket] ${socket.id} subscribed to prediction:${matchId}`);
+    // verbose logging removed for production
   });
 
   socket.on('disconnect', () => {
-    console.log(`[Socket] Client disconnected: ${socket.id}`);
+    // verbose logging removed for production
   });
 });
 
@@ -251,11 +251,15 @@ async function bootstrap(): Promise<void> {
       console.error('[ChainSync] Failed to start:', err);
     });
 
-    // Emit price updates every 10 seconds
+    // Emit price updates every 10 seconds (only when clients are subscribed)
     setInterval(() => {
-      priceService.emitAllPrices().catch((err) => {
-        console.error('[PriceService] Failed to emit prices:', err);
-      });
+      const hasSubscribers = io.sockets.adapter.rooms.get('markets')?.size ?? 0;
+      const hasTeamSubs = Array.from(io.sockets.adapter.rooms.keys()).some(r => r.startsWith('team:'));
+      if (hasSubscribers > 0 || hasTeamSubs) {
+        priceService.emitAllPrices().catch((err) => {
+          console.error('[PriceService] Failed to emit prices:', err);
+        });
+      }
     }, 10000);
 
     server.listen(config.port, () => {
