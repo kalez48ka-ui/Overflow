@@ -107,6 +107,7 @@ const primaryLinks = [
 ];
 
 const moreLinks = [
+  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/match/history", label: "Match History", icon: Clock },
   { href: "/how-it-works", label: "How It Works", icon: BookOpen },
 ];
@@ -130,6 +131,18 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Close menus on Escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, []);
+
   const isMoreActive = moreLinks.some((l) => pathname === l.href);
 
   return (
@@ -142,8 +155,8 @@ export function Navbar() {
           {/* ── Logo ── */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
             <motion.div
-              whileHover={{ rotate: [0, -5, 5, 0], scale: 1.08 }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.2 }}
             >
               <OverflowLogo className="h-9 w-9 drop-shadow-[0_0_8px_rgba(228,0,43,0.3)]" />
             </motion.div>
@@ -197,6 +210,7 @@ export function Navbar() {
             <div ref={moreRef} className="relative">
               <button
                 onClick={() => setMoreOpen(!moreOpen)}
+                aria-expanded={moreOpen}
                 className={cn(
                   "relative flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] font-medium transition-all duration-200",
                   moreOpen || isMoreActive
@@ -206,7 +220,7 @@ export function Navbar() {
               >
                 {(moreOpen || isMoreActive) && (
                   <motion.div
-                    layoutId="nav-active"
+                    layoutId="nav-more-active"
                     className="absolute inset-0 rounded-full bg-white/[0.08] border border-white/[0.08]"
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
@@ -269,6 +283,7 @@ export function Navbar() {
               className="md:hidden p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[#8B949E] hover:text-[#E6EDF3] transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50 rounded-lg"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
             >
               <div className="flex flex-col gap-1">
                 <span className={cn("block h-0.5 w-5 bg-current transition-transform", mobileOpen && "translate-y-1.5 rotate-45")} />

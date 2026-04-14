@@ -322,13 +322,53 @@ export class CricketDataService {
       cricApiName: apiMatch.name || null,
     };
 
+    // Resolve winnerId and endTime for completed matches
+    let resolvedWinnerId: string | null = null;
+    let resolvedEndTime: Date | null = null;
+
+    if (status === 'COMPLETED') {
+      // Set endTime from API date
+      resolvedEndTime = apiMatch.dateTimeGMT
+        ? new Date(apiMatch.dateTimeGMT)
+        : new Date(apiMatch.date);
+
+      // Resolve winner from matchWinner field
+      if (apiMatch.matchWinner) {
+        const winnerSymbol = resolveTeamSymbol(apiMatch.matchWinner);
+        if (winnerSymbol) {
+          const winnerTeam = await this.prisma.team.findUnique({ where: { symbol: winnerSymbol } });
+          if (winnerTeam) resolvedWinnerId = winnerTeam.id;
+        }
+      }
+
+      // Fallback: determine winner from scores if matchWinner is missing
+      if (!resolvedWinnerId && homeScore && awayScore) {
+        const homeRuns = this.parseScoreRuns(homeScore);
+        const awayRuns = this.parseScoreRuns(awayScore);
+        if (homeRuns !== null && awayRuns !== null) {
+          if (homeRuns > awayRuns) resolvedWinnerId = homeTeam.id;
+          else if (awayRuns > homeRuns) resolvedWinnerId = awayTeam.id;
+        }
+      }
+    }
+
     if (existing) {
       await this.prisma.match.update({
         where: { id: existing.id },
-        data: matchData,
+        data: {
+          ...matchData,
+          ...(resolvedEndTime ? { endTime: resolvedEndTime } : {}),
+          ...(resolvedWinnerId ? { winnerId: resolvedWinnerId } : {}),
+        },
       });
     } else {
-      const created = await this.prisma.match.create({ data: matchData });
+      const created = await this.prisma.match.create({
+        data: {
+          ...matchData,
+          ...(resolvedEndTime ? { endTime: resolvedEndTime } : {}),
+          ...(resolvedWinnerId ? { winnerId: resolvedWinnerId } : {}),
+        },
+      });
       console.log(`[CricketData] Created match: ${apiMatch.name}`);
 
       // Auto-create a fan war for the new match
@@ -614,7 +654,7 @@ export class CricketDataService {
     return this.prisma.match.findMany({
       where: { status: 'COMPLETED' },
       include: { homeTeam: true, awayTeam: true },
-      orderBy: { endTime: 'desc' },
+      orderBy: { startTime: 'desc' },
       take: limit,
     });
   }

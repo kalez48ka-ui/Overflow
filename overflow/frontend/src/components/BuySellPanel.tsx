@@ -232,6 +232,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              min="0"
               placeholder="0.00"
               className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#484F58] outline-none focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 transition-colors duration-150"
             />

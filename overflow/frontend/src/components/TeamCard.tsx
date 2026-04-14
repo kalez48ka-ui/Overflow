@@ -165,7 +165,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
           <div className="mb-3 flex items-end justify-between">
             <div>
               <p
-                className="text-2xl font-black tabular-nums tracking-tight text-[#E6EDF3]"
+                className="text-2xl font-black font-mono tabular-nums tracking-tight text-[#E6EDF3]"
               >
                 ${formatPrice(team.price)}
               </p>
@@ -178,7 +178,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
                   scale: { delay: index * 0.07 + 0.5, duration: 0.3, ease: "easeInOut" },
                 }}
                 className={cn(
-                  "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold",
+                  "mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-bold font-mono tabular-nums",
                   isPositive
                     ? "bg-[#3FB950]/10 text-[#3FB950]"
                     : "bg-[#F85149]/10 text-[#F85149]"

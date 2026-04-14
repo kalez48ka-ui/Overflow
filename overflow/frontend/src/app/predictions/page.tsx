@@ -16,11 +16,11 @@ import { LivePredictionBanner } from "@/components/LivePredictionBanner";
 import { CountUp } from "@/components/motion";
 import { predictionsApi } from "@/lib/api";
 import type { PredictionPoolStatus, PredictionLeaderboardEntry } from "@/lib/api";
-import {
-  MOCK_PREDICTION_POOLS,
-  MOCK_PREDICTION_LEADERBOARD,
-} from "@/lib/mockData";
+// Mock data available at @/lib/mockData if API is down
 import { formatNumber, shortenAddress } from "@/lib/utils";
+import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
+import { NumberTicker } from "@/components/ui/number-ticker";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -31,13 +31,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 export default function PredictionsPage() {
   const { address, isConnected } = useAccount();
 
-  const [pools, setPools] = useState<PredictionPoolStatus[]>(
-    MOCK_PREDICTION_POOLS as PredictionPoolStatus[],
-  );
+  const [pools, setPools] = useState<PredictionPoolStatus[]>([]);
   const [userPredictions, setUserPredictions] = useState<PredictionPoolStatus[]>([]);
-  const [leaderboard, setLeaderboard] = useState<PredictionLeaderboardEntry[]>(
-    MOCK_PREDICTION_LEADERBOARD,
-  );
+  const [leaderboard, setLeaderboard] = useState<PredictionLeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Derived data
@@ -45,12 +41,12 @@ export default function PredictionsPage() {
     (p) => p.status === "OPEN" || p.status === "LIVE",
   );
   const settledPools = pools.filter((p) => p.status === "SETTLED");
-  const totalPrizePool = pools.reduce((sum, p) => sum + p.totalPool, 0);
-  const topAccuracy = leaderboard.length > 0 ? leaderboard[0].avgScore : 0;
+  const totalPrizePool = pools.reduce((sum, p) => sum + Number(p.totalPool ?? 0), 0);
+  const topAccuracy = leaderboard.length > 0 ? Number(leaderboard[0]?.avgScore ?? 0) : 0;
 
   // Find any live question for the banner
   const livePool = pools.find((p) => p.status === "LIVE");
-  const liveQuestion = livePool?.questions.find(
+  const liveQuestion = livePool?.questions?.find(
     (q) => q.isLive && !q.resolved && new Date(q.deadline).getTime() > Date.now(),
   );
 
@@ -65,14 +61,14 @@ export default function PredictionsPage() {
         predictionsApi.getLeaderboard(10, signal),
       ]);
 
-      if (results[0].status === "fulfilled" && results[0].value?.length > 0) {
-        setPools(results[0].value);
+      if (results[0].status === "fulfilled") {
+        setPools(results[0].value ?? []);
       }
-      if (results[1].status === "fulfilled" && results[1].value) {
-        setUserPredictions(results[1].value);
+      if (results[1].status === "fulfilled") {
+        setUserPredictions(results[1].value ?? []);
       }
-      if (results[2].status === "fulfilled" && results[2].value?.length > 0) {
-        setLeaderboard(results[2].value);
+      if (results[2].status === "fulfilled") {
+        setLeaderboard(results[2].value ?? []);
       }
       setLoading(false);
     },
@@ -117,7 +113,7 @@ export default function PredictionsPage() {
             if (p.matchId !== data.matchId) return p;
             return {
               ...p,
-              questions: p.questions.map((q) =>
+              questions: (p.questions ?? []).map((q) =>
                 q.questionIndex === data.question.questionIndex
                   ? data.question
                   : q,
@@ -164,21 +160,22 @@ export default function PredictionsPage() {
           </p>
 
           {/* Stats */}
-          <div className="mt-6 flex items-center gap-6">
+          <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
                 Total Prizes
               </p>
               <p className="text-2xl font-black tabular-nums text-[#FDB913]">
-                <CountUp
+                <NumberTicker
                   value={totalPrizePool}
-                  formatter={(n) => `${Math.round(n).toLocaleString()}`}
-                  duration={1}
+                  decimals={0}
+                  duration={800}
+                  showArrow={false}
                 />{" "}
                 WIRE
               </p>
             </div>
-            <div className="h-8 w-px bg-[#21262D]" />
+            <div className="hidden sm:block h-8 w-px bg-[#21262D]" />
             <div>
               <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
                 Active Pools
@@ -187,7 +184,7 @@ export default function PredictionsPage() {
                 <CountUp value={activePools.length} duration={1} />
               </p>
             </div>
-            <div className="h-8 w-px bg-[#21262D]" />
+            <div className="hidden sm:block h-8 w-px bg-[#21262D]" />
             <div>
               <p className="text-[10px] uppercase tracking-widest text-[#8B949E]">
                 Top Accuracy
@@ -241,11 +238,19 @@ export default function PredictionsPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   {activePools.map((pool) => (
-                    <PredictionPoolCard
+                    <AnimatedGradientBorder
                       key={pool.id}
-                      pool={pool}
-                      onEntrySuccess={fetchData}
-                    />
+                      active={pool.status === "OPEN"}
+                      gradientColors={["#21262D", "#58A6FF", "#21262D", "#FDB913", "#21262D"]}
+                      duration={5}
+                      borderWidth={1}
+                      containerClassName="rounded-xl"
+                    >
+                      <PredictionPoolCard
+                        pool={pool}
+                        onEntrySuccess={fetchData}
+                      />
+                    </AnimatedGradientBorder>
                   ))}
                 </div>
               </section>
@@ -347,16 +352,16 @@ export default function PredictionsPage() {
                           {shortenAddress(entry.wallet)}
                         </td>
                         <td className="px-4 py-3 text-right text-xs font-bold tabular-nums text-[#58A6FF]">
-                          {entry.avgScore.toFixed(1)}%
+                          {Number(entry.avgScore ?? 0).toFixed(1)}%
                         </td>
                         <td className="hidden px-4 py-3 text-right text-xs font-bold tabular-nums text-[#3FB950] sm:table-cell">
-                          {entry.totalProfit.toLocaleString()} WIRE
+                          {Number((entry as unknown as Record<string, unknown>).totalEarnings ?? entry.totalProfit ?? 0).toLocaleString()} WIRE
                         </td>
                         <td className="hidden px-4 py-3 text-right text-xs text-[#8B949E] md:table-cell">
-                          {entry.matchesPlayed}
+                          {String((entry as unknown as Record<string, unknown>).totalPools ?? entry.matchesPlayed ?? 0)}
                         </td>
                         <td className="hidden px-4 py-3 text-right text-xs font-bold tabular-nums text-[#FDB913] md:table-cell">
-                          {entry.bestScore}
+                          {entry.bestScore ?? Number(entry.avgScore ?? 0).toFixed(0)}
                         </td>
                       </tr>
                     ))}
@@ -408,8 +413,8 @@ function UserPredictionRow({
   prediction: PredictionPoolStatus;
 }) {
   const correctCount =
-    prediction.userEntry?.answers.filter((a) => a.isCorrect === true).length ?? 0;
-  const totalQuestions = prediction.questions.length;
+    prediction.userEntry?.answers?.filter((a) => a.isCorrect === true).length ?? 0;
+  const totalQuestions = prediction.questions?.length ?? 0;
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3">
@@ -453,7 +458,7 @@ function UserPredictionRow({
           prediction.userEntry?.payout !== undefined &&
           prediction.userEntry.payout > 0 && (
             <p className="text-xs font-semibold text-[#3FB950] tabular-nums">
-              +{prediction.userEntry.payout.toLocaleString()} WIRE
+              +{Number(prediction.userEntry.payout).toLocaleString()} WIRE
             </p>
           )}
         {prediction.userEntry?.claimed && (

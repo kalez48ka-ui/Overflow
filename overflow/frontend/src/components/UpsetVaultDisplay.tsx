@@ -63,7 +63,7 @@ export function UpsetVaultDisplay({
     return (
       <div className="flex items-center gap-3 rounded-xl border border-[#21262D] bg-[#161B22] px-4 py-2.5">
         <div>
-          <p className="text-[10px] text-[#484F58]">Vault</p>
+          <p className="text-[10px] text-[#8B949E]">Vault</p>
           <p className="text-sm font-bold font-mono tabular-nums text-[#E6EDF3]">{formatCurrency(balance)}</p>
         </div>
         <div className="ml-auto text-right">
@@ -85,17 +85,17 @@ export function UpsetVaultDisplay({
           <span className="text-2xl font-black font-mono tabular-nums text-[#E6EDF3]">
             <AnimatedNumber value={balance} />
           </span>
-          <span className="text-xs text-[#484F58]">WIRE</span>
+          <span className="text-xs text-[#8B949E]">WIRE</span>
         </div>
 
         <div className="flex items-center justify-between text-xs">
           <div>
-            <span className="text-[#484F58]">Next </span>
+            <span className="text-[#8B949E]">Next </span>
             <span className="font-mono tabular-nums text-[#E6EDF3]">
               {countdown > 0 ? formatCountdown(countdown) : "LIVE"}
             </span>
           </div>
-          <span className="text-[#484F58]">+2% of fees</span>
+          <span className="text-[#8B949E]">+2% of fees</span>
         </div>
       </div>
     </div>

@@ -20,6 +20,8 @@ import type { MatchInfo } from "@/lib/api";
 import type { MatchData, BattingTeamData } from "@/types";
 import { cn, formatPrice, formatPercent, formatCurrency } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
 import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -95,7 +97,7 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
 
       <div className="flex items-baseline gap-2 mb-3">
         <span className="text-4xl font-black font-mono tabular-nums" style={{ color: levelColor }}>
-          <CountUp value={score} duration={1.5} />
+          <NumberTicker value={score} decimals={0} duration={800} showFlash={true} showArrow={false} />
         </span>
         <span className="text-xs text-[#484F58]">/ 100</span>
       </div>
@@ -328,7 +330,8 @@ export default function MatchPage() {
   const [activeChart, setActiveChart] = useState<string>(LIVE_MATCH.team1.teamId);
   const [matchData, setMatchData] = useState<MatchData>(LIVE_MATCH);
   const [upcomingMatch, setUpcomingMatch] = useState<MatchInfo | null>(null);
-  const [hasLiveMatch, setHasLiveMatch] = useState(true);
+  const [lastCompleted, setLastCompleted] = useState<MatchInfo | null>(null);
+  const [hasLiveMatch, setHasLiveMatch] = useState(false);
   const [loading, setLoading] = useState(true);
   const socketRef = useRef<Socket | null>(null);
 
@@ -345,7 +348,18 @@ export default function MatchPage() {
       if (liveMatches && liveMatches.length > 0) {
         setHasLiveMatch(true);
         const live = liveMatches[0];
-        setMatchData((prev) => mapApiMatchToMatchData(live, prev));
+        setMatchData((prev) => {
+          const next = mapApiMatchToMatchData(live, prev);
+          // Skip update if scores haven't changed (prevents flicker)
+          if (prev.team1.runs === next.team1.runs &&
+              prev.team1.wickets === next.team1.wickets &&
+              prev.team2.runs === next.team2.runs &&
+              prev.team2.wickets === next.team2.wickets &&
+              prev.status === next.status) {
+            return prev;
+          }
+          return next;
+        });
         // Default chart to team1 of the live match
         const t1 = live.team1Id || LIVE_MATCH.team1.teamId;
         setActiveChart((prev) => {
@@ -365,6 +379,14 @@ export default function MatchPage() {
           }
         } catch {
           // Upcoming fetch failed — non-critical
+        }
+        try {
+          const completed = await api.matches.getCompleted();
+          if (completed && completed.length > 0) {
+            setLastCompleted(completed[0]);
+          }
+        } catch {
+          // Completed fetch failed — non-critical
         }
         return false;
       }
@@ -500,10 +522,10 @@ export default function MatchPage() {
               </span>
             )}
             <span className="text-sm font-semibold text-[#E6EDF3]">
-              {matchData.matchType}
+              {hasLiveMatch ? matchData.matchType : upcomingMatch ? "Next Match" : "PSL 2026"}
             </span>
             <span className="hidden sm:block text-xs text-[#8B949E]">
-              {matchData.venue}
+              {hasLiveMatch ? matchData.venue : upcomingMatch?.venue ?? "Pakistan Super League"}
             </span>
           </div>
         </div>
@@ -518,6 +540,89 @@ export default function MatchPage() {
       ) : !hasLiveMatch ? (
         /* No live match — show upcoming match info and trading UI */
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+          {/* Last completed match result */}
+          {lastCompleted && (() => {
+            const t1 = PSL_TEAMS.find((t) => t.id === lastCompleted.team1Id);
+            const t2 = PSL_TEAMS.find((t) => t.id === lastCompleted.team2Id);
+            const t1Color = lastCompleted.team1Color ?? t1?.color ?? "#58A6FF";
+            const t2Color = lastCompleted.team2Color ?? t2?.color ?? "#58A6FF";
+            const isTeam1Winner = lastCompleted.winnerId === lastCompleted.team1Id;
+            const isTeam2Winner = lastCompleted.winnerId === lastCompleted.team2Id;
+            const endDate = lastCompleted.endTime
+              ? new Date(lastCompleted.endTime)
+              : new Date(lastCompleted.startTime);
+
+            return (
+              <div className="mb-4 rounded-xl border border-[#21262D] bg-[#161B22] p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#484F58]">
+                    Last Result
+                  </span>
+                  {lastCompleted.cricApiName && (
+                    <span className="text-[10px] text-[#484F58] truncate max-w-[200px]">
+                      {lastCompleted.cricApiName}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-4">
+                  {/* Team 1 */}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <TeamLogo teamId={lastCompleted.team1Id} color={t1Color} size={32} />
+                    <div className="min-w-0">
+                      <p className={cn(
+                        "text-sm font-bold truncate",
+                        isTeam1Winner ? "text-[#3FB950]" : "text-[#E6EDF3]"
+                      )}>
+                        {lastCompleted.team1Name}
+                      </p>
+                      {lastCompleted.score1 && (
+                        <p className="text-lg font-bold font-mono tabular-nums text-[#E6EDF3]">
+                          {lastCompleted.score1}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* VS divider */}
+                  <span className="flex-shrink-0 text-xs font-bold text-[#484F58]">vs</span>
+
+                  {/* Team 2 */}
+                  <div className="flex items-center gap-2.5 min-w-0 flex-row-reverse text-right">
+                    <TeamLogo teamId={lastCompleted.team2Id} color={t2Color} size={32} />
+                    <div className="min-w-0">
+                      <p className={cn(
+                        "text-sm font-bold truncate",
+                        isTeam2Winner ? "text-[#3FB950]" : "text-[#E6EDF3]"
+                      )}>
+                        {lastCompleted.team2Name}
+                      </p>
+                      {lastCompleted.score2 && (
+                        <p className="text-lg font-bold font-mono tabular-nums text-[#E6EDF3]">
+                          {lastCompleted.score2}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Venue + Date */}
+                <div className="mt-3 flex items-center justify-between text-xs text-[#8B949E]">
+                  {lastCompleted.venue && (
+                    <span className="truncate max-w-[60%]">{lastCompleted.venue}</span>
+                  )}
+                  <span className="flex-shrink-0">
+                    {endDate.toLocaleDateString(undefined, {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="mb-6 rounded-xl border border-[#21262D] bg-[#161B22] p-4">
             <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#484F58]">
               No live match
@@ -547,10 +652,14 @@ export default function MatchPage() {
             )}
           </div>
 
-          {/* Still render the full trading UI with mock data so users can explore */}
+          {/* Trading UI — scorecard hidden when no live data */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
             <div className="space-y-4">
-              <LiveScorecard match={matchData} />
+              {lastCompleted && (
+                <div className="rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-2 text-xs text-[#484F58]">
+                  Scorecard shows the last completed match above. Live scorecard will appear when a match is in progress.
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2 mb-2 px-1">
                   <div className="ml-auto flex items-center gap-1">
@@ -604,7 +713,15 @@ export default function MatchPage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
             {/* Left column */}
             <div className="space-y-6">
-              <LiveScorecard match={matchData} />
+              <AnimatedGradientBorder
+                active={hasLiveMatch}
+                gradientColors={["#21262D", "#E4002B", "#21262D", "#F85149", "#21262D"]}
+                duration={3}
+                borderWidth={1}
+                containerClassName="rounded-xl"
+              >
+                <LiveScorecard match={matchData} />
+              </AnimatedGradientBorder>
 
               {/* Price chart with team switcher */}
               <div>

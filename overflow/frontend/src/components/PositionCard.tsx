@@ -81,7 +81,7 @@ export function PositionCard({ position, index = 0, onTrade }: PositionCardProps
                 isProfit ? "text-[#3FB950]" : "text-[#F85149]"
               )}
             >
-              {isProfit ? "+" : ""}{formatPercent(position.pnlPercent)}
+              {formatPercent(position.pnlPercent)}
             </span>
             <p
               className={cn(
@@ -95,7 +95,7 @@ export function PositionCard({ position, index = 0, onTrade }: PositionCardProps
           <button
             onClick={handleShare}
             title="Share position"
-            className="flex h-7 w-7 items-center justify-center rounded border border-[#21262D] text-[#484F58] hover:text-[#8B949E] transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded border border-[#21262D] text-[#484F58] hover:text-[#8B949E] transition-colors"
           >
             <Share2 className="h-3 w-3" />
           </button>

@@ -18,6 +18,8 @@ import {
   MOCK_FAN_WAR_LEADERBOARD,
 } from "@/lib/mockData";
 import { formatNumber, shortenAddress } from "@/lib/utils";
+import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
+import { NumberTicker } from "@/components/ui/number-ticker";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -28,11 +30,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 export default function FanWarsPage() {
   const { address, isConnected } = useAccount();
 
-  const [fanWars, setFanWars] = useState<FanWarStatus[]>(
-    MOCK_FAN_WARS as FanWarStatus[],
-  );
+  const [fanWars, setFanWars] = useState<FanWarStatus[]>([]);
   const [userLocks, setUserLocks] = useState<FanWarLock[]>([]);
-  const [leaderboard, setLeaderboard] = useState(MOCK_FAN_WAR_LEADERBOARD);
+  const [leaderboard, setLeaderboard] = useState<typeof MOCK_FAN_WAR_LEADERBOARD>([]);
   const [loading, setLoading] = useState(true);
 
   // Derived data
@@ -50,13 +50,13 @@ export default function FanWarsPage() {
       fanWarsApi.getLeaderboard(),
     ]);
 
-    if (results[0].status === "fulfilled" && results[0].value?.length > 0) {
+    if (results[0].status === "fulfilled" && results[0].value) {
       setFanWars(results[0].value);
     }
     if (results[1].status === "fulfilled" && results[1].value) {
       setUserLocks(results[1].value);
     }
-    if (results[2].status === "fulfilled" && results[2].value?.length > 0) {
+    if (results[2].status === "fulfilled" && results[2].value) {
       setLeaderboard(results[2].value);
     }
     setLoading(false);
@@ -125,7 +125,7 @@ export default function FanWarsPage() {
                 Total Boost Pool
               </p>
               <p className="text-2xl font-black tabular-nums text-[#FDB913]">
-                <CountUp value={totalBoostPool} duration={1} /> WIRE
+                <NumberTicker value={totalBoostPool} decimals={0} duration={800} showArrow={false} /> WIRE
               </p>
             </div>
             <div className="h-8 w-px bg-[#21262D]" />
@@ -174,11 +174,25 @@ export default function FanWarsPage() {
                 </div>
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   {activeWars.map((war) => (
-                    <FanWarCard
+                    <AnimatedGradientBorder
                       key={war.id}
-                      war={war}
-                      onLockSuccess={fetchData}
-                    />
+                      active={war.status === "OPEN" || war.status === "LOCKED"}
+                      gradientColors={[
+                        "#21262D",
+                        war.homeTeamColor || "#E4002B",
+                        "#21262D",
+                        war.awayTeamColor || "#58A6FF",
+                        "#21262D",
+                      ]}
+                      duration={5}
+                      borderWidth={1}
+                      containerClassName="rounded-xl"
+                    >
+                      <FanWarCard
+                        war={war}
+                        onLockSuccess={fetchData}
+                      />
+                    </AnimatedGradientBorder>
                   ))}
                 </div>
               </section>

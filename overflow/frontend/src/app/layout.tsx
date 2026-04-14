@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
 import { Navbar } from "@/components/Navbar";
@@ -8,9 +8,15 @@ import { ToastProvider } from "@/components/ToastProvider";
 import { AppShell } from "@/components/AppShell";
 import { CheckCircle2 } from "lucide-react";
 
-const inter = Inter({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-space",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -108,7 +114,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -117,6 +123,12 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning className="min-h-screen bg-[#0D1117] text-[#E6EDF3] antialiased">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[10000] focus:top-2 focus:left-2 focus:rounded-md focus:bg-[#161B22] focus:px-4 focus:py-2 focus:text-sm focus:text-[#E6EDF3] focus:ring-2 focus:ring-[#58A6FF]"
+        >
+          Skip to content
+        </a>
         <WalletProvider>
           <ToastProvider />
           <AppShell>
@@ -131,7 +143,7 @@ export default function RootLayout({
             >
               <Navbar />
             </ErrorBoundary>
-            <main>
+            <main id="main-content">
               <ErrorBoundary>{children}</ErrorBoundary>
             </main>
             <Footer />

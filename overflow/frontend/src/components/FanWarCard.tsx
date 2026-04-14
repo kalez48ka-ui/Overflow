@@ -349,7 +349,7 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
               exit={{ opacity: 0, height: 0 }}
               className="border-t border-[#21262D] px-4 py-4"
             >
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Home side lock */}
                 <LockSide
                   teamId={war.homeTeamId}
@@ -632,6 +632,7 @@ function LockSide({
           onChange={(e) => onAmountChange(e.target.value)}
           placeholder="0"
           min={0}
+          aria-label={`Lock amount for ${teamSymbol}`}
           className="w-full rounded-md border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] placeholder-[#8B949E] outline-none transition-all focus:border-[#58A6FF] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           disabled={disabled}
         />
@@ -672,26 +673,43 @@ function LockSide({
       )}
 
       {/* Lock button */}
-      <MagneticButton
-        glowColor={teamColor}
-        className="w-full rounded-lg"
-        onClick={disabled || numAmount <= 0 || !isConnected ? undefined : onLock}
-      >
-        <span
-          className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white transition-opacity"
-          style={{
-            backgroundColor: teamColor,
-            opacity: disabled || numAmount <= 0 || !isConnected ? 0.4 : 1,
-          }}
+      {disabled || numAmount <= 0 || !isConnected ? (
+        <button
+          disabled
+          className="w-full rounded-lg"
+          aria-disabled="true"
         >
-          {loading ? (
-            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          ) : (
-            <Lock className="h-3 w-3" />
-          )}
-          {isConnected ? "LOCK TOKENS" : "Connect Wallet"}
-        </span>
-      </MagneticButton>
+          <span
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white opacity-40"
+            style={{ backgroundColor: teamColor }}
+          >
+            {loading ? (
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <Lock className="h-3 w-3" />
+            )}
+            {isConnected ? "LOCK TOKENS" : "Connect Wallet"}
+          </span>
+        </button>
+      ) : (
+        <MagneticButton
+          glowColor={teamColor}
+          className="w-full rounded-lg"
+          onClick={onLock}
+        >
+          <span
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-white"
+            style={{ backgroundColor: teamColor }}
+          >
+            {loading ? (
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <Lock className="h-3 w-3" />
+            )}
+            LOCK TOKENS
+          </span>
+        </MagneticButton>
+      )}
     </div>
   );
 }

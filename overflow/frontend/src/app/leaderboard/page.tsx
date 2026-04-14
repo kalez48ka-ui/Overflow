@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
+import { useAccount } from "wagmi";
 import { api } from "@/lib/api";
 import type { LeaderboardEntry } from "@/lib/api";
 import { cn, formatCurrency, shortenAddress } from "@/lib/utils";
@@ -53,7 +54,7 @@ function WalletCell({ wallet }: { wallet: string }) {
       </span>
       <button
         onClick={handleCopy}
-        className="rounded p-0.5 text-[#484F58] hover:text-[#E6EDF3] transition-colors"
+        className="rounded p-2 text-[#484F58] hover:text-[#E6EDF3] transition-colors"
         aria-label="Copy wallet address"
       >
         {copied ? (
@@ -79,6 +80,7 @@ function SkeletonRow() {
 }
 
 export default function LeaderboardPage() {
+  const { address } = useAccount();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,6 +123,8 @@ export default function LeaderboardPage() {
       className="min-h-screen bg-[#0D1117]"
     >
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        <h1 className="text-2xl font-black text-[#E6EDF3] mb-4">Leaderboard</h1>
+
         {/* Sort tabs — text with underline */}
         <div className="mb-6 flex items-center gap-6 border-b border-[#21262D]">
           {SORT_TABS.map(({ key, label }) => (
@@ -154,8 +158,8 @@ export default function LeaderboardPage() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="overflow-hidden rounded-xl border border-[#21262D] bg-[#161B22]"
         >
+        <div className="rounded-lg border border-[#21262D] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -220,13 +224,15 @@ export default function LeaderboardPage() {
                 ) : (
                   entries.map((entry, idx) => {
                     const dotColor = RANK_DOT_COLORS[entry.rank];
+                    const isCurrentUser = address ? entry.wallet.toLowerCase() === address.toLowerCase() : false;
                     return (
                       <tr
                         key={entry.wallet}
                         className={cn(
                           "border-b border-[#21262D]/50 transition-colors hover:bg-[#21262D]/40",
                           idx % 2 === 1 && "bg-white/[0.01]",
-                          entry.rank <= 3 && "bg-white/[0.02]"
+                          entry.rank <= 3 && "bg-white/[0.02]",
+                          isCurrentUser && "ring-1 ring-[#58A6FF] bg-[#58A6FF]/5"
                         )}
                       >
                         <td className="px-4 py-3">
@@ -243,18 +249,25 @@ export default function LeaderboardPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <WalletCell wallet={entry.wallet} />
+                          <div className="flex items-center gap-1.5">
+                            <WalletCell wallet={entry.wallet} />
+                            {isCurrentUser && (
+                              <span className="rounded-full bg-[#58A6FF]/15 px-1.5 py-0.5 text-[10px] font-bold text-[#58A6FF]">
+                                You
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span
                             className={cn(
-                              "text-xs font-bold tabular-nums",
+                              "text-xs font-bold font-mono tabular-nums",
                               entry.totalPnl >= 0
                                 ? "text-[#3FB950]"
                                 : "text-[#F85149]"
                             )}
                           >
-                            {entry.totalPnl >= 0 ? "+" : "-"}${Math.abs(entry.totalPnl).toFixed(2)}
+                            {entry.totalPnl >= 0 ? "+" : ""}{formatCurrency(entry.totalPnl)}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -305,6 +318,7 @@ export default function LeaderboardPage() {
               </tbody>
             </table>
           </div>
+        </div>
         </motion.div>
         </AnimatePresence>
       </div>

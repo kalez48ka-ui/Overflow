@@ -29,6 +29,9 @@ import type { VaultState } from "@/lib/api";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import Link from "next/link";
 import { Spotlight } from "@/components/ui/spotlight";
+import { BackgroundBeams } from "@/components/ui/background-beams";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { RevealText } from "@/components/effects";
 
 function FeaturePill({
@@ -50,6 +53,8 @@ export default function LandingPage() {
   const [teams, setTeams] = useState<PSLTeam[]>(PSL_TEAMS);
   const [loading, setLoading] = useState(true);
   const [vaultState, setVaultState] = useState<VaultState | null>(null);
+  const [hasLiveMatch, setHasLiveMatch] = useState(false);
+  const [liveMatchLabel, setLiveMatchLabel] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"rank" | "price" | "change24h" | "volume" | "marketCap">("rank");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -159,6 +164,18 @@ export default function LandingPage() {
       }
       // API failed for vault — StatsBar will use GLOBAL_STATS defaults
 
+      // Check for live matches to show in the hero ticker
+      try {
+        const liveMatches = await api.matches.getLive(controller.signal);
+        if (!cancelled && liveMatches && liveMatches.length > 0) {
+          setHasLiveMatch(true);
+          const m = liveMatches[0];
+          setLiveMatchLabel(`${m.team1Name} vs ${m.team2Name}`);
+        }
+      } catch {
+        // Non-critical — ticker will hide the live match label
+      }
+
       setLoading(false);
     })();
 
@@ -184,6 +201,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_40%,#0D1117)]" />
         </div>
 
+        <BackgroundBeams className="z-0" beamCount={8} />
         <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
 
         <motion.div
@@ -214,11 +232,13 @@ export default function LandingPage() {
           >
             <RevealText
               lines={["From Betting", "to Building Wealth."]}
-              className="mx-auto max-w-4xl text-3xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
+              className="mx-auto max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
             />
             <p className="mx-auto mt-5 max-w-xl text-base text-[#8B949E] sm:text-lg">
-              Own PSL team tokens. Prices move with every ball.
-              No gambling — real assets, real exits, real rewards.
+              <TextGenerateEffect
+                text="Own PSL team tokens. Prices move with every ball. No gambling — real assets, real exits, real rewards."
+                staggerDelay={0.04}
+              />
             </p>
           </motion.div>
 
@@ -232,12 +252,14 @@ export default function LandingPage() {
             <div className="rounded-xl border border-[#E4002B]/40 bg-[#E4002B]/10 px-5 py-3 text-sm font-bold text-[#E6EDF3] transition-all duration-200 ease-out hover:bg-[#E4002B]/20 hover:border-[#E4002B]/60">
               <SafeConnectButton label="Start Trading" showBalance={false} />
             </div>
-            <Link
-              href="/match"
-              className="hover-lift flex items-center gap-2 rounded-xl border border-[#21262D] px-5 py-3 text-sm font-semibold text-[#E6EDF3] hover:border-[#3FB950]/50 hover:bg-[#3FB950]/5 transition-all duration-200 ease-out"
-            >
-              <Activity className="h-4 w-4 text-[#3FB950]" />
-              Watch Live Match
+            <Link href="/match">
+              <ShimmerButton
+                className="bg-[#161B22] hover:bg-[#21262D] border border-[#21262D] hover:border-[#3FB950]/50"
+                shimmerColor="rgba(63, 185, 80, 0.1)"
+              >
+                <Activity className="h-4 w-4 text-[#3FB950]" />
+                Watch Live Match
+              </ShimmerButton>
             </Link>
           </motion.div>
 
@@ -249,15 +271,19 @@ export default function LandingPage() {
             className="mt-8 flex justify-center"
           >
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#21262D]/60 bg-[#161B22]/60 px-5 py-2 text-xs backdrop-blur-md">
-              <span className="flex items-center gap-1.5 text-[#F85149] font-bold">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F85149] opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#F85149]" />
-                </span>
-                LIVE
-              </span>
-              <span className="text-[#8B949E]">PZ vs MS</span>
-              <span className="text-[#484F58]">|</span>
+              {hasLiveMatch && liveMatchLabel && (
+                <>
+                  <span className="flex items-center gap-1.5 text-[#F85149] font-bold">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#F85149] opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#F85149]" />
+                    </span>
+                    LIVE
+                  </span>
+                  <span className="text-[#8B949E]">{liveMatchLabel}</span>
+                  <span className="text-[#484F58]">|</span>
+                </>
+              )}
               <span className="text-[#E6EDF3] font-semibold">
                 <CountUp
                   value={vaultBalance}
@@ -402,63 +428,108 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="relative bg-[#161B22]/30">
+      <section className="relative overflow-hidden">
         <div className="border-t border-[#21262D]" />
         <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-          <div className="mb-12 text-center">
-            <h2 className="text-xl font-bold text-[#E6EDF3]">
+          <motion.div
+            className="mb-16 text-center"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <h2 className="text-2xl font-black text-[#E6EDF3] sm:text-3xl">
               How It Works
             </h2>
-            <p className="mt-2 text-sm text-[#8B949E]">
-              Wallet to payout in four steps
+            <p className="mt-3 text-sm text-[#8B949E]">
+              From wallet to payout in under a minute
             </p>
-          </div>
+          </motion.div>
 
-          <StaggerReveal
-            className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start sm:gap-0"
-            staggerDelay={0.1}
-            yOffset={24}
-          >
-            {[
-              {
-                title: "Connect",
-                desc: "Link your Web3 wallet. Takes 10 seconds.",
-                icon: Zap,
-              },
-              {
-                title: "Pick a Side",
-                desc: "Buy team tokens. Prices track real match outcomes.",
-                icon: Trophy,
-              },
-              {
-                title: "Trade Live",
-                desc: "React to wickets, sixes, collapses in real time.",
-                icon: Activity,
-              },
-              {
-                title: "Collect",
-                desc: "Upset Vault pays out when underdogs win.",
-                icon: Flame,
-              },
-            ].map(({ title, desc, icon: StepIcon }, idx) => (
-              <div key={title} className="flex flex-1 items-start gap-0 sm:flex-col sm:items-center">
-                <div className="flex flex-1 flex-col items-center text-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-[#21262D] bg-[#161B22]">
-                    <StepIcon className="h-4 w-4 text-[#8B949E]" />
+          {/* Steps — vertical timeline on mobile, horizontal on desktop */}
+          <div className="relative">
+            {/* Horizontal connector — desktop */}
+            <div className="pointer-events-none absolute top-[52px] left-[calc(12.5%+24px)] right-[calc(12.5%+24px)] hidden lg:block">
+              <motion.div
+                className="h-px w-full bg-[#21262D]"
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
+                style={{ transformOrigin: "left" }}
+              />
+            </div>
+
+            {/* Vertical connector — mobile */}
+            <div className="pointer-events-none absolute top-[52px] bottom-[52px] left-6 w-px lg:hidden">
+              <motion.div
+                className="h-full w-full bg-[#21262D]"
+                initial={{ scaleY: 0 }}
+                whileInView={{ scaleY: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, delay: 0.3, ease: "easeOut" }}
+                style={{ transformOrigin: "top" }}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-0 lg:grid-cols-4">
+              {[
+                {
+                  step: "01",
+                  title: "Connect",
+                  desc: "Link your Web3 wallet to WireFluid. No signup, no KYC.",
+                  icon: Zap,
+                },
+                {
+                  step: "02",
+                  title: "Pick a Side",
+                  desc: "Buy team tokens. Prices track real match performance via bonding curves.",
+                  icon: Trophy,
+                },
+                {
+                  step: "03",
+                  title: "Trade Live",
+                  desc: "React to wickets, sixes, collapses in real time. AI signals guide your moves.",
+                  icon: Activity,
+                },
+                {
+                  step: "04",
+                  title: "Collect",
+                  desc: "Earn from the Upset Vault, Predict & Earn, and season rewards.",
+                  icon: Flame,
+                },
+              ].map(({ step, title, desc, icon: StepIcon }, idx) => (
+                <motion.div
+                  key={title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: idx * 0.15 }}
+                  className="group relative flex items-start gap-5 py-4 lg:flex-col lg:items-center lg:text-center lg:px-4 lg:py-0"
+                >
+                  {/* Step dot + number */}
+                  <div className="relative z-10 flex flex-col items-center gap-2">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#21262D] bg-[#0D1117] transition-all group-hover:border-[#E6EDF3]/20 group-hover:shadow-[0_0_20px_rgba(255,255,255,0.04)]">
+                      <StepIcon className="h-5 w-5 text-[#E6EDF3] transition-transform group-hover:scale-110" />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-[#484F58]">
+                      {step}
+                    </span>
                   </div>
-                  <h3 className="mb-1 text-sm font-semibold text-[#E6EDF3]">
-                    {title}
-                  </h3>
-                  <p className="max-w-[180px] text-xs leading-relaxed text-[#8B949E]">{desc}</p>
-                </div>
-                {idx < 3 && (
-                  <div className="hidden sm:flex items-center justify-center px-4 pt-4">
-                    <ArrowRight className="h-4 w-4 text-[#484F58]" />
+
+                  {/* Content */}
+                  <div className="pt-1 lg:pt-0 lg:mt-2">
+                    <h3 className="text-sm font-bold text-[#E6EDF3] mb-1">
+                      {title}
+                    </h3>
+                    <p className="text-xs leading-relaxed text-[#8B949E] max-w-[220px] lg:mx-auto">
+                      {desc}
+                    </p>
                   </div>
-                )}
-              </div>
-            ))}
-          </StaggerReveal>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -534,8 +605,8 @@ export default function LandingPage() {
                 yOffset={20}
               >
                 {[
-                  { label: "Paid Out", raw: 249, prefix: "$", suffix: "K" },
-                  { label: "Upsets", raw: 18, prefix: "", suffix: "" },
+                  { label: "All-time Paid Out", raw: 249, prefix: "$", suffix: "K" },
+                  { label: "All-time Upsets", raw: 18, prefix: "", suffix: "" },
                   { label: "Avg Mult.", raw: 2.7, prefix: "", suffix: "x" },
                 ].map(({ label, raw, prefix, suffix }) => (
                   <div key={label} className="rounded-lg bg-[#0D1117]/60 px-3 py-3 border border-[#21262D]">

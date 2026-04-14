@@ -5,25 +5,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price: number, decimals: number = 4): string {
-  return price.toFixed(decimals);
+export function formatPrice(price: number | string, decimals: number = 4): string {
+  return Number(price).toFixed(decimals);
 }
 
-export function formatCurrency(amount: number): string {
-  if (amount >= 1_000_000) return `$${(amount / 1_000_000).toFixed(2)}M`;
-  if (amount >= 1_000) return `$${(amount / 1_000).toFixed(1)}K`;
-  return `$${amount.toFixed(2)}`;
+export function formatCurrency(amount: number | string): string {
+  const n = Number(amount);
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+  return `$${n.toFixed(2)}`;
 }
 
-export function formatNumber(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return n.toLocaleString();
+export function formatNumber(n: number | string): string {
+  const v = Number(n);
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(2)}M`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}K`;
+  return v.toLocaleString();
 }
 
-export function formatPercent(n: number, showSign = true): string {
-  const sign = showSign && n > 0 ? "+" : "";
-  return `${sign}${n.toFixed(2)}%`;
+export function formatPercent(n: number | string, showSign = true): string {
+  const v = Number(n);
+  const sign = showSign && v > 0 ? "+" : "";
+  return `${sign}${v.toFixed(2)}%`;
 }
 
 export function formatCountdown(ms: number): string {

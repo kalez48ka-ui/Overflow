@@ -111,16 +111,16 @@ export class ErrorBoundary extends React.Component<
           {/* Reset button */}
           <button
             onClick={this.handleReset}
-            className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors"
+            className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#3FB950]/50 focus-visible:outline-none"
             style={{
-              backgroundColor: "#238636",
+              backgroundColor: "#3FB950",
               color: "#FFFFFF",
             }}
             onMouseEnter={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = "#2EA043";
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#2EA043";
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLButtonElement).style.backgroundColor = "#238636";
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#3FB950";
             }}
           >
             Try Again

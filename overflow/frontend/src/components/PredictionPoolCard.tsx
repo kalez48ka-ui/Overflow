@@ -156,6 +156,7 @@ interface PredictionPoolCardProps {
 
 export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardProps) {
   const { address, isConnected } = useAccount();
+  const questions = pool.questions ?? [];
   const remaining = useCountdown(pool.deadline);
   const isExpired = remaining <= 0;
   const isOpen = pool.status === "OPEN" && !isExpired;
@@ -175,15 +176,15 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
   }, [pool.userEntry]);
 
   const hasSubmitted = localUserEntry !== null;
-  const maxPoints = pool.questions.reduce((sum, q) => sum + q.points, 0);
+  const maxPoints = questions.reduce((sum, q) => sum + q.points, 0);
   const selectedCount = Object.keys(selectedAnswers).length;
-  const allPreMatchAnswered = pool.questions.filter((q) => !q.isLive).every(
+  const allPreMatchAnswered = questions.filter((q) => !q.isLive).every(
     (q) => selectedAnswers[q.questionIndex] !== undefined,
   );
 
   // Calculate estimated points based on selections
   const estimatedPoints = Object.entries(selectedAnswers).reduce((sum, [idx]) => {
-    const q = pool.questions.find((q) => q.questionIndex === Number(idx));
+    const q = questions.find((q) => q.questionIndex === Number(idx));
     return sum + (q?.points || 0);
   }, 0);
 
@@ -362,11 +363,11 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
           <p className="mb-3 text-xs font-semibold text-[#E6EDF3]">
             {isSettled ? "Results" : "Questions"}{" "}
             <span className="text-[#8B949E] font-normal">
-              ({pool.questions.length} questions, {maxPoints} pts max)
+              ({questions.length} questions, {maxPoints} pts max)
             </span>
           </p>
           <div className="space-y-4">
-            {pool.questions.map((q) => (
+            {questions.map((q) => (
               <QuestionBlock
                 key={q.questionIndex}
                 question={q}

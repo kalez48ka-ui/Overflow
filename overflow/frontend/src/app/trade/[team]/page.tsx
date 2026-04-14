@@ -28,6 +28,7 @@ import {
   formatTimeAgo,
 } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
+import { NumberTicker } from "@/components/ui/number-ticker";
 
 interface PageProps {
   params: Promise<{ team: string }>;
@@ -270,6 +271,10 @@ export default function TradePage({ params }: PageProps) {
   const orderBook = ORDER_BOOKS[teamId];
   const isPositive = team.change24h >= 0;
 
+  // Compute real 24h high/low from chart data instead of fake multipliers
+  const high24h = chartData.length > 0 ? Math.max(...chartData.map(c => c.high)) : null;
+  const low24h = chartData.length > 0 ? Math.min(...chartData.map(c => c.low)) : null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -285,7 +290,7 @@ export default function TradePage({ params }: PageProps) {
               <div className="flex items-center gap-3 mb-1">
                 <Link
                   href="/"
-                  className="flex items-center gap-1 shrink-0 text-xs text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
+                  className="flex items-center gap-1 shrink-0 p-2 text-xs text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                 </Link>
@@ -295,7 +300,7 @@ export default function TradePage({ params }: PageProps) {
               </div>
               <div className="flex items-baseline gap-3 pl-[52px]">
                 <span className="text-4xl sm:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
-                  ${formatPrice(team.price)}
+                  $<NumberTicker value={team.price} decimals={4} duration={800} showArrow={false} />
                 </span>
                 <span
                   className={cn(
@@ -317,8 +322,8 @@ export default function TradePage({ params }: PageProps) {
           {/* Mobile: 2-column grid */}
           <div className="grid grid-cols-2 gap-2 py-2.5 text-xs font-mono sm:hidden">
             {[
-              { label: "High", value: <CountUp value={team.price * 1.08} prefix="$" decimals={4} duration={1} />, color: "#3FB950" },
-              { label: "Low", value: <CountUp value={team.price * 0.91} prefix="$" decimals={4} duration={1} />, color: "#F85149" },
+              { label: "High", value: high24h !== null ? <CountUp value={high24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#484F58]">--</span>, color: "#3FB950" },
+              { label: "Low", value: low24h !== null ? <CountUp value={low24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#484F58]">--</span>, color: "#F85149" },
               { label: "Volume", value: <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Mkt Cap", value: <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Buy Tax", value: <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />, color: "#3FB950" },
@@ -333,8 +338,8 @@ export default function TradePage({ params }: PageProps) {
           {/* Desktop: horizontal flex with dividers */}
           <div className="hidden sm:flex items-center divide-x divide-[#21262D] py-2.5 text-xs font-mono">
             {[
-              { label: "High", value: <CountUp value={team.price * 1.08} prefix="$" decimals={4} duration={1} />, color: "#3FB950" },
-              { label: "Low", value: <CountUp value={team.price * 0.91} prefix="$" decimals={4} duration={1} />, color: "#F85149" },
+              { label: "High", value: high24h !== null ? <CountUp value={high24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#484F58]">--</span>, color: "#3FB950" },
+              { label: "Low", value: low24h !== null ? <CountUp value={low24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#484F58]">--</span>, color: "#F85149" },
               { label: "Volume", value: <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Mkt Cap", value: <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Buy Tax", value: <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />, color: "#3FB950" },
@@ -371,7 +376,7 @@ export default function TradePage({ params }: PageProps) {
                       key={tf}
                       onClick={() => setTimeframe(tf)}
                       className={cn(
-                        "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+                        "rounded px-2.5 py-1 min-h-[44px] sm:min-h-0 text-xs font-medium transition-colors",
                         timeframe === tf
                           ? "bg-[#21262D] text-[#E6EDF3]"
                           : "text-[#484F58] hover:text-[#8B949E]"
@@ -404,6 +409,10 @@ export default function TradePage({ params }: PageProps) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Order book */}
               <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
+                <div className="mb-2 flex items-center">
+                  <span className="text-xs font-semibold text-[#E6EDF3]">Order Book</span>
+                  <span className="ml-2 text-[10px] text-[#484F58] border border-[#21262D] rounded px-1">Demo</span>
+                </div>
                 <div className="space-y-3">
                   <OrderBookTable title="Asks" entries={orderBook.asks} side="ask" />
                   <div className="py-1.5 text-center border-y border-[#21262D]">
@@ -418,6 +427,10 @@ export default function TradePage({ params }: PageProps) {
 
               {/* Recent trades */}
               <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
+                <div className="mb-2 flex items-center">
+                  <span className="text-xs font-semibold text-[#E6EDF3]">Recent Trades</span>
+                  <span className="ml-2 text-[10px] text-[#484F58] border border-[#21262D] rounded px-1">Demo</span>
+                </div>
                 <div className="space-y-0">
                   <div className="mb-2 grid grid-cols-3 text-[10px] text-[#484F58] uppercase tracking-wider">
                     <span>Price</span>

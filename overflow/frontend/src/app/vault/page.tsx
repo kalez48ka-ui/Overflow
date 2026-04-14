@@ -11,6 +11,9 @@ import { api } from "@/lib/api";
 import type { VaultData, UpsetEvent } from "@/types";
 import { formatCurrency, formatTimestamp } from "@/lib/utils";
 import Link from "next/link";
+import { BackgroundBeams } from "@/components/ui/background-beams";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
 
 function UpsetHistoryRow({
   event,
@@ -69,8 +72,8 @@ function MultiplierTable() {
             <tr key={row.score} className="bg-[#161B22] transition-colors hover:bg-white/[0.02]">
               <td className="px-3 py-2 text-[#8B949E]">{row.label}</td>
               <td className="px-3 py-2 font-mono tabular-nums text-[#E6EDF3]">{row.score}</td>
-              <td className="px-3 py-2 font-bold tabular-nums text-[#E4002B]">{row.multiplier}</td>
-              <td className="px-3 py-2 text-right tabular-nums text-[#E6EDF3]">{row.release}</td>
+              <td className="px-3 py-2 font-bold font-mono tabular-nums text-[#E4002B]">{row.multiplier}</td>
+              <td className="px-3 py-2 text-right font-mono tabular-nums text-[#E6EDF3]">{row.release}</td>
             </tr>
           ))}
         </tbody>
@@ -159,10 +162,12 @@ export default function VaultPage() {
         ) : (
           <>
             {/* Hero balance */}
-            <div className="mb-8 text-center">
-              <p className="mb-2 text-sm font-medium text-[#8B949E]">Upset Vault Balance</p>
-              <p className="text-5xl sm:text-6xl font-black tabular-nums text-[#E6EDF3]">
-                <CountUp value={currentBalance} prefix="$" decimals={2} duration={1.5} />
+            <div className="relative mb-8 text-center">
+              <BackgroundBeams className="z-0" beamCount={6} color="#E4002B" />
+              <h1 className="sr-only">Upset Vault</h1>
+              <p className="relative z-10 mb-2 text-sm font-medium text-[#8B949E]">Upset Vault Balance</p>
+              <p className="relative z-10 text-5xl sm:text-6xl font-black font-mono tabular-nums text-[#E6EDF3]">
+                $<NumberTicker value={currentBalance} decimals={2} duration={800} showArrow={false} showFlash={true} />
               </p>
               <div className="mt-4 flex items-center justify-center gap-6 text-xs text-[#8B949E]">
                 <span>
@@ -182,10 +187,18 @@ export default function VaultPage() {
             </div>
 
             {/* How it works — inline compact */}
-            <div className="mb-8 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3 text-xs text-[#8B949E] leading-relaxed">
-              <span className="font-medium text-[#E6EDF3]">How it works:</span>{" "}
-              Every trade contributes 2% of fees to the vault. When an underdog wins, the vault distributes funds to holders of the winning team token. Higher upset scores unlock bigger multipliers.
-            </div>
+            <AnimatedGradientBorder
+              active={true}
+              gradientColors={["#21262D", "#E4002B", "#21262D", "#484F58", "#21262D"]}
+              duration={6}
+              borderWidth={1}
+              containerClassName="mb-8 rounded-lg"
+            >
+              <div className="px-4 py-3 text-xs text-[#8B949E] leading-relaxed">
+                <span className="font-medium text-[#E6EDF3]">How it works:</span>{" "}
+                Every trade contributes 2% of fees to the vault. When an underdog wins, the vault distributes funds to holders of the winning team token. Higher upset scores unlock bigger multipliers.
+              </div>
+            </AnimatedGradientBorder>
 
             {/* Two column layout */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
@@ -195,9 +208,16 @@ export default function VaultPage() {
                   Upset History
                 </h2>
                 <div className="space-y-2">
-                  {upsetEvents.map((event) => (
-                    <UpsetHistoryRow key={event.id} event={event} />
-                  ))}
+                  {upsetEvents.length === 0 ? (
+                    <div className="rounded-lg border border-[#21262D] bg-[#161B22] py-10 text-center">
+                      <p className="text-sm text-[#8B949E]">No upsets recorded yet this season.</p>
+                      <p className="mt-1 text-xs text-[#484F58]">When an underdog wins, payouts will appear here.</p>
+                    </div>
+                  ) : (
+                    upsetEvents.map((event) => (
+                      <UpsetHistoryRow key={event.id} event={event} />
+                    ))
+                  )}
                 </div>
               </div>
 

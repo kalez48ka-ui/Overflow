@@ -837,7 +837,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="min-h-screen bg-[#0D1117] mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>

@@ -48,7 +48,7 @@ function StatItem({ label, icon: Icon, color, mono, isLive, children }: StatItem
           )}
         </p>
         <p
-          className={`truncate text-sm font-black tracking-tight text-[#E6EDF3] ${mono ? "font-mono" : ""} tabular-nums`}
+          className={`truncate text-sm tracking-tight text-[#E6EDF3] ${mono ? "font-bold font-mono" : "font-black"} tabular-nums`}
         >
           {children}
         </p>
@@ -96,13 +96,10 @@ export function StatsBar({
 
   return (
     <div
-      className="relative border-y border-[#21262D] bg-[#0D1117]/80 backdrop-blur-md"
+      className="border-y border-[#21262D] bg-[#0D1117]/80 backdrop-blur-md"
       role="region"
       aria-label="Platform statistics"
     >
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-[#21262D]" />
-
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-2 divide-x divide-[#21262D] md:grid-cols-4">
           <StatItem label="Total Volume" icon={BarChart2} color="#3FB950">
@@ -141,8 +138,6 @@ export function StatsBar({
         </div>
       </div>
 
-      {/* Bottom accent line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-[#21262D]" />
     </div>
   );
 }

@@ -131,8 +131,8 @@ function MatchRow({ match }: { match: MatchInfo }) {
           <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: team2Color }} />
         </div>
         {/* Score inline for completed */}
-        {(match.score1 || match.score2) && (
-          <span className="text-xs tabular-nums text-[#8B949E] shrink-0">
+        {(match.score1 != null || match.score2 != null) && (
+          <span className="text-xs font-mono tabular-nums text-[#8B949E] shrink-0">
             {match.score1 ?? "---"} vs {match.score2 ?? "---"}
           </span>
         )}
@@ -141,7 +141,7 @@ function MatchRow({ match }: { match: MatchInfo }) {
       {/* Right: date + venue */}
       <div className="flex items-center gap-3 text-xs text-[#8B949E] shrink-0 pl-7 sm:pl-0">
         {match.startTime && (
-          <span className="tabular-nums">
+          <span className="font-mono tabular-nums">
             {formatMatchDateShort(match.startTime)} {formatMatchTime(match.startTime)}
           </span>
         )}
@@ -203,11 +203,15 @@ export default function MatchHistoryPage() {
       className="min-h-screen bg-[#0D1117]"
     >
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        <h1 className="mb-6 text-2xl font-bold text-[#E6EDF3]">Match History</h1>
+
         {/* Tab bar — text tabs with underline */}
-        <div className="mb-6 flex items-center gap-6 border-b border-[#21262D]">
+        <div className="mb-6 flex items-center gap-6 border-b border-[#21262D]" role="tablist" aria-label="Match history filters">
           {TABS.map((tab) => (
             <button
               key={tab.key}
+              role="tab"
+              aria-selected={activeTab === tab.key}
               onClick={() => handleTabChange(tab.key)}
               className={cn(
                 "relative min-h-[44px] pb-3 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58A6FF]/50",

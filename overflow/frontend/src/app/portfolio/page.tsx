@@ -13,10 +13,12 @@ import {
   ArrowDownRight,
   Star,
   ExternalLink,
+  Wallet,
 } from "lucide-react";
 import { useAccount } from "wagmi";
 import { PositionCard } from "@/components/PositionCard";
 import { RewardsPanel } from "@/components/RewardsPanel";
+import { SafeConnectButton } from "@/components/WalletProvider";
 import { CountUp } from "@/components/motion";
 import {
   USER_POSITIONS,
@@ -36,6 +38,8 @@ import {
   shortenAddress,
 } from "@/lib/utils";
 import Link from "next/link";
+import { NumberTicker } from "@/components/ui/number-ticker";
+import { CardSpotlight } from "@/components/ui/card-spotlight";
 
 /** Map an API TradeRecord to the local Transaction shape used by the UI. */
 function tradeRecordToTransaction(tr: TradeRecord): Transaction {
@@ -262,13 +266,24 @@ export default function PortfolioPage() {
       transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
       className="min-h-screen bg-[#0D1117]"
     >
+      {!isConnected ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Wallet className="h-12 w-12 text-[#484F58] mb-4" />
+          <h2 className="text-lg font-bold text-[#E6EDF3] mb-2">Connect Your Wallet</h2>
+          <p className="text-sm text-[#8B949E] mb-6 text-center max-w-md">
+            Connect your wallet to view your portfolio, positions, and trading history.
+          </p>
+          <SafeConnectButton />
+        </div>
+      ) : (
+        <>
       {/* Header — portfolio value is the hero */}
       <div className="border-b border-[#21262D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <p className="text-[10px] text-[#484F58] uppercase tracking-wider mb-1">Total Value</p>
           <div className="flex items-baseline gap-4">
             <p className="text-4xl sm:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
-              <CountUp value={totalValue} prefix="$" decimals={2} duration={1.2} />
+              $<NumberTicker value={totalValue} decimals={2} duration={800} showArrow={false} />
             </p>
             <span
               className={cn(
@@ -330,7 +345,7 @@ export default function PortfolioPage() {
                       {activeTab === tab && (
                         <motion.div
                           layoutId="portfolio-tab"
-                          className="absolute bottom-0 left-0 right-6 h-0.5 bg-[#E4002B]"
+                          className="absolute bottom-0 left-0 right-6 h-0.5 bg-[#58A6FF]"
                         />
                       )}
                     </button>
@@ -348,14 +363,20 @@ export default function PortfolioPage() {
                     className="space-y-3"
                   >
                     {positions.map((position, i) => (
-                      <PositionCard
+                      <CardSpotlight
                         key={position.teamId}
-                        position={position}
-                        index={i}
-                        onTrade={(teamId) => {
-                          router.push(`/trade/${teamId.toLowerCase()}`);
-                        }}
-                      />
+                        className="rounded-xl"
+                        color={position.color.replace("#", "").match(/../g)?.map(h => parseInt(h, 16)).join(", ") || "255, 255, 255"}
+                        opacity={0.06}
+                      >
+                        <PositionCard
+                          position={position}
+                          index={i}
+                          onTrade={(teamId) => {
+                            router.push(`/trade/${teamId.toLowerCase()}`);
+                          }}
+                        />
+                      </CardSpotlight>
                     ))}
                     {positions.length === 0 && (
                       <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
@@ -456,6 +477,8 @@ export default function PortfolioPage() {
           </>
         )}
       </div>
+        </>
+      )}
     </motion.div>
   );
 }

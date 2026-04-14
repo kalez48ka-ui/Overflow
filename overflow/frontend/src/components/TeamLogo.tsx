@@ -3,6 +3,17 @@ import Image from "next/image";
 const TEAM_IDS = ["IU", "LQ", "MS", "KK", "PZ", "QG", "HK", "RW"] as const;
 type TeamId = (typeof TEAM_IDS)[number];
 
+const TEAM_NAMES: Record<string, string> = {
+  IU: "Islamabad United",
+  LQ: "Lahore Qalandars",
+  MS: "Multan Sultans",
+  KK: "Karachi Kings",
+  PZ: "Peshawar Zalmi",
+  QG: "Quetta Gladiators",
+  HK: "Hyderabad Kingsmen",
+  RW: "Rawalpindiz",
+};
+
 function isValidTeamId(id: string): id is TeamId {
   return TEAM_IDS.includes(id as TeamId);
 }
@@ -29,11 +40,12 @@ export function TeamLogo({ teamId, color, size = 40, className = "", glow = fals
         }}
       >
         <Image
-          src={`/teams/${cleanId}.svg`}
-          alt={cleanId}
+          src={`/teams/${cleanId}.png`}
+          alt={`${TEAM_NAMES[cleanId] || cleanId} logo`}
           width={size}
           height={size}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
+          unoptimized
         />
       </div>
     );
@@ -47,7 +59,7 @@ export function TeamLogo({ teamId, color, size = 40, className = "", glow = fals
         width: size,
         height: size,
         backgroundColor: color || "#58A6FF",
-        fontSize: size * 0.25,
+        fontSize: Math.max(size * 0.3, 10),
         ...(glow && color ? { boxShadow: `0 0 20px ${color}40, 0 0 40px ${color}20` } : {}),
       }}
     >

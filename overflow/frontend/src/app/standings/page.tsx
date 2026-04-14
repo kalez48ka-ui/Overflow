@@ -14,6 +14,7 @@ import { api, type MatchInfo } from "@/lib/api";
 import { cn, formatPrice } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
 import type { PSLTeam } from "@/types";
+import { CardSpotlight } from "@/components/ui/card-spotlight";
 
 type SortKey =
   | "ranking"
@@ -217,8 +218,11 @@ export default function StandingsPage() {
       className="min-h-screen bg-[#0D1117]"
     >
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <h1 className="text-2xl font-black text-[#E6EDF3] mb-4">Points Table</h1>
+
         {/* Season banner — compact single line */}
-        <div className="mb-6 flex flex-col gap-2 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardSpotlight className="mb-6 rounded-lg border border-[#21262D] bg-[#161B22]" color="228, 0, 43" opacity={0.05} radius={300}>
+        <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 text-sm">
             <span className="font-bold text-[#E6EDF3]">PSL 2026</span>
             <span className="text-[#484F58]">&middot;</span>
@@ -244,16 +248,20 @@ export default function StandingsPage() {
             <span className="text-xs tabular-nums text-[#8B949E]">{seasonProgress}%</span>
           </div>
         </div>
+        </CardSpotlight>
 
         {/* Table container */}
         <p className="mb-2 text-[10px] text-[#8B949E] sm:hidden">Swipe to see all columns</p>
         <div className="overflow-x-auto rounded-xl border border-[#21262D] bg-[#161B22]">
-          <table className="w-full min-w-[560px] text-sm">
+          <table className="w-full min-w-[560px] text-sm" aria-label="PSL 2026 Points Table">
             <thead>
               <tr className="border-b border-[#21262D]">
                 {COLUMNS.map((col) => (
                   <th
                     key={col.key}
+                    role="columnheader"
+                    tabIndex={0}
+                    aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
                     className={cn(
                       "group cursor-pointer select-none px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[#8B949E] transition-colors hover:text-[#E6EDF3] sticky top-0 bg-[#161B22] z-10",
                       col.align === "left" ? "text-left" : "text-right",
@@ -262,6 +270,7 @@ export default function StandingsPage() {
                       col.hideMobile && "hidden md:table-cell",
                     )}
                     onClick={() => handleSort(col.key)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSort(col.key); } }}
                   >
                     <span className="inline-flex items-center gap-1">
                       <span className="hidden sm:inline">{col.label}</span>
@@ -420,7 +429,7 @@ function TeamRow({
       <td className="px-4 py-3 text-center">
         <span
           className={cn(
-            "inline-flex h-6 w-6 items-center justify-center rounded text-xs font-bold tabular-nums",
+            "inline-flex h-6 w-6 items-center justify-center rounded text-xs font-bold font-mono tabular-nums",
             rankColor ? "font-black" : "text-[#8B949E]",
           )}
           style={rankColor ? { color: rankColor } : undefined}
@@ -446,24 +455,24 @@ function TeamRow({
       </td>
 
       {/* P */}
-      <td className="px-4 py-3 text-right tabular-nums text-[#E6EDF3]">
+      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#E6EDF3]">
         {played}
       </td>
 
       {/* W */}
-      <td className="px-4 py-3 text-right tabular-nums text-[#3FB950] font-medium">
+      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#3FB950] font-medium">
         {team.wins}
       </td>
 
       {/* L */}
-      <td className="px-4 py-3 text-right tabular-nums text-[#F85149] font-medium">
+      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#F85149] font-medium">
         {team.losses}
       </td>
 
       {/* NRR */}
       <td
         className={cn(
-          "hidden md:table-cell px-4 py-3 text-right tabular-nums font-medium",
+          "hidden md:table-cell px-4 py-3 text-right font-mono tabular-nums font-medium",
           team.nrr >= 0 ? "text-[#3FB950]" : "text-[#F85149]",
         )}
       >
@@ -483,7 +492,7 @@ function TeamRow({
               }}
             />
           </div>
-          <span className="tabular-nums text-[#E6EDF3] font-medium text-xs w-7 text-right">
+          <span className="font-mono tabular-nums text-[#E6EDF3] font-medium text-xs w-7 text-right">
             {team.performanceScore}
           </span>
         </div>
@@ -493,7 +502,7 @@ function TeamRow({
       <td className="px-4 py-3 text-right">
         <Link
           href={`/trade/${team.id.toLowerCase()}`}
-          className="tabular-nums font-semibold text-[#E6EDF3] hover:text-[#E4002B] transition-colors"
+          className="font-mono tabular-nums font-semibold text-[#E6EDF3] hover:text-[#E4002B] transition-colors"
         >
           ${formatPrice(team.price)}
         </Link>
@@ -502,7 +511,7 @@ function TeamRow({
       {/* 24h Change */}
       <td
         className={cn(
-          "px-4 py-3 text-right tabular-nums font-semibold",
+          "px-4 py-3 text-right font-mono tabular-nums font-semibold",
           isPositive ? "text-[#3FB950]" : "text-[#F85149]",
         )}
       >
@@ -511,7 +520,7 @@ function TeamRow({
       </td>
 
       {/* Sell Tax */}
-      <td className="px-4 py-3 text-right tabular-nums text-[#8B949E]">
+      <td className="px-4 py-3 text-right font-mono tabular-nums text-[#8B949E]">
         {team.sellTax}%
       </td>
     </tr>
