@@ -24,8 +24,10 @@ import { FanWarsService } from './modules/fanwars/fanwars.service';
 import { createFanWarsRouter } from './routes/fanwars';
 import { PredictionsService } from './modules/predictions/predictions.service';
 import { createPredictionsRouter } from './routes/predictions';
+import { ChainSyncService } from './modules/sync/chain-sync.service';
 
 const prisma = new PrismaClient();
+let chainSyncInstance: ChainSyncService | null = null;
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy for X-Forwarded-For (rate limiter + brute-force IP tracking)
@@ -243,6 +245,12 @@ async function bootstrap(): Promise<void> {
 
     cricketService.startPolling();
 
+    // Start on-chain event sync (non-blocking — retries internally if RPC is down)
+    chainSyncInstance = new ChainSyncService(prisma, priceService, vaultService, io);
+    chainSyncInstance.start().catch((err) => {
+      console.error('[ChainSync] Failed to start:', err);
+    });
+
     // Emit price updates every 10 seconds
     setInterval(() => {
       priceService.emitAllPrices().catch((err) => {
@@ -265,6 +273,7 @@ async function bootstrap(): Promise<void> {
 function gracefulShutdown(signal: string): void {
   console.log(`\n[Server] ${signal} received — shutting down gracefully...`);
   cricketService.stopPolling();
+  if (chainSyncInstance) chainSyncInstance.stop();
 
   // Close Socket.io connections first
   io.close();
