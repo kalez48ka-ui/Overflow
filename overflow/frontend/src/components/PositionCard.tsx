@@ -70,7 +70,7 @@ export const PositionCard = React.memo(function PositionCard({ position, index =
           <TeamLogo teamId={position.teamId} color={position.color} size={32} />
           <div>
             <span className="text-sm font-semibold text-[#E6EDF3]">{position.teamName}</span>
-            <span className="ml-2 text-xs text-[#768390]">{position.symbol}</span>
+            <span className="ml-2 text-xs text-[#8B949E]">{position.symbol}</span>
           </div>
         </div>
 
@@ -96,7 +96,7 @@ export const PositionCard = React.memo(function PositionCard({ position, index =
           <button
             onClick={handleShare}
             aria-label="Share position"
-            className="flex h-9 w-9 items-center justify-center rounded border border-[#21262D] text-[#768390] hover:text-[#9CA3AF] transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded border border-[#21262D] text-[#8B949E] hover:text-[#9CA3AF] transition-colors"
           >
             <Share2 className="h-3 w-3" />
           </button>
@@ -107,7 +107,7 @@ export const PositionCard = React.memo(function PositionCard({ position, index =
       <div className="mt-3 flex flex-wrap items-center justify-between gap-y-2 text-xs">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono tabular-nums">
           <span className="text-[#9CA3AF]">{position.amount.toLocaleString()} tokens</span>
-          <span className="text-[#768390]">avg ${formatPrice(position.avgBuyPrice)}</span>
+          <span className="text-[#8B949E]">avg ${formatPrice(position.avgBuyPrice)}</span>
           <span className="text-[#E6EDF3]">now ${formatPrice(position.currentPrice)}</span>
         </div>
         <div className="flex items-center gap-2">

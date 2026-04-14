@@ -8,7 +8,6 @@ import {
   Users,
   Trophy,
   Target,
-  Coins,
 } from "lucide-react";
 import { useAccount } from "wagmi";
 import { getSocket } from "@/lib/socket";
@@ -18,8 +17,6 @@ import { predictionsApi } from "@/lib/api";
 import type { PredictionPoolStatus, PredictionLeaderboardEntry } from "@/lib/api";
 // Mock data available at @/lib/mockData if API is down
 import { formatNumber, shortenAddress } from "@/lib/utils";
-import { ShimmerButton } from "@/components/ui/shimmer-button";
-import { NumberTicker } from "@/components/ui/number-ticker";
 import { GlitchPrice } from "@/components/effects/GlitchPrice";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
@@ -228,7 +225,7 @@ export default function PredictionsPage() {
             {/* Empty state */}
             {activePools.length === 0 && settledPools.length === 0 && (
               <div className="rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
-                <Brain className="mx-auto h-10 w-10 text-[#768390]" />
+                <Brain className="mx-auto h-10 w-10 text-[#8B949E]" />
                 <p className="mt-3 text-sm text-[#9CA3AF]">
                   No prediction pools available yet. Check back before the next match.
                 </p>
@@ -321,22 +318,22 @@ export default function PredictionsPage() {
                 <table className="w-full" aria-label="Prediction pools">
                   <thead>
                     <tr className="border-b border-[#21262D] bg-[#161B22]">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Rank
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Wallet
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF]">
+                      <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF]">
                         Avg Score
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] sm:table-cell">
+                      <th scope="col" className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] sm:table-cell">
                         Profit
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] md:table-cell">
+                      <th scope="col" className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] md:table-cell">
                         Matches
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] md:table-cell">
+                      <th scope="col" className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] md:table-cell">
                         Best
                       </th>
                     </tr>

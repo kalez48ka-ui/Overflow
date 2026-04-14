@@ -289,7 +289,7 @@ export default function LandingPage() {
                     LIVE
                   </span>
                   <span className="text-[#9CA3AF]">{liveMatchLabel}</span>
-                  <span className="text-[#768390]">|</span>
+                  <span className="text-[#8B949E]">|</span>
                 </>
               )}
               <span className="text-[#E6EDF3] font-semibold">
@@ -300,7 +300,7 @@ export default function LandingPage() {
                 />
                 {" "}in Upset Vault
               </span>
-              <span className="text-[#768390]">|</span>
+              <span className="text-[#8B949E]">|</span>
               <span className="text-[#9CA3AF]">
                 <span className="text-[#3FB950] font-semibold tabular-nums">
                   <CountUp
@@ -392,7 +392,7 @@ export default function LandingPage() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Sort teams by">
             {(
               [
                 { key: "rank", label: "Rank" },

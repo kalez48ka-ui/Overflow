@@ -139,7 +139,7 @@ function TransactionRow({
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-[10px] text-[#9CA3AF]">
           <span>{formatTimeAgo(tx.timestamp)}</span>
-          <span className="text-[#768390]">|</span>
+          <span className="text-[#8B949E]">|</span>
           <a
             href={`https://wirefluidscan.com/tx/${tx.txHash}`}
             target="_blank"
@@ -157,7 +157,7 @@ function TransactionRow({
         <p className="text-xs font-semibold font-mono tabular-nums text-[#E6EDF3]">
           {formatCurrency(tx.total)}
         </p>
-        <p className="text-[10px] font-mono tabular-nums text-[#768390]">
+        <p className="text-[10px] font-mono tabular-nums text-[#8B949E]">
           {tx.amount.toLocaleString()} @ ${formatPrice(tx.price)}
         </p>
       </div>
@@ -201,26 +201,31 @@ export default function PortfolioPage() {
     (async () => {
       try {
         const data = await api.portfolio.get(address, controller.signal);
-        if (!cancelled && data && data.positions && data.positions.length > 0) {
-          // Map API PortfolioPosition to local Position type
-          const mapped: Position[] = data.positions.map((p) => {
-            const mock = PSL_TEAMS.find(
-              (t) => t.symbol === p.teamSymbol || t.symbol === `$${p.teamSymbol}`
-            );
-            return {
-              teamId: p.teamSymbol.replace("$", ""),
-              teamName: p.teamName,
-              symbol: p.teamSymbol.startsWith("$") ? p.teamSymbol : `$${p.teamSymbol}`,
-              color: mock?.color || "#E4002B",
-              amount: p.amount,
-              avgBuyPrice: p.avgBuyPrice,
-              currentPrice: p.currentPrice,
-              pnlPercent: p.pnlPercent,
-              unrealizedPnl: p.pnl,
-              value: p.value,
-            };
-          });
-          setPositions(mapped);
+        if (!cancelled && data && data.positions) {
+          if (data.positions.length > 0) {
+            // Map API PortfolioPosition to local Position type
+            const mapped: Position[] = data.positions.map((p) => {
+              const mock = PSL_TEAMS.find(
+                (t) => t.symbol === p.teamSymbol || t.symbol === `$${p.teamSymbol}`
+              );
+              return {
+                teamId: p.teamSymbol.replace("$", ""),
+                teamName: p.teamName,
+                symbol: p.teamSymbol.startsWith("$") ? p.teamSymbol : `$${p.teamSymbol}`,
+                color: mock?.color || "#E4002B",
+                amount: p.amount,
+                avgBuyPrice: p.avgBuyPrice,
+                currentPrice: p.currentPrice,
+                pnlPercent: p.pnlPercent,
+                unrealizedPnl: p.pnl,
+                value: p.value,
+              };
+            });
+            setPositions(mapped);
+          } else {
+            // API returned empty — wallet has no positions
+            setPositions([]);
+          }
         }
       } catch {
         // API failed — keep mock data
@@ -284,7 +289,7 @@ export default function PortfolioPage() {
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       {!isConnected ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <Wallet className="h-12 w-12 text-[#768390] mb-4" />
+          <Wallet className="h-12 w-12 text-[#8B949E] mb-4" />
           <h2 className="text-lg font-bold text-[#E6EDF3] mb-2">Connect Your Wallet</h2>
           <p className="text-sm text-[#9CA3AF] mb-6 text-center max-w-md">
             Connect your wallet to view your portfolio, positions, and trading history.
@@ -296,7 +301,7 @@ export default function PortfolioPage() {
       {/* Header — portfolio value is the hero */}
       <div className="border-b border-[#21262D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-          <p className="text-[10px] text-[#768390] uppercase tracking-wider mb-1">Total Value</p>
+          <p className="text-[10px] text-[#8B949E] uppercase tracking-wider mb-1">Total Value</p>
           <div className="min-h-[80px] flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
             <p className="text-3xl sm:text-4xl md:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
               $<NumberTicker value={totalValue} decimals={2} duration={800} showArrow={false} />
@@ -328,17 +333,17 @@ export default function PortfolioPage() {
             <div className="mb-6 border-b border-[#21262D]">
               <div className="flex items-center divide-x divide-[#21262D] overflow-x-auto py-2.5 text-xs font-mono scrollbar-none">
                 <div className="shrink-0 pr-5">
-                  <span className="text-[#768390]">P&L </span>
+                  <span className="text-[#8B949E]">P&L </span>
                   <span className="font-semibold tabular-nums" style={{ color: totalPnl >= 0 ? "#3FB950" : "#F85149" }}>
                     {totalPnl >= 0 ? "+" : ""}{formatCurrency(totalPnl)}
                   </span>
                 </div>
                 <div className="shrink-0 px-5">
-                  <span className="text-[#768390]">Rewards </span>
+                  <span className="text-[#8B949E]">Rewards </span>
                   <span className="font-semibold tabular-nums text-[#FDB913]">{totalClaimable.toFixed(2)} WIRE</span>
                 </div>
                 <div className="shrink-0 px-5">
-                  <span className="text-[#768390]">Positions </span>
+                  <span className="text-[#8B949E]">Positions </span>
                   <span className="font-semibold tabular-nums text-[#E6EDF3]">{positions.length}</span>
                 </div>
               </div>
@@ -481,7 +486,7 @@ export default function PortfolioPage() {
                               style={{ backgroundColor: pos.color }}
                             />
                             <span className="text-xs text-[#9CA3AF]">{pos.symbol}</span>
-                            <span className="text-[10px] font-mono tabular-nums text-[#768390]">{pct.toFixed(1)}%</span>
+                            <span className="text-[10px] font-mono tabular-nums text-[#8B949E]">{pct.toFixed(1)}%</span>
                           </div>
                           <div className="text-right">
                             <span className="text-xs font-semibold font-mono tabular-nums text-[#E6EDF3]">

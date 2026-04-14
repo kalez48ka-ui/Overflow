@@ -31,7 +31,7 @@ export function AnimatedGradientBorder({
   containerClassName,
   borderRadius = "0.75rem",
   borderWidth = 1,
-  gradientColors = ["#21262D", "#9CA3AF", "#21262D", "#768390", "#21262D"],
+  gradientColors = ["#21262D", "#9CA3AF", "#21262D", "#8B949E", "#21262D"],
   duration = 4,
   active = true,
 }: AnimatedGradientBorderProps) {

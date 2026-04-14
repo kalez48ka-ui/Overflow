@@ -155,16 +155,6 @@ input[type="number"] {
   opacity: 0.4;
 }
 
-/* ── Card border glow — GPU-accelerated box-shadow shimmer ─────── */
-@keyframes borderGlow {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(33, 38, 45, 1); }
-  50% { box-shadow: 0 0 0 1px rgba(156, 163, 175, 0.3); }
-}
-
-.card-border-glow {
-  animation: borderGlow 3s ease-in-out infinite;
-}
-
 /* ── Counting animation for stats ─────────────────────────────── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(6px); }

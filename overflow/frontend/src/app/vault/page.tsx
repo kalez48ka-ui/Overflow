@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import {
   ArrowRight,
 } from "lucide-react";
@@ -48,7 +49,7 @@ function UpsetHistoryRow({
         <span className="tabular-nums font-medium text-[#3FB950]">
           {formatCurrency(event.totalPayout)}
         </span>
-        <span className="text-[#768390]">
+        <span className="text-[#8B949E]">
           {formatTimestamp(event.date)}
         </span>
       </div>
@@ -91,6 +92,7 @@ function MultiplierTable() {
 }
 
 export default function VaultPage() {
+  const prefersReduced = useReducedMotion();
   const [vaultData, setVaultData] = useState<VaultData>(VAULT_DATA);
   const [loading, setLoading] = useState(true);
 
@@ -156,9 +158,9 @@ export default function VaultPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.3 }}
       className="min-h-screen bg-[#0D1117]"
     >
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -197,7 +199,7 @@ export default function VaultPage() {
             {/* How it works — inline compact */}
             <AnimatedGradientBorder
               active={true}
-              gradientColors={["#21262D", "#E4002B", "#21262D", "#768390", "#21262D"]}
+              gradientColors={["#21262D", "#E4002B", "#21262D", "#8B949E", "#21262D"]}
               duration={6}
               borderWidth={1}
               containerClassName="mb-8 rounded-lg"
@@ -219,7 +221,7 @@ export default function VaultPage() {
                   {upsetEvents.length === 0 ? (
                     <div className="rounded-lg border border-[#21262D] bg-[#161B22] py-10 text-center">
                       <p className="text-sm text-[#9CA3AF]">No upsets recorded yet this season.</p>
-                      <p className="mt-1 text-xs text-[#768390]">When an underdog wins, payouts will appear here.</p>
+                      <p className="mt-1 text-xs text-[#8B949E]">When an underdog wins, payouts will appear here.</p>
                     </div>
                   ) : (
                     upsetEvents.map((event) => (

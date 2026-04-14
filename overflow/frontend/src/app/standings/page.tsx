@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import {
   ArrowUpDown,
   ChevronUp,
@@ -58,6 +59,7 @@ const RANK_COLORS: Record<number, string> = {
 };
 
 export default function StandingsPage() {
+  const prefersReduced = useReducedMotion();
   const [teams, setTeams] = useState<PSLTeam[]>(PSL_TEAMS);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("ranking");
@@ -192,9 +194,9 @@ export default function StandingsPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.3 }}
       className="relative overflow-hidden min-h-screen bg-[#0D1117]"
     >
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
@@ -206,9 +208,9 @@ export default function StandingsPage() {
         <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className="font-bold text-[#E6EDF3]">PSL 2026</span>
-            <span className="hidden sm:inline text-[#768390]">&middot;</span>
+            <span className="hidden sm:inline text-[#8B949E]">&middot;</span>
             <span className="text-[#9CA3AF]">{seasonStage}</span>
-            <span className="hidden sm:inline text-[#768390]">&middot;</span>
+            <span className="hidden sm:inline text-[#8B949E]">&middot;</span>
             <span className="tabular-nums text-[#9CA3AF]">
               {matchesLoading ? "..." : `${completedMatches}/${Math.max(allMatches.length, totalScheduledMatches)} matches`}
             </span>
@@ -309,7 +311,7 @@ export default function StandingsPage() {
               ))}
             </div>
           ) : displayUpcoming.length === 0 ? (
-            <p className="text-sm text-[#768390]">No upcoming fixtures scheduled.</p>
+            <p className="text-sm text-[#8B949E]">No upcoming fixtures scheduled.</p>
           ) : (
             <div className="space-y-1">
               {displayUpcoming.map((match) => (
@@ -363,7 +365,7 @@ function UpcomingFixtureRow({ match }: { match: MatchInfo }) {
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t1Color }} />
         <span className="font-medium text-[#E6EDF3] truncate">{match.team1Name}</span>
-        <span className="text-xs text-[#768390]">vs</span>
+        <span className="text-xs text-[#8B949E]">vs</span>
         <span className="font-medium text-[#E6EDF3] truncate">{match.team2Name}</span>
         <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: t2Color }} />
       </div>
@@ -376,7 +378,7 @@ function UpcomingFixtureRow({ match }: { match: MatchInfo }) {
         </span>
         {match.venue && (
           <>
-            <span className="text-[#768390]">&middot;</span>
+            <span className="text-[#8B949E]">&middot;</span>
             <span className="max-w-[140px] truncate hidden sm:inline">{match.venue}</span>
           </>
         )}
@@ -433,7 +435,7 @@ function TeamRow({
             <span className="font-semibold text-[#E6EDF3] text-sm transition-colors group-hover/link:text-[#E4002B]">
               {team.name}
             </span>
-            <span className="ml-2 text-xs text-[#768390]">{team.symbol}</span>
+            <span className="ml-2 text-xs text-[#8B949E]">{team.symbol}</span>
           </div>
         </Link>
       </td>

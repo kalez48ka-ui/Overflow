@@ -29,13 +29,13 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
               </span>
             </span>
           ) : (
-            <span className="text-[10px] font-bold text-[#768390] uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-[#8B949E] uppercase tracking-wider">
               {match.status === "completed" ? "COMPLETED" : "DEMO"}
             </span>
           )}
-          <span className="text-[10px] text-[#768390]">{match.venue}</span>
+          <span className="text-[10px] text-[#8B949E]">{match.venue}</span>
         </div>
-        <span className="text-[10px] font-mono tabular-nums text-[#768390]">
+        <span className="text-[10px] font-mono tabular-nums text-[#8B949E]">
           Ov {match.currentOver}
         </span>
       </div>
@@ -63,7 +63,7 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
                 />
                 <span className="text-xl sm:text-2xl text-[#9CA3AF]">/{battingTeam.wickets}</span>
               </p>
-              <p className="text-[10px] font-mono tabular-nums text-[#768390]">{battingTeam.overs} ov &middot; RR {battingTeam.runRate.toFixed(2)}</p>
+              <p className="text-[10px] font-mono tabular-nums text-[#8B949E]">{battingTeam.overs} ov &middot; RR {battingTeam.runRate.toFixed(2)}</p>
             </div>
           </div>
           {(battingTeam.target || battingTeam.requiredRunRate != null) && (
@@ -105,13 +105,13 @@ export function LiveScorecard({ match }: LiveScorecardProps) {
               {bowlingTeam.runs}
               <span className="text-base">/{bowlingTeam.wickets}</span>
             </p>
-            <p className="text-[10px] font-mono tabular-nums text-[#768390]">{bowlingTeam.overs} ov</p>
+            <p className="text-[10px] font-mono tabular-nums text-[#8B949E]">{bowlingTeam.overs} ov</p>
           </div>
         </div>
 
         {/* Bowler */}
         <div className="mt-3 flex items-center justify-between text-xs">
-          <span className="text-[#768390]">Bowling</span>
+          <span className="text-[#8B949E]">Bowling</span>
           <span className="font-medium text-[#9CA3AF]">{match.currentBowler}</span>
         </div>
       </div>

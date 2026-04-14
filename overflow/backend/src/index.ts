@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import crypto from 'crypto';
@@ -30,19 +30,8 @@ import { ChainSyncService } from './modules/sync/chain-sync.service';
 // Startup environment validation — fail fast on missing critical vars
 // ---------------------------------------------------------------------------
 function validateEnvironment(): void {
-  const required: Record<string, string | undefined> = {
-    DATABASE_URL: process.env.DATABASE_URL,
-    ADMIN_SECRET: process.env.ADMIN_SECRET,
-  };
-
-  const missing = Object.entries(required)
-    .filter(([, v]) => !v)
-    .map(([k]) => k);
-
-  if (missing.length > 0) {
-    console.error(`[FATAL] Missing required environment variables: ${missing.join(', ')}`);
-    process.exit(1);
-  }
+  // DATABASE_URL and ADMIN_SECRET are already validated by config/index.ts (requireEnv)
+  // which is imported before this runs — no need to duplicate those checks here.
 
   // Warn for optional but important vars
   if (!process.env.CRICKET_API_KEY) {
@@ -212,6 +201,15 @@ app.get('/api/health', async (_req, res) => {
     status,
     db: dbOk,
     timestamp: new Date().toISOString(),
+  });
+});
+
+// Global error handler — must be AFTER all routes
+app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+  console.error(`[Error] ${(req as any).requestId || 'no-id'}: ${err.message}`);
+  res.status(500).json({
+    error: 'Internal server error',
+    requestId: (req as any).requestId,
   });
 });
 

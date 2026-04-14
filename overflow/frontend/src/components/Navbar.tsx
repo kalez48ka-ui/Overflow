@@ -258,7 +258,7 @@ export function Navbar() {
               <span className="text-[15px] font-black tracking-tight text-[#E6EDF3]">
                 OVER<span className="text-[#E4002B]">FLOW</span>
               </span>
-              <span className="text-[8px] font-medium tracking-[0.2em] text-[#768390] uppercase">
+              <span className="text-[8px] font-medium tracking-[0.2em] text-[#8B949E] uppercase">
                 PSL Trading
               </span>
             </div>

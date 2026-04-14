@@ -212,7 +212,7 @@ function NumberInput({
         max={max}
         step={step}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#768390] focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
+        className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#8B949E] focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
       />
     </div>
   );
@@ -380,7 +380,7 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
               placeholder="Enter admin password"
               maxLength={128}
               autoFocus
-              className={`w-full rounded-lg border px-3 py-2.5 pr-10 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#768390] focus:ring-1 ${
+              className={`w-full rounded-lg border px-3 py-2.5 pr-10 text-sm text-[#E6EDF3] outline-none transition placeholder:text-[#8B949E] focus:ring-1 ${
                 error
                   ? "border-[#E4002B] bg-[#E4002B]/10 focus:ring-[#E4002B]/30"
                   : "border-[#21262D] bg-[#0D1117] focus:border-[#58A6FF] focus:ring-[#58A6FF]/30"

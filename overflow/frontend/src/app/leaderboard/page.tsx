@@ -66,7 +66,7 @@ function WalletCell({ wallet }: { wallet: string }) {
       </span>
       <button
         onClick={handleCopy}
-        className="rounded p-2 text-[#768390] hover:text-[#E6EDF3] transition-colors"
+        className="rounded p-2 text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
         aria-label="Copy wallet address"
       >
         {copied ? (
@@ -128,7 +128,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     return fetchLeaderboard(sortKey);
-  }, [sortKey]);
+  }, [sortKey, fetchLeaderboard]);
 
   return (
     <motion.div
@@ -325,7 +325,7 @@ export default function LeaderboardPage() {
                               {entry.favoriteTeam}
                             </span>
                           ) : (
-                            <span className="text-xs text-[#768390]">&mdash;</span>
+                            <span className="text-xs text-[#8B949E]">&mdash;</span>
                           )}
                         </td>
                         <td className="hidden md:table-cell px-4 py-3 text-right">

@@ -118,7 +118,7 @@ export function RewardsPanel({ rewards }: RewardsPanelProps) {
         {rewards.length === 0 && (
           <div className="px-4 py-12 text-center">
             <p className="text-sm text-[#9CA3AF]">No rewards yet</p>
-            <p className="mt-1 text-xs text-[#768390]">Trade team tokens to earn rewards</p>
+            <p className="mt-1 text-xs text-[#8B949E]">Trade team tokens to earn rewards</p>
           </div>
         )}
       </div>

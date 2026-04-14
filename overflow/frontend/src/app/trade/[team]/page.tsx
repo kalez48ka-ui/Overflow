@@ -112,7 +112,7 @@ function BondingCurveCard({ team }: { team: PSLTeam }) {
             onMouseLeave={() => setShowTooltip(false)}
             onFocus={() => setShowTooltip(true)}
             onBlur={() => setShowTooltip(false)}
-            className="text-[#768390] hover:text-[#9CA3AF] transition-colors"
+            className="text-[#8B949E] hover:text-[#9CA3AF] transition-colors"
             aria-label="Bonding curve info"
           >
             <Info className="h-3 w-3" />
@@ -279,7 +279,7 @@ function RecentTradesFeed({ teamSymbol }: { teamSymbol: string }) {
                         href={`https://wirefluidscan.com/tx/${trade.txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hidden group-hover:inline-flex text-[#768390] hover:text-[#E6EDF3] transition-colors"
+                        className="hidden group-hover:inline-flex text-[#8B949E] hover:text-[#E6EDF3] transition-colors"
                         aria-label={`View transaction ${truncateHash(trade.txHash)}`}
                         title={trade.txHash}
                       >
@@ -331,7 +331,7 @@ function SellTaxExplainer({ team }: { team: PSLTeam }) {
               onMouseLeave={() => setShowTooltip(false)}
               onFocus={() => setShowTooltip(true)}
               onBlur={() => setShowTooltip(false)}
-              className="text-[#768390] hover:text-[#9CA3AF] transition-colors"
+              className="text-[#8B949E] hover:text-[#9CA3AF] transition-colors"
               aria-label="Sell tax info"
               aria-describedby="sell-tax-tooltip"
             >
@@ -543,13 +543,14 @@ export default function TradePage({ params }: PageProps) {
                   {(["1h", "24h", "7d"] as const).map((tf) => (
                     <button
                       key={tf}
-                      aria-pressed={timeframe === tf}
+                      role="radio"
+                      aria-checked={timeframe === tf}
                       onClick={() => setTimeframe(tf)}
                       className={cn(
                         "rounded px-2.5 py-1 min-h-[44px] sm:min-h-0 text-xs font-medium transition-colors",
                         timeframe === tf
                           ? "bg-[#21262D] text-[#E6EDF3]"
-                          : "text-[#768390] hover:text-[#9CA3AF]"
+                          : "text-[#8B949E] hover:text-[#9CA3AF]"
                       )}
                     >
                       {tf.toUpperCase()}

@@ -67,7 +67,7 @@ export const viewport: Viewport = {
 
 function Footer() {
   return (
-    <footer className="py-6">
+    <footer className="py-6" aria-label="Site footer">
       <div className="footer-border-glow" />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 mt-6">
         <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">

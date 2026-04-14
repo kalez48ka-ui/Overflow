@@ -287,8 +287,8 @@ export function FanWarCard({ war, onLockSuccess }: FanWarCardProps) {
 
           {/* VS divider */}
           <div className="flex flex-col items-center gap-1">
-            <Swords className="h-5 w-5 text-[#768390]" />
-            <span className="text-xs font-black text-[#768390]">VS</span>
+            <Swords className="h-5 w-5 text-[#8B949E]" />
+            <span className="text-xs font-black text-[#8B949E]">VS</span>
           </div>
 
           {/* Away Team */}

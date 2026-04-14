@@ -105,7 +105,7 @@ function QuestionOption({
       <span
         className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 transition-all"
         style={{
-          borderColor: selected || correct || wrong ? borderColor : "#768390",
+          borderColor: selected || correct || wrong ? borderColor : "#8B949E",
         }}
       >
         {(selected || correct || wrong) && (

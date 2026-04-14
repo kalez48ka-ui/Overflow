@@ -230,7 +230,7 @@ function BondingCurveSVG() {
         animate={isInView ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.5, delay: 2 }}
       >
-        <line x1={230} y1={102} x2={230} y2={126} stroke="#768390" strokeWidth={1} strokeDasharray="2 2" />
+        <line x1={230} y1={102} x2={230} y2={126} stroke="#8B949E" strokeWidth={1} strokeDasharray="2 2" />
         <text x={238} y={118} className="fill-[#9CA3AF] text-[9px] font-medium">spread</text>
       </motion.g>
 
@@ -371,7 +371,7 @@ function DonutChart() {
 /* ------------------------------------------------------------------ */
 
 const upsetTiers = [
-  { tier: "Normal", range: "0 - 3", multiplier: 1, release: 0, color: "#768390", bg: "#161B22", barWidth: 10 },
+  { tier: "Normal", range: "0 - 3", multiplier: 1, release: 0, color: "#8B949E", bg: "#161B22", barWidth: 10 },
   { tier: "Big Upset", range: "4 - 6", multiplier: 3, release: 15, color: "#3FB950", bg: "#0D1F14", barWidth: 40 },
   { tier: "Huge Upset", range: "7 - 9", multiplier: 5, release: 30, color: "#FDB913", bg: "#1A1608", barWidth: 65 },
   { tier: "GIANT KILLER", range: "10 - 13", multiplier: 10, release: 60, color: "#E4002B", bg: "#1A0A0E", barWidth: 100 },
@@ -450,8 +450,8 @@ const rewardPositions = [
   { pos: "2nd", share: 25, color: "#9CA3AF", height: 72, medal: "silver" },
   { pos: "3rd", share: 20, color: "#CD7F32", height: 57, medal: "bronze" },
   { pos: "4th", share: 12, color: "#58A6FF", height: 34, medal: null },
-  { pos: "5th", share: 5, color: "#768390", height: 14, medal: null },
-  { pos: "6th", share: 3, color: "#768390", height: 9, medal: null },
+  { pos: "5th", share: 5, color: "#8B949E", height: 14, medal: null },
+  { pos: "6th", share: 3, color: "#8B949E", height: 9, medal: null },
   { pos: "7th", share: 0, color: "#30363D", height: 2, medal: null },
   { pos: "8th", share: 0, color: "#30363D", height: 2, medal: null },
 ];
@@ -1273,7 +1273,7 @@ export default function HowItWorksPage() {
                 { place: "Champion", share: 50, color: "#FDB913" },
                 { place: "Runner-up", share: 25, color: "#9CA3AF" },
                 { place: "3rd / 4th", share: 15, color: "#CD7F32" },
-                { place: "5th - 8th", share: 10, color: "#768390" },
+                { place: "5th - 8th", share: 10, color: "#8B949E" },
               ].map(({ place, share, color }) => (
                 <div key={place} className="bg-[#161B22] px-4 py-6 text-center">
                   <p className="text-3xl font-black tabular-nums font-mono tracking-tight" style={{ color }}>

@@ -132,6 +132,7 @@ model Trade {
 
   @@index([wallet, createdAt])
   @@index([teamId, createdAt])
+  @@index([createdAt])
   @@unique([txHash])
   @@index([wallet, teamId, type])
 }

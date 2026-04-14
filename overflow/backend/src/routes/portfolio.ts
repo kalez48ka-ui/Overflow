@@ -144,12 +144,14 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
 
       // Add current-day snapshot using live prices for all held positions
       if (positions.size > 0) {
+        const teamPriceMap = new Map(
+          trades.map(t => [t.team.id, Number(t.team.currentPrice)])
+        );
+
         let currentValue = 0;
         for (const [teamId, pos] of positions.entries()) {
           if (pos.amount <= 0) continue;
-          // Find the current price from the trade includes
-          const teamTrade = trades.find((t) => t.team.id === teamId);
-          const livePrice = Number(teamTrade?.team.currentPrice ?? 0) || latestTeamPrice.get(teamId) || 0;
+          const livePrice = teamPriceMap.get(teamId) || latestTeamPrice.get(teamId) || 0;
           currentValue += pos.amount * livePrice;
         }
         const todayStr = new Date().toISOString().split('T')[0]!;

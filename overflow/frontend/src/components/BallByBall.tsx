@@ -20,7 +20,7 @@ function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean
   }
   if (isExtra) {
     return (
-      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#768390] text-[10px] font-bold text-[#9CA3AF]">
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#8B949E] text-[10px] font-bold text-[#9CA3AF]">
         +1
       </span>
     );
@@ -31,7 +31,7 @@ function RunBadge({ runs, isWicket, isExtra }: { runs: number; isWicket: boolean
       : runs === 4
       ? "bg-[#3FB950] text-white"
       : runs === 0
-      ? "bg-[#21262D] text-[#768390]"
+      ? "bg-[#21262D] text-[#8B949E]"
       : "bg-[#21262D] text-[#E6EDF3]";
 
   return (
@@ -116,7 +116,7 @@ export function BallByBall({ events, simulateLive = false }: BallByBallProps) {
   return (
     <div className="rounded-xl border border-[#21262D] bg-[#161B22] overflow-hidden">
       <div className="flex items-center justify-between border-b border-[#21262D] px-4 py-2">
-        <span className="text-[10px] text-[#768390] uppercase tracking-wider">Ball by Ball</span>
+        <span className="text-[10px] text-[#8B949E] uppercase tracking-wider">Ball by Ball</span>
         {/* Current over mini-dots */}
         {currentOverEvents.length > 0 && (
           <div className="flex items-center gap-1" aria-label={`Over ${currentOverEvents[0]?.over} balls`}>
@@ -196,7 +196,7 @@ export function BallByBall({ events, simulateLive = false }: BallByBallProps) {
                   {event.description}
                 </p>
               </div>
-              <span className="shrink-0 text-[10px] font-mono tabular-nums text-[#768390]">
+              <span className="shrink-0 text-[10px] font-mono tabular-nums text-[#8B949E]">
                 {event.over}.{event.ball}
               </span>
             </motion.div>

@@ -120,6 +120,7 @@ const Sparkline = React.memo(function Sparkline({
 });
 
 export const TeamCard = React.memo(function TeamCard({ team, index = 0 }: TeamCardProps) {
+  const prefersReduced = useReducedMotion();
   const isPositive = team.change24h >= 0;
 
   return (
@@ -178,9 +179,9 @@ export const TeamCard = React.memo(function TeamCard({ team, index = 0 }: TeamCa
                 ${formatPrice(team.price)}
               </p>
               <motion.div
-                initial={{ opacity: 0, x: -8, scale: 1 }}
-                animate={{ opacity: 1, x: 0, scale: [1, 1.1, 1] }}
-                transition={{
+                initial={prefersReduced ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: -8, scale: 1 }}
+                animate={{ opacity: 1, x: 0, scale: prefersReduced ? 1 : [1, 1.1, 1] }}
+                transition={prefersReduced ? { duration: 0 } : {
                   opacity: { delay: index * 0.07 + 0.3, duration: 0.3 },
                   x: { delay: index * 0.07 + 0.3, duration: 0.3 },
                   scale: { delay: index * 0.07 + 0.5, duration: 0.3, ease: "easeInOut" },

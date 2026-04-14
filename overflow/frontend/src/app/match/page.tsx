@@ -119,7 +119,7 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
         <span className="text-4xl font-black font-mono tabular-nums" style={{ color: levelColor }}>
           <NumberTicker value={score} decimals={0} duration={800} showFlash={true} showArrow={false} />
         </span>
-        <span className="text-xs text-[#768390]">/ 100</span>
+        <span className="text-xs text-[#8B949E]">/ 100</span>
       </div>
 
       <div className="h-1.5 overflow-hidden rounded-full bg-[#21262D] mb-3">
@@ -137,11 +137,11 @@ function UpsetScoreTracker({ score, vaultBalance }: { score: number; vaultBalanc
 
       <div className="flex items-center justify-between text-xs">
         <div>
-          <span className="text-[#768390]">Multiplier </span>
+          <span className="text-[#8B949E]">Multiplier </span>
           <span className="font-bold font-mono tabular-nums text-[#E6EDF3]">1.8x</span>
         </div>
         <div>
-          <span className="text-[#768390]">Payout </span>
+          <span className="text-[#8B949E]">Payout </span>
           <span className="font-bold font-mono tabular-nums text-[#E6EDF3]">
             {formatCurrency(vaultBalance * 1.8)}
           </span>
@@ -210,7 +210,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
               {war.totalHomeLocked.toLocaleString()}
             </span>
           </div>
-          <span className="text-[#768390]">vs</span>
+          <span className="text-[#8B949E]">vs</span>
           <div className="flex items-center gap-1.5">
             <span className="font-mono tabular-nums text-[#E6EDF3]">
               {war.totalAwayLocked.toLocaleString()}
@@ -237,7 +237,7 @@ function FanWarWidget({ team1Id, team2Id }: { team1Id: string; team2Id: string }
         </div>
 
         <div className="mb-3 flex items-center justify-between text-xs">
-          <span className="text-[#768390]">Boost Pool</span>
+          <span className="text-[#8B949E]">Boost Pool</span>
           <span className="font-bold font-mono tabular-nums text-[#FDB913]">
             {war.boostPool.toLocaleString()} WIRE
           </span>
@@ -427,30 +427,19 @@ export default function MatchPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const getPollMs = () => (hasLiveMatchRef.current ? LIVE_POLL_MS : IDLE_POLL_MS);
-
-    const startPolling = () => {
-      if (pollIntervalRef.current) return; // already running
-      pollIntervalRef.current = setInterval(() => {
-        if (!cancelled) fetchLiveData();
-      }, getPollMs());
-    };
-
-    const stopPolling = () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-
     // Pause polling when tab is hidden, resume when visible
+    // The hasLiveMatch effect owns the interval — this handler just
+    // clears/triggers a single fetch so we don't poll while hidden.
     const handleVisibility = () => {
       if (document.hidden) {
-        stopPolling();
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
       } else {
-        // Fetch immediately on tab return, then resume interval
+        // Let the hasLiveMatch effect handle restart on next render;
+        // just trigger a single immediate fetch on tab return.
         if (!cancelled) fetchLiveData();
-        startPolling();
       }
     };
 
@@ -530,7 +519,10 @@ export default function MatchPage() {
 
     return () => {
       cancelled = true;
-      stopPolling();
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
       document.removeEventListener("visibilitychange", handleVisibility);
       socket.off("connect");
       socket.off("match:liveScore");
@@ -625,11 +617,11 @@ export default function MatchPage() {
             return (
               <div className="mb-4 rounded-xl border border-[#21262D] bg-[#161B22] p-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#768390]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8B949E]">
                     Last Result
                   </span>
                   {lastCompleted.cricApiName && (
-                    <span className="text-[10px] text-[#768390] truncate max-w-[200px]">
+                    <span className="text-[10px] text-[#8B949E] truncate max-w-[200px]">
                       {lastCompleted.cricApiName}
                     </span>
                   )}
@@ -655,7 +647,7 @@ export default function MatchPage() {
                   </div>
 
                   {/* VS divider */}
-                  <span className="flex-shrink-0 text-xs font-bold text-[#768390]">vs</span>
+                  <span className="flex-shrink-0 text-xs font-bold text-[#8B949E]">vs</span>
 
                   {/* Team 2 */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-row-reverse text-right">
@@ -694,7 +686,7 @@ export default function MatchPage() {
           })()}
 
           <div className="mb-6 rounded-xl border border-[#21262D] bg-[#161B22] p-4">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#768390]">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#8B949E]">
               No live match
             </p>
             {upcomingMatch ? (
@@ -726,7 +718,7 @@ export default function MatchPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
             <div className="space-y-4">
               {lastCompleted && (
-                <div className="rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-2 text-xs text-[#768390]">
+                <div className="rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-2 text-xs text-[#8B949E]">
                   Scorecard shows the last completed match above. Live scorecard will appear when a match is in progress.
                 </div>
               )}
@@ -737,6 +729,8 @@ export default function MatchPage() {
                       <button
                         key={id}
                         onClick={() => setActiveChart(id)}
+                        aria-pressed={activeChart === id}
+                        aria-label={`Show ${t?.name ?? id} chart`}
                         className={cn(
                           "rounded px-2.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold transition-all",
                           activeChart === id
@@ -804,6 +798,8 @@ export default function MatchPage() {
                       <button
                         key={id}
                         onClick={() => setActiveChart(id)}
+                        aria-pressed={activeChart === id}
+                        aria-label={`Show ${t?.name ?? id} chart`}
                         className={cn(
                           "rounded px-2.5 py-1.5 min-h-[44px] sm:min-h-0 text-xs font-semibold transition-all",
                           activeChart === id

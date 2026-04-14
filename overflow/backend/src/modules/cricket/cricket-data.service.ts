@@ -696,9 +696,9 @@ export class CricketDataService {
     return this.prisma.match.findUnique({
       where: { id: matchId },
       include: {
-        homeTeam: true,
-        awayTeam: true,
-        balls: { orderBy: { timestamp: 'asc' }, take: 300 },
+        homeTeam: { select: { id: true, name: true, symbol: true, color: true } },
+        awayTeam: { select: { id: true, name: true, symbol: true, color: true } },
+        balls: { orderBy: { timestamp: 'asc' as const }, take: 300 },
       },
     });
   }

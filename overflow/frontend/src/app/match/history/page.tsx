@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Spotlight = dynamic(
   () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
@@ -118,7 +119,7 @@ function StatusDot({ status }: { status: MatchInfo["status"] }) {
   }
   return (
     <>
-      <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#768390]" />
+      <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#8B949E]" />
       <span className="sr-only">Upcoming</span>
     </>
   );
@@ -146,7 +147,7 @@ function MatchRow({ match }: { match: MatchInfo }) {
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
           <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: team1Color }} />
           <span className="text-sm font-medium text-[#E6EDF3] truncate max-w-[100px] sm:max-w-none">{match.team1Name}</span>
-          <span className="text-xs text-[#768390]">vs</span>
+          <span className="text-xs text-[#8B949E]">vs</span>
           <span className="text-sm font-medium text-[#E6EDF3] truncate max-w-[100px] sm:max-w-none">{match.team2Name}</span>
           <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: team2Color }} />
         </div>
@@ -174,7 +175,7 @@ function MatchRow({ match }: { match: MatchInfo }) {
         )}
         {match.venue && (
           <>
-            <span className="text-[#768390]">&middot;</span>
+            <span className="text-[#8B949E]">&middot;</span>
             <span className="flex items-center gap-1 max-w-[160px] truncate">
               <MapPin className="h-3 w-3 shrink-0" />
               {match.venue}
@@ -191,6 +192,7 @@ function MatchRow({ match }: { match: MatchInfo }) {
 // -------------------------------------------------------------------------
 
 export default function MatchHistoryPage() {
+  const prefersReduced = useReducedMotion();
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [matches, setMatches] = useState<MatchInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -224,9 +226,9 @@ export default function MatchHistoryPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.3 }}
       className="min-h-screen bg-[#0D1117] relative overflow-hidden"
     >
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />

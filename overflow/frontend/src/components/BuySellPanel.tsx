@@ -256,7 +256,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
               min="0"
               maxLength={20}
               placeholder="0.00"
-              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#768390] outline-none focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 transition-colors duration-150"
+              className="w-full rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-3 pr-16 text-right text-lg font-semibold text-[#E6EDF3] placeholder-[#8B949E] outline-none focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30 transition-colors duration-150"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <div

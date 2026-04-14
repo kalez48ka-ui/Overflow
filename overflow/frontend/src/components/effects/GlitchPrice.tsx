@@ -13,8 +13,6 @@ interface GlitchPriceProps {
   /** How long the scramble lasts in ms. Default 600. */
   duration?: number;
   className?: string;
-  /** Re-scramble on an interval (ms). 0 = only on value change. */
-  autoScrambleInterval?: number;
 }
 
 export function GlitchPrice({
@@ -22,7 +20,6 @@ export function GlitchPrice({
   previousValue = null,
   duration = 600,
   className = "",
-  autoScrambleInterval = 0,
 }: GlitchPriceProps) {
   const [displayed, setDisplayed] = useState(value);
   const [direction, setDirection] = useState<"up" | "down" | null>(null);
@@ -82,15 +79,6 @@ export function GlitchPrice({
       prevRef.current = value;
     }
   }, [value, runGlitch]);
-
-  // Auto-scramble interval for simulated live ticking
-  useEffect(() => {
-    if (autoScrambleInterval <= 0) return;
-    const timer = setInterval(() => {
-      runGlitch(value, value);
-    }, autoScrambleInterval);
-    return () => clearInterval(timer);
-  }, [autoScrambleInterval, value, runGlitch]);
 
   // Cleanup on unmount
   useEffect(() => {

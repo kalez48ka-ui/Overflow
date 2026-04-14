@@ -43,8 +43,8 @@ export function createAiRouter(prisma: PrismaClient): Router {
       const match = await prisma.match.findUnique({
         where: { id: matchId },
         include: {
-          homeTeam: true,
-          awayTeam: true,
+          homeTeam: { select: { id: true, name: true, symbol: true, performanceScore: true } },
+          awayTeam: { select: { id: true, name: true, symbol: true, performanceScore: true } },
         },
       });
 
@@ -133,8 +133,8 @@ export function createAiRouter(prisma: PrismaClient): Router {
       const liveMatches = await prisma.match.findMany({
         where: { status: 'LIVE' },
         include: {
-          homeTeam: true,
-          awayTeam: true,
+          homeTeam: { select: { id: true, symbol: true, performanceScore: true, priceChange24h: true, ranking: true, wins: true, losses: true, sellTaxRate: true } },
+          awayTeam: { select: { id: true, symbol: true, performanceScore: true, priceChange24h: true, ranking: true, wins: true, losses: true, sellTaxRate: true } },
         },
       });
 
