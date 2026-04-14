@@ -237,8 +237,8 @@ export default function LandingPage() {
             transition={prefersReduced ? instantTransition : { delay: 0.1 }}
             className="text-center"
           >
-            <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl text-center">
-              From <FlipWords words={["Betting", "Guessing", "Losing", "Gambling"]} duration={2500} className="text-[#E4002B]" />
+            <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl text-center min-h-[5.5rem] sm:min-h-[7rem] lg:min-h-[10rem]">
+              <span className="inline-block relative">From <FlipWords words={["Betting", "Guessing", "Losing", "Gambling"]} duration={2500} className="text-[#E4002B]" /></span>
               <br />
               <span className="text-[#E6EDF3]">to Building Wealth.</span>
             </h1>
@@ -278,7 +278,7 @@ export default function LandingPage() {
             transition={prefersReduced ? instantTransition : { delay: 0.3 }}
             className="mt-8 flex justify-center"
           >
-            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#21262D]/60 bg-[#161B22]/60 px-5 py-2 text-xs backdrop-blur-md">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-full border border-[#21262D]/60 bg-[#161B22]/60 px-4 sm:px-5 py-2 text-[11px] sm:text-xs backdrop-blur-md max-w-[95vw]">
               {hasLiveMatch && liveMatchLabel && (
                 <>
                   <span className="flex items-center gap-1.5 text-[#F85149] font-bold">
@@ -465,10 +465,10 @@ export default function LandingPage() {
         <div className="gradient-divider" />
         <LampContainer className="pt-12">
           <motion.h2
-            initial={prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0.5, y: 100 }}
+            initial={prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={prefersReduced ? instantTransition : { delay: 0.3, duration: 0.8, ease: "easeInOut" }}
+            transition={prefersReduced ? instantTransition : { delay: 0.2, duration: 0.6, ease: "easeOut" }}
             className="text-2xl font-black text-[#E6EDF3] sm:text-3xl text-center"
           >
             How It Works
@@ -478,7 +478,7 @@ export default function LandingPage() {
           </p>
         </LampContainer>
 
-        <div className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
+        <div className="mx-auto max-w-7xl px-4 -mt-8 sm:-mt-16 pb-24 sm:px-6">
           {/* Steps — vertical timeline on mobile, horizontal on desktop */}
           <div className="relative">
             {/* Horizontal connector — desktop */}
@@ -569,7 +569,7 @@ export default function LandingPage() {
       <div className="gradient-divider" />
 
       {/* Upset Vault explainer */}
-      <section className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
+      <section className="relative mx-auto max-w-7xl px-4 py-16 sm:py-24 sm:px-6">
         <div className="relative overflow-hidden rounded-xl border border-[#21262D] bg-[#161B22]">
           <Meteors number={8} className="opacity-40" />
 
@@ -667,8 +667,8 @@ export default function LandingPage() {
       </section>
 
       {/* Why Overflow */}
-      <section className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
-        <div className="gradient-divider mb-16" />
+      <section className="relative mx-auto max-w-7xl px-4 py-16 sm:py-24 sm:px-6">
+        <div className="gradient-divider mb-12" />
         <motion.div
           className="mb-12 text-center"
           initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 16 }}
