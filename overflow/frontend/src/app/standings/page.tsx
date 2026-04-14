@@ -68,12 +68,12 @@ export default function StandingsPage() {
   const [matchesLoading, setMatchesLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     api.teams
-      .getAll()
+      .getAll(controller.signal)
       .then((data) => {
-        if (cancelled || !data || data.length === 0) return;
+        if (controller.signal.aborted || !data || data.length === 0) return;
 
         const mapped: PSLTeam[] = data.map((t) => mapApiTeamToFrontend(t));
 
@@ -83,20 +83,21 @@ export default function StandingsPage() {
         // fallback already set via useState default
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
-    Promise.allSettled([api.matches.getAll(), api.matches.getUpcoming()])
+    Promise.allSettled([
+      api.matches.getAll(controller.signal),
+      api.matches.getUpcoming(controller.signal),
+    ])
       .then(([allResult, upcomingResult]) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
 
         if (allResult.status === "fulfilled" && allResult.value) {
           setAllMatches(allResult.value);
@@ -107,12 +108,10 @@ export default function StandingsPage() {
         }
       })
       .finally(() => {
-        if (!cancelled) setMatchesLoading(false);
+        if (!controller.signal.aborted) setMatchesLoading(false);
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => controller.abort();
   }, []);
 
   const handleSort = useCallback(
@@ -243,7 +242,7 @@ export default function StandingsPage() {
                     key={col.key}
                     role="columnheader"
                     tabIndex={0}
-                    aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
+                    aria-sort={sortKey === col.key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                     className={cn(
                       "group cursor-pointer select-none px-3 sm:px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[#9CA3AF] transition-colors hover:text-[#E6EDF3] sticky top-0 bg-[#161B22] z-10",
                       col.align === "left" ? "text-left" : "text-right",

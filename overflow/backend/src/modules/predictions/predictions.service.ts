@@ -488,182 +488,198 @@ export class PredictionsService {
     matchId: string,
     correctAnswers: Array<{ questionIndex: number; correctOption: number }>
   ): Promise<void> {
-    const pool = await this.prisma.predictionPool.findUnique({
-      where: { matchId },
-      include: {
-        questions: { orderBy: { questionIndex: 'asc' } },
-        entries: { include: { answers: { include: { question: true } } } },
-      },
-    });
-
-    if (!pool) {
-      throw new Error(`No prediction pool found for match ${matchId}`);
-    }
-
-    if (pool.status === 'SETTLED') {
-      throw new Error(`Pool for match ${matchId} is already settled`);
-    }
-
-    if (pool.status === 'CANCELLED') {
-      throw new Error(`Pool for match ${matchId} is cancelled`);
-    }
-
-    if (pool.entries.length === 0) {
-      // No participants, just cancel
-      await this.prisma.predictionPool.update({
-        where: { id: pool.id },
-        data: { status: 'CANCELLED', settledAt: new Date() },
-      });
-      console.log(`[Predictions] Pool ${matchId} cancelled — no participants`);
-      return;
-    }
-
-    // Build correct answer map
+    // Build correct answer map upfront (pure input validation, no DB state)
     const correctMap = new Map<number, number>();
     for (const ca of correctAnswers) {
       correctMap.set(ca.questionIndex, ca.correctOption);
     }
 
-    // Validate all questions have correct answers
-    for (const q of pool.questions) {
-      if (!correctMap.has(q.questionIndex)) {
-        throw new Error(`Missing correct answer for question ${q.questionIndex}: "${q.questionText}"`);
-      }
-    }
+    // All reads AND writes happen inside a single Serializable transaction
+    // to prevent race conditions where concurrent settlePool calls read
+    // the same pool state and both attempt to settle.
+    const settlementResult = await this.prisma.$transaction(
+      async (tx) => {
+        // Read pool inside the transaction to get a consistent snapshot
+        const pool = await tx.predictionPool.findUnique({
+          where: { matchId },
+          include: {
+            questions: { orderBy: { questionIndex: 'asc' } },
+            entries: { include: { answers: { include: { question: true } } } },
+          },
+        });
 
-    // Build question lookup
-    const questionByIndex = new Map(pool.questions.map((q) => [q.questionIndex, q]));
-
-    // Calculate scores for each entry
-    const entryScores: Array<{ entryId: string; score: number; answerUpdates: Array<{ answerId: string; isCorrect: boolean; pointsEarned: number }> }> = [];
-
-    for (const entry of pool.entries) {
-      let score = 0;
-      const answerUpdates: Array<{ answerId: string; isCorrect: boolean; pointsEarned: number }> = [];
-
-      for (const answer of entry.answers) {
-        const question = questionByIndex.get(answer.question.questionIndex);
-        if (!question) continue;
-
-        const correctOption = correctMap.get(question.questionIndex);
-        const isCorrect = answer.chosenOption === correctOption;
-        const pointsEarned = isCorrect ? question.points : 0;
-
-        if (isCorrect) {
-          score += question.points;
+        if (!pool) {
+          throw new Error(`No prediction pool found for match ${matchId}`);
         }
 
-        answerUpdates.push({
-          answerId: answer.id,
-          isCorrect,
-          pointsEarned,
-        });
-      }
+        if (pool.status === 'SETTLED') {
+          throw new Error(`Pool for match ${matchId} is already settled`);
+        }
 
-      entryScores.push({ entryId: entry.id, score, answerUpdates });
-    }
+        if (pool.status === 'CANCELLED') {
+          throw new Error(`Pool for match ${matchId} is cancelled`);
+        }
 
-    // Calculate pool distribution
-    const totalPool = Number(pool.totalPool);
-    const participantCount = pool.entries.length;
-    const platformShareAmount = totalPool * 0.10;
-    const safetyFloorAmount = totalPool * 0.30;
-    const accuracyBonusAmount = totalPool * 0.60;
+        if (pool.entries.length === 0) {
+          // No participants, just cancel
+          await tx.predictionPool.update({
+            where: { id: pool.id, status: { notIn: ['SETTLED', 'CANCELLED'] } },
+            data: { status: 'CANCELLED', settledAt: new Date() },
+          });
+          return null; // Signal: cancelled, no settlement data
+        }
 
-    const totalScoreSum = entryScores.reduce((sum, e) => sum + e.score, 0);
-    const highestScore = Math.max(...entryScores.map((e) => e.score));
+        // Validate all questions have correct answers
+        for (const q of pool.questions) {
+          if (!correctMap.has(q.questionIndex)) {
+            throw new Error(`Missing correct answer for question ${q.questionIndex}: "${q.questionText}"`);
+          }
+        }
 
-    // Calculate payouts
-    const entryPayouts: Array<{ entryId: string; score: number; payout: number }> = [];
+        // Build question lookup
+        const questionByIndex = new Map(pool.questions.map((q) => [q.questionIndex, q]));
 
-    for (const entry of entryScores) {
-      const safetyPayout = safetyFloorAmount / participantCount;
-      let accuracyPayout: number;
+        // Calculate scores for each entry
+        const entryScores: Array<{ entryId: string; score: number; answerUpdates: Array<{ answerId: string; isCorrect: boolean; pointsEarned: number }> }> = [];
 
-      if (totalScoreSum === 0) {
-        // No one got anything right — split accuracy pool equally too
-        accuracyPayout = accuracyBonusAmount / participantCount;
-      } else {
-        accuracyPayout = (entry.score / totalScoreSum) * accuracyBonusAmount;
-      }
+        for (const entry of pool.entries) {
+          let score = 0;
+          const answerUpdates: Array<{ answerId: string; isCorrect: boolean; pointsEarned: number }> = [];
 
-      const totalPayout = safetyPayout + accuracyPayout;
-      entryPayouts.push({ entryId: entry.entryId, score: entry.score, payout: totalPayout });
-    }
+          for (const answer of entry.answers) {
+            const question = questionByIndex.get(answer.question.questionIndex);
+            if (!question) continue;
 
-    // Persist everything in a transaction — batched to minimize query count
-    await this.prisma.$transaction(async (tx) => {
-      // Update questions with correct answers (small N, 5-10 questions max — keep individual)
-      for (const [qIndex, correctOption] of correctMap.entries()) {
-        const question = questionByIndex.get(qIndex);
-        if (question) {
-          await tx.predictionQuestion.update({
-            where: { id: question.id },
-            data: { correctOption, resolved: true },
+            const correctOption = correctMap.get(question.questionIndex);
+            const isCorrect = answer.chosenOption === correctOption;
+            const pointsEarned = isCorrect ? question.points : 0;
+
+            if (isCorrect) {
+              score += question.points;
+            }
+
+            answerUpdates.push({
+              answerId: answer.id,
+              isCorrect,
+              pointsEarned,
+            });
+          }
+
+          entryScores.push({ entryId: entry.id, score, answerUpdates });
+        }
+
+        // Calculate pool distribution
+        const totalPool = Number(pool.totalPool);
+        const participantCount = pool.entries.length;
+        const platformShareAmount = totalPool * 0.10;
+        const safetyFloorAmount = totalPool * 0.30;
+        const accuracyBonusAmount = totalPool * 0.60;
+
+        const totalScoreSum = entryScores.reduce((sum, e) => sum + e.score, 0);
+        const highestScore = Math.max(...entryScores.map((e) => e.score));
+
+        // Calculate payouts
+        const entryPayouts: Array<{ entryId: string; score: number; payout: number }> = [];
+
+        for (const entry of entryScores) {
+          const safetyPayout = safetyFloorAmount / participantCount;
+          let accuracyPayout: number;
+
+          if (totalScoreSum === 0) {
+            // No one got anything right — split accuracy pool equally too
+            accuracyPayout = accuracyBonusAmount / participantCount;
+          } else {
+            accuracyPayout = (entry.score / totalScoreSum) * accuracyBonusAmount;
+          }
+
+          const totalPayout = safetyPayout + accuracyPayout;
+          entryPayouts.push({ entryId: entry.entryId, score: entry.score, payout: totalPayout });
+        }
+
+        // Update questions with correct answers (small N, 5-10 questions max — keep individual)
+        for (const [qIndex, correctOption] of correctMap.entries()) {
+          const question = questionByIndex.get(qIndex);
+          if (question) {
+            await tx.predictionQuestion.update({
+              where: { id: question.id },
+              data: { correctOption, resolved: true },
+            });
+          }
+        }
+
+        // Batch update answers by correctness using updateMany (replaces N*M individual updates)
+        const allAnswerUpdates = entryScores.flatMap((e) => e.answerUpdates);
+        const correctAnswerIds = allAnswerUpdates.filter((a) => a.isCorrect).map((a) => a.answerId);
+        const incorrectAnswerIds = allAnswerUpdates.filter((a) => !a.isCorrect).map((a) => a.answerId);
+
+        if (correctAnswerIds.length > 0) {
+          await tx.predictionAnswer.updateMany({
+            where: { id: { in: correctAnswerIds } },
+            data: { isCorrect: true },
           });
         }
-      }
 
-      // Batch update answers by correctness using updateMany (replaces N*M individual updates)
-      const allAnswerUpdates = entryScores.flatMap((e) => e.answerUpdates);
-      const correctAnswerIds = allAnswerUpdates.filter((a) => a.isCorrect).map((a) => a.answerId);
-      const incorrectAnswerIds = allAnswerUpdates.filter((a) => !a.isCorrect).map((a) => a.answerId);
+        if (incorrectAnswerIds.length > 0) {
+          await tx.predictionAnswer.updateMany({
+            where: { id: { in: incorrectAnswerIds } },
+            data: { isCorrect: false },
+          });
+        }
 
-      if (correctAnswerIds.length > 0) {
-        await tx.predictionAnswer.updateMany({
-          where: { id: { in: correctAnswerIds } },
-          data: { isCorrect: true },
+        // Points need individual updates since each answer has a different value — parallelize
+        await Promise.all(
+          allAnswerUpdates.map((au) =>
+            tx.predictionAnswer.update({
+              where: { id: au.answerId },
+              data: { pointsEarned: au.pointsEarned },
+            })
+          )
+        );
+
+        // Update all entries with scores and payouts — parallelize
+        await Promise.all(
+          entryPayouts.map((ep) =>
+            tx.predictionEntry.update({
+              where: { id: ep.entryId },
+              data: { totalScore: ep.score, payout: ep.payout },
+            })
+          )
+        );
+
+        // Update pool status with WHERE guard to prevent double-settlement
+        const claimDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+        await tx.predictionPool.update({
+          where: { id: pool.id, status: { notIn: ['SETTLED', 'CANCELLED'] } },
+          data: {
+            status: 'SETTLED',
+            platformShare: platformShareAmount,
+            safetyFloorPool: safetyFloorAmount,
+            accuracyPool: accuracyBonusAmount,
+            totalScoreSum,
+            highestScore,
+            settledAt: new Date(),
+            claimDeadline,
+          },
         });
+
+        return { participantCount, totalPool, highestScore };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       }
+    );
 
-      if (incorrectAnswerIds.length > 0) {
-        await tx.predictionAnswer.updateMany({
-          where: { id: { in: incorrectAnswerIds } },
-          data: { isCorrect: false },
-        });
-      }
+    if (!settlementResult) {
+      console.log(`[Predictions] Pool ${matchId} cancelled — no participants`);
+      return;
+    }
 
-      // Points need individual updates since each answer has a different value — parallelize
-      await Promise.all(
-        allAnswerUpdates.map((au) =>
-          tx.predictionAnswer.update({
-            where: { id: au.answerId },
-            data: { pointsEarned: au.pointsEarned },
-          })
-        )
-      );
-
-      // Update all entries with scores and payouts — parallelize
-      await Promise.all(
-        entryPayouts.map((ep) =>
-          tx.predictionEntry.update({
-            where: { id: ep.entryId },
-            data: { totalScore: ep.score, payout: ep.payout },
-          })
-        )
-      );
-
-      // Update pool status
-      const claimDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
-      await tx.predictionPool.update({
-        where: { id: pool.id },
-        data: {
-          status: 'SETTLED',
-          platformShare: platformShareAmount,
-          safetyFloorPool: safetyFloorAmount,
-          accuracyPool: accuracyBonusAmount,
-          totalScoreSum,
-          highestScore,
-          settledAt: new Date(),
-          claimDeadline,
-        },
-      });
-    });
+    const { participantCount, totalPool, highestScore } = settlementResult;
 
     console.log(
       `[Predictions] Settled pool for match ${matchId}. ` +
       `Participants: ${participantCount}, Pool: ${totalPool.toFixed(2)}, ` +
-      `Highest: ${highestScore}, Platform: ${platformShareAmount.toFixed(2)}`
+      `Highest: ${highestScore}, Platform: ${(totalPool * 0.10).toFixed(2)}`
     );
 
     if (this.io) {

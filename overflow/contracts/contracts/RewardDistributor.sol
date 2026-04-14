@@ -72,6 +72,9 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
 
     mapping(uint256 => MatchRewardEpoch) internal epochs;
 
+    // C3 fix: track total claimed per team per epoch to cap rounding drain
+    mapping(uint256 => mapping(address => uint256)) public teamClaimedTotal; // epoch => teamToken => total claimed
+
     // Registered team tokens
     address[] public teamTokens;
     mapping(address => bool) public isTeamToken;
@@ -270,8 +273,16 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         uint256 userReward = (teamShare * userBalance) / totalSupply;
         if (userReward == 0) revert NoRewardsAvailable();
 
+        // C3 fix: cap claim so rounding across many small holders cannot drain more than teamShare
+        uint256 remaining = teamShare - teamClaimedTotal[epoch][teamAddress];
+        if (userReward > remaining) {
+            userReward = remaining;
+        }
+        if (userReward == 0) revert NoRewardsAvailable();
+
         e.claimed[teamAddress][msg.sender] = true;
         e.claimedAmount += userReward;
+        teamClaimedTotal[epoch][teamAddress] += userReward;
         _safeTransfer(msg.sender, userReward);
 
         emit RewardClaimed(epoch, msg.sender, teamAddress, userReward);
@@ -320,7 +331,14 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         if (userBalance == 0 || totalSupply == 0) return 0;
 
         uint256 teamShare = e.teamRewardShare[teamAddress];
-        return (teamShare * userBalance) / totalSupply;
+        uint256 reward = (teamShare * userBalance) / totalSupply;
+
+        // C3 fix: cap to remaining team budget
+        uint256 remaining = teamShare - teamClaimedTotal[epoch][teamAddress];
+        if (reward > remaining) {
+            reward = remaining;
+        }
+        return reward;
     }
 
     function getEpochInfo(uint256 epoch) external view returns (

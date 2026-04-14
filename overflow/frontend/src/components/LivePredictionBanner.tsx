@@ -5,28 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Zap, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useAccount, useWalletClient } from "wagmi";
+import { useCountdown } from "@/hooks/useCountdown";
 import { predictionsApi } from "@/lib/api";
 import type { PredictionQuestionData } from "@/lib/api";
-
-// ---------------------------------------------------------------------------
-// Countdown hook
-// ---------------------------------------------------------------------------
-
-function useCountdown(deadline: string) {
-  const [remaining, setRemaining] = useState(0);
-
-  useEffect(() => {
-    const tick = () => {
-      const diff = new Date(deadline).getTime() - Date.now();
-      setRemaining(diff > 0 ? diff : 0);
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [deadline]);
-
-  return remaining;
-}
 
 // ---------------------------------------------------------------------------
 // LivePredictionBanner

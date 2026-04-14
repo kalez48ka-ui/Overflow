@@ -220,8 +220,9 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
-      if (
-        message.includes('No prediction pool found') ||
+      if (message.includes('No prediction pool found')) {
+        res.status(404).json({ error: message });
+      } else if (
         message.includes('not accepting entries') ||
         message.includes('deadline has passed') ||
         message.includes('already entered') ||
@@ -279,10 +280,10 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
-      if (
-        message.includes('No prediction pool found') ||
+      if (message.includes('No prediction pool found') || message.includes('not found in this pool')) {
+        res.status(404).json({ error: message });
+      } else if (
         message.includes('not accepting live answers') ||
-        message.includes('not found in this pool') ||
         message.includes('not a live question') ||
         message.includes('Deadline for question') ||
         message.includes('Invalid option') ||
@@ -317,10 +318,10 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
-      if (
-        message.includes('No prediction pool found') ||
+      if (message.includes('No prediction pool found') || message.includes('No entry found')) {
+        res.status(404).json({ error: message });
+      } else if (
         message.includes('cannot claim yet') ||
-        message.includes('No entry found') ||
         message.includes('already claimed') ||
         message.includes('Claim window has expired')
       ) {
@@ -523,8 +524,9 @@ export function createPredictionsRouter(predictionsService: PredictionsService):
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
-      if (
-        message.includes('No prediction pool found') ||
+      if (message.includes('No prediction pool found')) {
+        res.status(404).json({ error: message });
+      } else if (
         message.includes('already settled') ||
         message.includes('cancelled') ||
         message.includes('Missing correct answer')

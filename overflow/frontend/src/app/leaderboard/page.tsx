@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,6 +15,7 @@ import type { LeaderboardEntry } from "@/lib/api";
 import { cn, formatCurrency, shortenAddress } from "@/lib/utils";
 import { PSL_TEAMS } from "@/lib/mockData";
 import { CountUp } from "@/components/motion/CountUp";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Spotlight = dynamic(
   () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
@@ -80,26 +81,27 @@ function WalletCell({ wallet }: { wallet: string }) {
 
 function SkeletonRow() {
   return (
-    <tr className="border-b border-[#21262D]/50">
+    <tr className="border-b border-[#21262D]/50" role="status">
       <td className="px-4 py-3"><div className="h-4 w-8 animate-pulse rounded bg-[#21262D]" /></td>
       <td className="px-4 py-3"><div className="h-4 w-24 animate-pulse rounded bg-[#21262D]" /></td>
       <td className="px-4 py-3"><div className="h-4 w-16 animate-pulse rounded bg-[#21262D]" /></td>
       <td className="px-4 py-3"><div className="h-4 w-12 animate-pulse rounded bg-[#21262D]" /></td>
       <td className="hidden sm:table-cell px-4 py-3"><div className="h-4 w-16 animate-pulse rounded bg-[#21262D]" /></td>
       <td className="hidden sm:table-cell px-4 py-3"><div className="h-4 w-12 animate-pulse rounded bg-[#21262D]" /></td>
-      <td className="hidden md:table-cell px-4 py-3"><div className="h-4 w-12 animate-pulse rounded bg-[#21262D]" /></td>
+      <td className="hidden md:table-cell px-4 py-3"><div className="h-4 w-12 animate-pulse rounded bg-[#21262D]" /><span className="sr-only">Loading...</span></td>
     </tr>
   );
 }
 
 export default function LeaderboardPage() {
+  const prefersReduced = useReducedMotion();
   const { address } = useAccount();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("pnl");
 
-  const fetchLeaderboard = (sort: SortKey) => {
+  const fetchLeaderboard = useCallback((sort: SortKey) => {
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -122,7 +124,7 @@ export default function LeaderboardPage() {
     return () => {
       cancelled = true;
     };
-  };
+  }, []);
 
   useEffect(() => {
     return fetchLeaderboard(sortKey);
@@ -130,9 +132,9 @@ export default function LeaderboardPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.3 }}
       className="min-h-screen bg-[#0D1117] relative overflow-hidden"
     >
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
@@ -186,25 +188,25 @@ export default function LeaderboardPage() {
             <table className="w-full min-w-[600px] text-left" aria-label="Trading leaderboard">
               <thead>
                 <tr className="border-b border-[#21262D]">
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] w-16">
+                  <th scope="col" className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] w-16">
                     Rank
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                  <th scope="col" className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
                     Wallet
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
+                  <th scope="col" className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Total P&L
                   </th>
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
+                  <th scope="col" className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Trades
                   </th>
-                  <th className="hidden sm:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
+                  <th scope="col" className="hidden sm:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Volume
                   </th>
-                  <th className="hidden sm:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-center">
+                  <th scope="col" className="hidden sm:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-center">
                     Favorite
                   </th>
-                  <th className="hidden md:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
+                  <th scope="col" className="hidden md:table-cell px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] text-right">
                     Win Rate
                   </th>
                 </tr>

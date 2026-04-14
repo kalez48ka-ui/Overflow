@@ -183,22 +183,24 @@ contract FanWars is Ownable, ReentrancyGuard {
         UserLock storage lock = userLocks[matchId][msg.sender];
         if (lock.amount > 0) revert AlreadyLocked();
 
-        // Transfer tokens from user to this contract
+        // H1 fix: balance-before/after pattern to handle transfer-tax tokens correctly
+        uint256 balBefore = IERC20(teamToken).balanceOf(address(this));
         IERC20(teamToken).safeTransferFrom(msg.sender, address(this), amount);
+        uint256 received = IERC20(teamToken).balanceOf(address(this)) - balBefore;
 
-        // Record the lock
+        // Record the lock with the actual received amount, not the pre-tax amount
         lock.teamToken = teamToken;
-        lock.amount = amount;
+        lock.amount = received;
 
         // Update war totals
         if (teamToken == war.homeTeamToken) {
-            war.totalHomeLocked += amount;
+            war.totalHomeLocked += received;
         } else {
-            war.totalAwayLocked += amount;
+            war.totalAwayLocked += received;
         }
-        totalLockedAllWars += amount;
+        totalLockedAllWars += received;
 
-        emit TokensLocked(matchId, msg.sender, teamToken, amount);
+        emit TokensLocked(matchId, msg.sender, teamToken, received);
     }
 
     // -----------------------------------------------------------------------

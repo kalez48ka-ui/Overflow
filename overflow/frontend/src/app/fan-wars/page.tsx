@@ -20,6 +20,7 @@ import {
 } from "@/lib/mockData";
 import { formatNumber, shortenAddress } from "@/lib/utils";
 import { NumberTicker } from "@/components/ui/number-ticker";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Spotlight = dynamic(
   () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
@@ -36,6 +37,7 @@ const AnimatedGradientBorder = dynamic(
 // ---------------------------------------------------------------------------
 
 export default function FanWarsPage() {
+  const prefersReduced = useReducedMotion();
   const { address, isConnected } = useAccount();
 
   const [fanWars, setFanWars] = useState<FanWarStatus[]>([]);
@@ -73,7 +75,9 @@ export default function FanWarsPage() {
     setLoading(false);
   }, [address, isConnected]);
 
-  fetchDataRef.current = fetchData;
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
 
   useEffect(() => {
     fetchData();
@@ -116,9 +120,9 @@ export default function FanWarsPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.3 }}
       className="min-h-screen bg-[#0D1117]"
     >
       {/* Hero Header */}
@@ -264,16 +268,16 @@ export default function FanWarsPage() {
                 <table className="w-full" aria-label="Fan wars leaderboard">
                   <thead>
                     <tr className="border-b border-[#21262D] bg-[#161B22]">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Rank
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-[#9CA3AF]">
                         Wallet
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF]">
+                      <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF]">
                         Total Boost
                       </th>
-                      <th className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] sm:table-cell">
+                      <th scope="col" className="hidden px-4 py-3 text-right text-xs font-semibold text-[#9CA3AF] sm:table-cell">
                         Wars Won
                       </th>
                     </tr>

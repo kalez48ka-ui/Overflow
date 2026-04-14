@@ -18,7 +18,19 @@ const TradingChart = dynamic(
   () => import("@/components/TradingChart").then((m) => ({ default: m.TradingChart })),
   {
     ssr: false,
-    loading: () => <div className="flex h-[380px] items-center justify-center" role="status"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#9CA3AF]" /><span className="sr-only">Loading...</span></div>,
+    loading: () => (
+      <div className="h-[380px] rounded-xl border border-[#21262D] bg-[#161B22] p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-3 w-20 skeleton rounded" />
+          <div className="flex gap-2">
+            <div className="h-6 w-10 skeleton rounded" />
+            <div className="h-6 w-10 skeleton rounded" />
+            <div className="h-6 w-10 skeleton rounded" />
+          </div>
+        </div>
+        <div className="h-[320px] skeleton rounded" />
+      </div>
+    ),
   },
 );
 const AIAnalysis = dynamic(
@@ -118,13 +130,13 @@ function BondingCurveCard({ team }: { team: PSLTeam }) {
       {/* Buy / Sell prices */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="rounded-lg bg-[#0D1117] px-3 py-2">
-          <span className="text-[10px] text-[#768390] uppercase tracking-wider">Buy Price</span>
+          <span className="text-[10px] text-[#8B949E] uppercase tracking-wider">Buy Price</span>
           <p className="text-sm font-bold font-mono tabular-nums text-[#3FB950]">
             ${formatPrice(buyPrice)}
           </p>
         </div>
         <div className="rounded-lg bg-[#0D1117] px-3 py-2">
-          <span className="text-[10px] text-[#768390] uppercase tracking-wider">Sell Price</span>
+          <span className="text-[10px] text-[#8B949E] uppercase tracking-wider">Sell Price</span>
           <p className="text-sm font-bold font-mono tabular-nums text-[#F85149]">
             ${formatPrice(sellPrice)}
           </p>
@@ -134,13 +146,13 @@ function BondingCurveCard({ team }: { team: PSLTeam }) {
       {/* Spread + Supply */}
       <div className="flex items-center justify-between mb-3 text-xs">
         <div>
-          <span className="text-[#768390]">Spread </span>
+          <span className="text-[#8B949E]">Spread </span>
           <span className="font-mono tabular-nums text-[#E6EDF3] font-medium">
             {spread.toFixed(2)}%
           </span>
         </div>
         <div>
-          <span className="text-[#768390]">Supply </span>
+          <span className="text-[#8B949E]">Supply </span>
           <span className="font-mono tabular-nums text-[#E6EDF3] font-medium">
             {formatNumber(totalSupply)}
           </span>
@@ -162,7 +174,7 @@ function BondingCurveCard({ team }: { team: PSLTeam }) {
           style={{ left: `${indicatorPct}%`, transform: `translate(-50%, -50%)` }}
         />
       </div>
-      <div className="flex justify-between mt-1 text-[9px] text-[#768390]">
+      <div className="flex justify-between mt-1 text-[9px] text-[#8B949E]">
         <span>Sell</span>
         <span>Buy</span>
       </div>
@@ -208,7 +220,7 @@ function RecentTradesFeed({ teamSymbol }: { teamSymbol: string }) {
     <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
       <div className="mb-2 flex items-center gap-2">
         <span className="text-xs font-semibold text-[#E6EDF3]">Recent Trades</span>
-        <span className="text-[10px] text-[#768390]">auto-refresh</span>
+        <span className="text-[10px] text-[#8B949E]">auto-refresh</span>
       </div>
 
       {loading ? (
@@ -217,17 +229,17 @@ function RecentTradesFeed({ teamSymbol }: { teamSymbol: string }) {
           <span className="sr-only">Loading trades...</span>
         </div>
       ) : error ? (
-        <p className="py-6 text-center text-xs text-[#768390]">
+        <p className="py-6 text-center text-xs text-[#8B949E]">
           Failed to load trades
         </p>
       ) : trades.length === 0 ? (
-        <p className="py-6 text-center text-xs text-[#768390]">
+        <p className="py-6 text-center text-xs text-[#8B949E]">
           No trades yet &mdash; be the first!
         </p>
       ) : (
         <div>
           {/* Column headers */}
-          <div className="mb-1.5 grid grid-cols-[auto_1fr_1fr_1fr] gap-2 text-[10px] text-[#768390] uppercase tracking-wider">
+          <div className="mb-1.5 grid grid-cols-[auto_1fr_1fr_1fr] gap-2 text-[10px] text-[#8B949E] uppercase tracking-wider">
             <span>Side</span>
             <span>Price</span>
             <span className="text-center">Amount</span>
@@ -260,7 +272,7 @@ function RecentTradesFeed({ teamSymbol }: { teamSymbol: string }) {
                   <span className="text-center font-mono tabular-nums text-[#9CA3AF]">
                     {formatNumber(trade.amount)}
                   </span>
-                  <span className="text-right text-[#768390] flex items-center justify-end gap-1">
+                  <span className="text-right text-[#8B949E] flex items-center justify-end gap-1">
                     <span>{formatTradeTime(trade.timestamp)}</span>
                     {trade.txHash && (
                       <a
@@ -321,11 +333,12 @@ function SellTaxExplainer({ team }: { team: PSLTeam }) {
               onBlur={() => setShowTooltip(false)}
               className="text-[#768390] hover:text-[#9CA3AF] transition-colors"
               aria-label="Sell tax info"
+              aria-describedby="sell-tax-tooltip"
             >
               <Info className="h-3 w-3" />
             </button>
             {showTooltip && (
-              <div className="absolute left-0 top-6 z-50 w-48 rounded-lg border border-[#21262D] bg-[#161B22] p-2.5 shadow-xl">
+              <div id="sell-tax-tooltip" role="tooltip" className="absolute left-0 top-6 z-50 w-48 rounded-lg border border-[#21262D] bg-[#161B22] p-2.5 shadow-xl">
                 <p className="text-[10px] leading-relaxed text-[#9CA3AF]">
                   Rank 1 = 2%, Rank 8 = 15%. Better form = lower exit cost.
                 </p>
@@ -340,7 +353,7 @@ function SellTaxExplainer({ team }: { team: PSLTeam }) {
           >
             {taxPercent}%
           </span>
-          <span className="text-[10px] text-[#768390]">#{team.ranking} of 8</span>
+          <span className="text-[10px] text-[#8B949E]">#{team.ranking} of 8</span>
         </div>
       </div>
     </div>
@@ -453,7 +466,7 @@ export default function TradePage({ params }: PageProps) {
                 </Link>
                 <TeamLogo teamId={team.id} color={team.color} size={28} />
                 <h1 className="text-sm font-medium text-[#9CA3AF]">{team.name}</h1>
-                <span className="text-xs text-[#768390]">{team.symbol}</span>
+                <span className="text-xs text-[#8B949E]">{team.symbol}</span>
               </div>
               <div className="flex items-baseline gap-3 pl-10 sm:pl-[52px]">
                 <GlitchPrice value={`$${formatPrice(team.price)}`} className="text-3xl sm:text-4xl md:text-5xl font-black tabular-nums text-[#E6EDF3]" />
@@ -477,15 +490,15 @@ export default function TradePage({ params }: PageProps) {
           {/* Mobile: 2-column grid */}
           <div className="grid grid-cols-2 gap-2 py-2.5 text-xs font-mono sm:hidden">
             {[
-              { label: "High", value: high24h !== null ? <CountUp value={high24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#768390]">--</span>, color: "#3FB950" },
-              { label: "Low", value: low24h !== null ? <CountUp value={low24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#768390]">--</span>, color: "#F85149" },
+              { label: "High", value: high24h !== null ? <CountUp value={high24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#8B949E]">--</span>, color: "#3FB950" },
+              { label: "Low", value: low24h !== null ? <CountUp value={low24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#8B949E]">--</span>, color: "#F85149" },
               { label: "Volume", value: <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Mkt Cap", value: <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Buy Tax", value: <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />, color: "#3FB950" },
               { label: "Sell Tax", value: <CountUp value={team.sellTax} suffix="%" decimals={1} duration={0.8} />, color: "#F85149" },
             ].map(({ label, value, color }) => (
               <div key={label} className="px-2 py-1 rounded-md bg-[#161B22]">
-                <span className="text-[#768390]">{label} </span>
+                <span className="text-[#8B949E]">{label} </span>
                 <span className="font-semibold tabular-nums" style={{ color }}>{value}</span>
               </div>
             ))}
@@ -493,15 +506,15 @@ export default function TradePage({ params }: PageProps) {
           {/* Desktop: horizontal flex with dividers */}
           <div className="hidden sm:flex items-center divide-x divide-[#21262D] py-2.5 text-xs font-mono">
             {[
-              { label: "High", value: high24h !== null ? <CountUp value={high24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#768390]">--</span>, color: "#3FB950" },
-              { label: "Low", value: low24h !== null ? <CountUp value={low24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#768390]">--</span>, color: "#F85149" },
+              { label: "High", value: high24h !== null ? <CountUp value={high24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#8B949E]">--</span>, color: "#3FB950" },
+              { label: "Low", value: low24h !== null ? <CountUp value={low24h} prefix="$" decimals={4} duration={1} /> : <span className="text-[#8B949E]">--</span>, color: "#F85149" },
               { label: "Volume", value: <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Mkt Cap", value: <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
               { label: "Buy Tax", value: <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />, color: "#3FB950" },
               { label: "Sell Tax", value: <CountUp value={team.sellTax} suffix="%" decimals={1} duration={0.8} />, color: "#F85149" },
             ].map(({ label, value, color }) => (
               <div key={label} className="shrink-0 px-4 first:pl-0">
-                <span className="text-[#768390]">{label} </span>
+                <span className="text-[#8B949E]">{label} </span>
                 <span className="font-semibold tabular-nums" style={{ color }}>{value}</span>
               </div>
             ))}
@@ -519,10 +532,10 @@ export default function TradePage({ params }: PageProps) {
             <div>
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#768390]">
+                  <span className="text-xs text-[#8B949E]">
                     {team.symbol} / WIRE
                   </span>
-                  <span className="text-[10px] text-[#768390]">
+                  <span className="text-[10px] text-[#8B949E]">
                     {timeframe === "1h" ? "1m" : timeframe === "24h" ? "5m" : "1h"}
                   </span>
                 </div>
@@ -582,7 +595,7 @@ export default function TradePage({ params }: PageProps) {
               <div className="mb-4">
                 <div className="mb-1.5 flex items-center justify-between text-xs font-mono tabular-nums">
                   <span className="text-[#3FB950]">{team.wins}W</span>
-                  <span className="text-[#768390]">
+                  <span className="text-[#8B949E]">
                     {team.wins + team.losses} played
                   </span>
                   <span className="text-[#F85149]">{team.losses}L</span>

@@ -69,10 +69,10 @@ function MultiplierTable() {
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-[#21262D] bg-[#0D1117]/60">
-            <th className="px-3 py-2 text-left font-semibold text-[#9CA3AF]">Tier</th>
-            <th className="px-3 py-2 text-left font-semibold text-[#9CA3AF]">Score</th>
-            <th className="px-3 py-2 text-left font-semibold text-[#9CA3AF]">Multiplier</th>
-            <th className="px-3 py-2 text-right font-semibold text-[#9CA3AF]">Release %</th>
+            <th scope="col" className="px-3 py-2 text-left font-semibold text-[#9CA3AF]">Tier</th>
+            <th scope="col" className="px-3 py-2 text-left font-semibold text-[#9CA3AF]">Score</th>
+            <th scope="col" className="px-3 py-2 text-left font-semibold text-[#9CA3AF]">Multiplier</th>
+            <th scope="col" className="px-3 py-2 text-right font-semibold text-[#9CA3AF]">Release %</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#21262D]">
@@ -95,15 +95,15 @@ export default function VaultPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     (async () => {
       const [stateResult, upsetsResult] = await Promise.allSettled([
-        api.vault.getState(),
-        api.vault.getUpsets(),
+        api.vault.getState(controller.signal),
+        api.vault.getUpsets(controller.signal),
       ]);
 
-      if (cancelled) return;
+      if (controller.signal.aborted) return;
 
       let newData = { ...VAULT_DATA };
       let updated = false;
@@ -148,7 +148,7 @@ export default function VaultPage() {
       setLoading(false);
     })();
 
-    return () => { cancelled = true; };
+    return () => controller.abort();
   }, []);
 
   const { currentBalance, totalPayouts, upsetEvents, currentMultiplier } =
@@ -176,7 +176,7 @@ export default function VaultPage() {
               <Meteors number={10} className="opacity-30" />
               <h1 className="sr-only">Upset Vault</h1>
               <p className="relative z-10 mb-2 text-sm font-medium text-[#9CA3AF]">Upset Vault Balance</p>
-              <GlitchPrice value={formatCurrency(currentBalance)} className="relative z-10 text-4xl sm:text-5xl md:text-6xl font-black font-mono tabular-nums text-[#E6EDF3]" autoScrambleInterval={8000} />
+              <GlitchPrice value={formatCurrency(currentBalance)} className="relative z-10 text-4xl sm:text-5xl md:text-6xl font-black font-mono tabular-nums text-[#E6EDF3]" />
               <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-[#9CA3AF]">
                 <span>
                   All-time payouts{" "}
@@ -247,11 +247,11 @@ export default function VaultPage() {
                     Buy underdog tokens to benefit from upset payouts.
                   </p>
                   <Link
-                    href="/trade/lq"
+                    href="/"
                     className="inline-flex items-center gap-2 rounded-lg bg-[#E4002B] px-4 py-2 text-sm font-bold text-white hover:bg-[#C00025] transition-colors"
                   >
-                    Trade $LQ
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    Browse Teams
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
               </div>

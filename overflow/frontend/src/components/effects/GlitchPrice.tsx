@@ -109,6 +109,7 @@ export function GlitchPrice({
   return (
     <motion.span
       className={`relative inline-flex items-center font-mono ${className}`}
+      aria-label={value}
       animate={
         isGlitching
           ? { x: [0, -2, 3, -1, 2, 0] }
@@ -135,6 +136,7 @@ export function GlitchPrice({
 
       {/* Price digits */}
       <span
+        aria-hidden="true"
         style={{
           textShadow: isGlitching
             ? `0 0 8px ${glowColor}80`

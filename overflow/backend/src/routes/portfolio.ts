@@ -87,6 +87,7 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
           createdAt: { gte: since },
         },
         orderBy: { createdAt: 'asc' },
+        take: 5000,
         include: {
           team: {
             select: { id: true, symbol: true, name: true, currentPrice: true },

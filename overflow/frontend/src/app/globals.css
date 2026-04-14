@@ -155,16 +155,6 @@ input[type="number"] {
   opacity: 0.4;
 }
 
-/* ── Text shimmer — disabled (was rainbow gradient) ──────────── */
-.text-shimmer {
-  /* No-op: use plain text color instead */
-}
-
-/* ── CTA pulse — disabled (was pulsing glow) ─────────────────── */
-.cta-pulse {
-  /* No-op */
-}
-
 /* ── Card border glow — GPU-accelerated box-shadow shimmer ─────── */
 @keyframes borderGlow {
   0%, 100% { box-shadow: 0 0 0 1px rgba(33, 38, 45, 1); }
@@ -173,15 +163,6 @@ input[type="number"] {
 
 .card-border-glow {
   animation: borderGlow 3s ease-in-out infinite;
-}
-
-/* ── Price tick — disabled (was fake price flash) ─────────────── */
-.price-tick {
-  /* No-op */
-}
-
-.price-tick-down {
-  /* No-op */
 }
 
 /* ── Counting animation for stats ─────────────────────────────── */
@@ -207,11 +188,6 @@ input[type="number"] {
 
 .live-dot {
   animation: liveDot 2s ease-in-out infinite;
-}
-
-/* ── Floating particles — removed ─────────────────────────────── */
-.particle {
-  display: none;
 }
 
 /* ── Section divider — monochrome ─────────────────────────────── */

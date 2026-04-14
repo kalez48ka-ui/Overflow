@@ -162,6 +162,8 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         if (!isTeamToken[tokenAddress]) revert InvalidToken();
         if (msg.value == 0) revert InsufficientPayment();
         if (circuitBreaker.isPaused(tokenAddress)) revert TradingPaused();
+        // H2 fix: reject zero slippage protection to prevent sandwich attacks
+        require(minTokensOut > 0, "Set slippage protection");
 
         TeamToken token = TeamToken(tokenAddress);
         uint256 currentSupply = token.totalSupply();
@@ -222,6 +224,8 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         if (!isTeamToken[tokenAddress]) revert InvalidToken();
         if (amount == 0) revert ZeroAmount();
         if (circuitBreaker.isPaused(tokenAddress)) revert TradingPaused();
+        // H2 fix: reject zero slippage protection to prevent sandwich attacks
+        require(minProceeds > 0, "Set slippage protection");
 
         TeamToken token = TeamToken(tokenAddress);
         if (token.balanceOf(msg.sender) < amount) revert InsufficientBalance();

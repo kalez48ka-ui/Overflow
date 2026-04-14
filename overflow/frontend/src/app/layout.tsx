@@ -100,6 +100,7 @@ function Footer() {
             href="https://github.com/kalez48ka-ui/Overflow"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="Overflow GitHub repository (opens in new tab)"
             className="flex items-center gap-1.5 text-xs text-[#9CA3AF] hover:text-[#E6EDF3] transition-colors"
           >
             <svg viewBox="0 0 16 16" fill="currentColor" className="h-4 w-4">

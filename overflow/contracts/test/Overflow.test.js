@@ -97,7 +97,7 @@ describe("Overflow Platform", function () {
       const tokenAddr = teamTokens["ISU"];
       const buyAmount = ethers.parseEther("1"); // 1 ETH
 
-      await factory.connect(user1).buy(tokenAddr, 0, { value: buyAmount });
+      await factory.connect(user1).buy(tokenAddr, 1, { value: buyAmount });
 
       const token = await ethers.getContractAt("TeamToken", tokenAddr);
       const balance = await token.balanceOf(user1.address);
@@ -110,7 +110,7 @@ describe("Overflow Platform", function () {
 
       const tokenAddr = teamTokens["LHQ"];
       const buyAmount = ethers.parseEther("1");
-      await factory.connect(user2).buy(tokenAddr, 0, { value: buyAmount });
+      await factory.connect(user2).buy(tokenAddr, 1, { value: buyAmount });
 
       const balanceAfter = await ethers.provider.getBalance(rdAddr);
       const feeReceived = balanceAfter - balanceBefore;
@@ -132,7 +132,7 @@ describe("Overflow Platform", function () {
       const sellAmount = balance / 10n; // Sell 10% — within max tx limit
       const ethBefore = await ethers.provider.getBalance(user1.address);
 
-      await factory.connect(user1).sell(tokenAddr, sellAmount, 0);
+      await factory.connect(user1).sell(tokenAddr, sellAmount, 1);
 
       const ethAfter = await ethers.provider.getBalance(user1.address);
       // User should have received some ETH (minus gas)
@@ -150,7 +150,7 @@ describe("Overflow Platform", function () {
     it("should reject sells for tokens user does not hold", async function () {
       const tokenAddr = teamTokens["QTG"];
       await expect(
-        factory.connect(user3).sell(tokenAddr, ethers.parseEther("100"), 0)
+        factory.connect(user3).sell(tokenAddr, ethers.parseEther("100"), 1)
       ).to.be.revertedWithCustomError(factory, "InsufficientBalance");
     });
   });
@@ -188,7 +188,7 @@ describe("Overflow Platform", function () {
     it("should apply progressive sell tax (<5min = 12%)", async function () {
       // Buy fresh tokens
       const tokenAddr = teamTokens["MLS"];
-      await factory.connect(user3).buy(tokenAddr, 0, { value: ethers.parseEther("0.5") });
+      await factory.connect(user3).buy(tokenAddr, 1, { value: ethers.parseEther("0.5") });
 
       const token = await ethers.getContractAt("TeamToken", tokenAddr);
       const taxBps = await token.getSellTaxBps(user3.address);
@@ -482,7 +482,7 @@ describe("Overflow Platform", function () {
 
       // Try to buy — should fail
       await expect(
-        factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("0.1") })
+        factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("0.1") })
       ).to.be.revertedWithCustomError(factory, "TradingPaused");
 
       // Resume for other tests
@@ -497,7 +497,7 @@ describe("Overflow Platform", function () {
     it("should have asymmetric buy/sell prices (buy > sell)", async function () {
       // Buy some tokens first to move off zero supply
       const tokenAddr = teamTokens["QTG"];
-      await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("1") });
+      await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("1") });
 
       const buyPrice = await factory.getBuyPrice(tokenAddr);
       const sellPrice = await factory.getSellPrice(tokenAddr);
@@ -511,7 +511,7 @@ describe("Overflow Platform", function () {
       const tokenAddr = teamTokens["QTG"];
 
       const priceBefore = await factory.getBuyPrice(tokenAddr);
-      await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("2") });
+      await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("2") });
       const priceAfter = await factory.getBuyPrice(tokenAddr);
 
       expect(priceAfter).to.be.greaterThan(priceBefore);
@@ -605,7 +605,7 @@ describe("Overflow Platform", function () {
       await isolatedOracle.registerTeam(tstAddr);
 
       // Buy a small amount to seed minimal reserves
-      await isolatedFactory.connect(user1).buy(tstAddr, 0, { value: ethers.parseEther("0.01") });
+      await isolatedFactory.connect(user1).buy(tstAddr, 1, { value: ethers.parseEther("0.01") });
 
       const token = await ethers.getContractAt("TeamToken", tstAddr);
       const balance = await token.balanceOf(user1.address);
@@ -618,7 +618,7 @@ describe("Overflow Platform", function () {
       // The sell curve proceeds grow faster than what was deposited on the buy side
       // at high supply, but with such a small buy, reserves are tiny.
       // Buy more to increase supply significantly
-      await isolatedFactory.connect(user2).buy(tstAddr, 0, { value: ethers.parseEther("5") });
+      await isolatedFactory.connect(user2).buy(tstAddr, 1, { value: ethers.parseEther("5") });
 
       await time.increase(61);
 
@@ -643,7 +643,7 @@ describe("Overflow Platform", function () {
       // With asymmetric curves (sell < buy), proceeds usually fit reserves.
       // The InsufficientReserves check is a safety net. Verify it exists by testing the path.
       try {
-        await isolatedFactory.connect(user2).sell(tstAddr, sellAmount, 0);
+        await isolatedFactory.connect(user2).sell(tstAddr, sellAmount, 1);
         // If sell succeeds, reserves were sufficient — that is fine, the guard exists
       } catch (e) {
         // If it reverts with InsufficientReserves, guard works as expected
@@ -798,7 +798,7 @@ describe("Overflow Platform", function () {
       await deployer.sendTransaction({ to: factoryAddr, value: ethers.parseEther("100") });
 
       // Seed tokenReserves by doing a tiny buy (so sell path does not revert on reserves first)
-      await isoFactory.connect(user2).buy(itrAddr, 0, { value: ethers.parseEther("50") });
+      await isoFactory.connect(user2).buy(itrAddr, 1, { value: ethers.parseEther("50") });
 
       await time.increase(61);
 
@@ -822,7 +822,7 @@ describe("Overflow Platform", function () {
       // The transaction may revert with MaxIterationsExceeded or run out of gas first.
       const moderateSell = ethers.parseEther("150000");
       await expect(
-        isoFactory.connect(user1).sell(itrAddr, moderateSell, 0)
+        isoFactory.connect(user1).sell(itrAddr, moderateSell, 1)
       ).to.be.reverted;
     });
   });
@@ -839,7 +839,7 @@ describe("Overflow Platform", function () {
 
       // Ensure user1 has LHQ tokens
       if (balance == 0n) {
-        await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("0.5") });
+        await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("0.5") });
         await time.increase(1); // ensure lastBuyTimestamp < snapshot
       }
 
@@ -868,7 +868,7 @@ describe("Overflow Platform", function () {
 
       // Buy tokens for user3 on a fresh team
       const tokenAddr = teamTokens["HKM"];
-      await factory.connect(user3).buy(tokenAddr, 0, { value: ethers.parseEther("0.5") });
+      await factory.connect(user3).buy(tokenAddr, 1, { value: ethers.parseEther("0.5") });
       await time.increase(1);
 
       const ranking = await oracle.getTeamRanking();
@@ -900,7 +900,7 @@ describe("Overflow Platform", function () {
       try { await circuitBreaker.resume(tokenAddr); } catch {}
 
       // user1 buys fresh tokens
-      await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("1") });
+      await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("1") });
 
       const token = await ethers.getContractAt("TeamToken", tokenAddr);
       const senderBalance = await token.balanceOf(user1.address);
@@ -952,7 +952,7 @@ describe("Overflow Platform", function () {
       const balance = await token.balanceOf(user1.address);
       if (balance <= maxTx) {
         // Buy more tokens to exceed maxTx threshold
-        await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("5") });
+        await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("5") });
       }
 
       const updatedBalance = await token.balanceOf(user1.address);
@@ -1144,7 +1144,7 @@ describe("Overflow Platform", function () {
 
       // Trading blocked while paused
       await expect(
-        factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("0.1") })
+        factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("0.1") })
       ).to.be.revertedWithCustomError(factory, "TradingPaused");
 
       // Advance past pause duration
@@ -1152,7 +1152,7 @@ describe("Overflow Platform", function () {
       expect(await circuitBreaker.isPaused(tokenAddr)).to.equal(false);
 
       // Trading resumes
-      await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("0.1") });
+      await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("0.1") });
       const token = await ethers.getContractAt("TeamToken", tokenAddr);
       expect(await token.balanceOf(user1.address)).to.be.greaterThan(0);
     });
@@ -1255,7 +1255,7 @@ describe("Overflow Platform", function () {
       const tokenAddr = teamTokens["RWP"];
       const buyAmount = ethers.parseEther("0.1");
       // minTokensOut = 0 should always succeed
-      await factory.connect(user2).buy(tokenAddr, 0, { value: buyAmount });
+      await factory.connect(user2).buy(tokenAddr, 1, { value: buyAmount });
       const token = await ethers.getContractAt("TeamToken", tokenAddr);
       expect(await token.balanceOf(user2.address)).to.be.greaterThan(0);
     });
@@ -1311,7 +1311,7 @@ describe("Overflow Platform", function () {
       await isoOracle.registerTeam(rsvAddr);
 
       // Do a tiny buy to seed minimal reserves
-      await isoFactory.connect(user1).buy(rsvAddr, 0, { value: ethers.parseEther("0.01") });
+      await isoFactory.connect(user1).buy(rsvAddr, 1, { value: ethers.parseEther("0.01") });
 
       // Mint a large supply directly (bypassing the buy curve = no ETH deposited for these)
       const rsvToken = await ethers.getContractAt("TeamToken", rsvAddr);
@@ -1326,7 +1326,7 @@ describe("Overflow Platform", function () {
       const maxTx = await rsvToken.maxTxAmount();
       const sellAmt = ethers.parseEther("500") < maxTx ? ethers.parseEther("500") : maxTx;
       await expect(
-        isoFactory.connect(user2).sell(rsvAddr, sellAmt, 0)
+        isoFactory.connect(user2).sell(rsvAddr, sellAmt, 1)
       ).to.be.revertedWithCustomError(isoFactory, "InsufficientReserves");
     });
   });
@@ -1395,7 +1395,7 @@ describe("Overflow Platform", function () {
       // The _calculateBuyTokens function returns 0 when supply is already at MAX_SUPPLY,
       // which triggers the ZeroAmount revert in the buy() function.
       await expect(
-        isoFactory.connect(user2).buy(cptAddr, 0, { value: ethers.parseEther("1") })
+        isoFactory.connect(user2).buy(cptAddr, 1, { value: ethers.parseEther("1") })
       ).to.be.reverted;
     });
   });
@@ -1409,7 +1409,7 @@ describe("Overflow Platform", function () {
       const token = await ethers.getContractAt("TeamToken", tokenAddr);
 
       // Buy fresh tokens
-      await factory.connect(user3).buy(tokenAddr, 0, { value: ethers.parseEther("0.2") });
+      await factory.connect(user3).buy(tokenAddr, 1, { value: ethers.parseEther("0.2") });
 
       // Advance past 5 minutes but under 30 minutes
       await time.increase(6 * 60);
@@ -1436,7 +1436,7 @@ describe("Overflow Platform", function () {
       await time.increase(15 * 60);
       try { await circuitBreaker.resume(tokenAddr); } catch {}
 
-      await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("0.5") });
+      await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("0.5") });
       const token = await ethers.getContractAt("TeamToken", tokenAddr);
       const balance = await token.balanceOf(user1.address);
       const maxTx = await token.maxTxAmount();
@@ -1691,7 +1691,7 @@ describe("Overflow Platform", function () {
       const lhqToken = await ethers.getContractAt("TeamToken", teamTokens["LHQ"]);
       const lhqBal = await lhqToken.balanceOf(user1.address);
       if (lhqBal == 0n) {
-        await factory.connect(user1).buy(teamTokens["LHQ"], 0, { value: ethers.parseEther("0.5") });
+        await factory.connect(user1).buy(teamTokens["LHQ"], 1, { value: ethers.parseEther("0.5") });
       }
       await time.increase(2); // ensure lastBuyTimestamp < snapshot
 
@@ -1736,7 +1736,7 @@ describe("Overflow Platform", function () {
       // Ensure user1 holds LHQ
       const lhqToken = await ethers.getContractAt("TeamToken", teamTokens["LHQ"]);
       if ((await lhqToken.balanceOf(user1.address)) == 0n) {
-        await factory.connect(user1).buy(teamTokens["LHQ"], 0, { value: ethers.parseEther("0.3") });
+        await factory.connect(user1).buy(teamTokens["LHQ"], 1, { value: ethers.parseEther("0.3") });
       }
       await time.increase(2);
 
@@ -1762,7 +1762,7 @@ describe("Overflow Platform", function () {
       const tokenAddr = teamTokens["PSZ"];
       await time.increase(15 * 60);
       try { await circuitBreaker.resume(tokenAddr); } catch {}
-      await factory.connect(user2).buy(tokenAddr, 0, { value: ethers.parseEther("0.3") });
+      await factory.connect(user2).buy(tokenAddr, 1, { value: ethers.parseEther("0.3") });
       await time.increase(2);
 
       const ranking = await oracle.getTeamRanking();
@@ -1923,7 +1923,7 @@ describe("Overflow Platform", function () {
       const tokenAddr = ranking[0]; // first-place team
       await time.increase(15 * 60);
       try { await circuitBreaker.resume(tokenAddr); } catch {}
-      await factory.connect(user3).buy(tokenAddr, 0, { value: ethers.parseEther("0.2") });
+      await factory.connect(user3).buy(tokenAddr, 1, { value: ethers.parseEther("0.2") });
 
       // Attempting to claim should revert (bought after snapshot)
       await expect(
@@ -1959,7 +1959,7 @@ describe("Overflow Platform", function () {
       const epoch = (await upsetVault.currentUpsetEpoch()) - 1n;
 
       // user3 buys LHQ tokens AFTER the upset was triggered
-      await factory.connect(user3).buy(teamTokens["LHQ"], 0, { value: ethers.parseEther("0.2") });
+      await factory.connect(user3).buy(teamTokens["LHQ"], 1, { value: ethers.parseEther("0.2") });
 
       await expect(
         upsetVault.connect(user3).claimUpsetReward(epoch)
@@ -1973,7 +1973,7 @@ describe("Overflow Platform", function () {
   describe("Factory Zero-Amount Edge Cases", function () {
     it("should revert buy with zero ETH", async function () {
       await expect(
-        factory.connect(user1).buy(teamTokens["ISU"], 0, { value: 0 })
+        factory.connect(user1).buy(teamTokens["ISU"], 1, { value: 0 })
       ).to.be.revertedWithCustomError(factory, "InsufficientPayment");
     });
 
@@ -1997,8 +1997,8 @@ describe("Overflow Platform", function () {
       try { await circuitBreaker.resume(tokenAddr); } catch {}
 
       // 1. Users buy KRK tokens
-      await factory.connect(user1).buy(tokenAddr, 0, { value: ethers.parseEther("0.5") });
-      await factory.connect(user2).buy(tokenAddr, 0, { value: ethers.parseEther("0.3") });
+      await factory.connect(user1).buy(tokenAddr, 1, { value: ethers.parseEther("0.5") });
+      await factory.connect(user2).buy(tokenAddr, 1, { value: ethers.parseEther("0.3") });
 
       // Advance time so buys are before the snapshot (C-1 fix requires lastBuyTimestamp < snapshotTimestamp)
       await time.increase(1);

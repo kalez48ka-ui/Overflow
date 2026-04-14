@@ -296,7 +296,7 @@ export default function LandingPage() {
                 <GlitchPrice
                   value={formatCurrency(vaultBalance)}
                   className="font-semibold text-[#E6EDF3]"
-                  autoScrambleInterval={12000}
+
                 />
                 {" "}in Upset Vault
               </span>
@@ -435,13 +435,14 @@ export default function LandingPage() {
         </div>
 
         {teamsLoading ? (
-          <div className="min-h-[400px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="min-h-[400px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" role="status">
             {Array.from({ length: PSL_TEAMS.length }).map((_, i) => (
               <div
                 key={i}
                 className="h-48 animate-pulse rounded-xl border border-[#21262D] bg-[#161B22]"
               />
             ))}
+            <span className="sr-only">Loading...</span>
           </div>
         ) : displayTeams.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-[#21262D] bg-[#161B22] py-16 text-center">
@@ -545,7 +546,7 @@ export default function LandingPage() {
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#21262D] bg-[#0D1117] transition-all group-hover:border-[#E6EDF3]/20 group-hover:shadow-[0_0_24px_rgba(228,0,43,0.12)]">
                       <StepIcon className="h-5 w-5 text-[#E6EDF3] transition-transform group-hover:scale-110" />
                     </div>
-                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-[#768390]">
+                    <span className="text-[10px] font-mono font-bold tracking-[0.2em] text-[#8B949E]">
                       {step}
                     </span>
                   </div>
@@ -584,7 +585,7 @@ export default function LandingPage() {
                 <GlitchPrice
                   value={formatCurrency(vaultBalance)}
                   className="vault-glow text-5xl font-black sm:text-6xl md:text-7xl tabular-nums tracking-tight text-[#E6EDF3]"
-                  autoScrambleInterval={8000}
+
                 />
               </Sparkles>
             </div>

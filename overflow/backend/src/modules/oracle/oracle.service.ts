@@ -263,7 +263,11 @@ export class OracleService {
   }
 
   private async updateSellTaxes(): Promise<void> {
-    const teams = await this.prisma.team.findMany();
+    const teams = await this.prisma.team.findMany({
+      select: { id: true, ranking: true, sellTaxRate: true },
+      orderBy: { ranking: 'asc' },
+    });
+
     const updates = teams
       .filter((team) => {
         const newTax = SELL_TAX_BY_RANK[team.ranking] ?? 5;
@@ -277,7 +281,7 @@ export class OracleService {
       );
 
     if (updates.length > 0) {
-      await Promise.all(updates);
+      await this.prisma.$transaction(updates);
     }
   }
 }

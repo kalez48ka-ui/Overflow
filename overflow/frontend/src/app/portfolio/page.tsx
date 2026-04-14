@@ -42,6 +42,7 @@ import dynamic from "next/dynamic";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { GlitchPrice } from "@/components/effects/GlitchPrice";
 import { StaggerReveal } from "@/components/motion/StaggerReveal";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const CardSpotlight = dynamic(
   () => import("@/components/ui/card-spotlight").then((m) => ({ default: m.CardSpotlight })),
@@ -176,6 +177,7 @@ function TransactionRow({
 }
 
 export default function PortfolioPage() {
+  const prefersReduced = useReducedMotion();
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const [activeTab, setActiveTab] = useState<"positions" | "history">("positions");
@@ -273,11 +275,12 @@ export default function PortfolioPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
       className="relative min-h-screen overflow-hidden bg-[#0D1117]"
     >
+      <h1 className="sr-only">Portfolio</h1>
       <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
       {!isConnected ? (
         <div className="flex flex-col items-center justify-center py-20">

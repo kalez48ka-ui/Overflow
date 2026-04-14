@@ -21,6 +21,7 @@ import { formatNumber, shortenAddress } from "@/lib/utils";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { GlitchPrice } from "@/components/effects/GlitchPrice";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const Spotlight = dynamic(
   () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
@@ -41,6 +42,7 @@ const LivePredictionBanner = dynamic(
 // ---------------------------------------------------------------------------
 
 export default function PredictionsPage() {
+  const prefersReduced = useReducedMotion();
   const { address, isConnected } = useAccount();
 
   const [pools, setPools] = useState<PredictionPoolStatus[]>([]);
@@ -90,7 +92,9 @@ export default function PredictionsPage() {
     [address, isConnected],
   );
 
-  fetchDataRef.current = fetchData;
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -148,9 +152,9 @@ export default function PredictionsPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.3 }}
       className="min-h-screen bg-[#0D1117]"
     >
       {/* Live Question Banner */}

@@ -6,6 +6,7 @@ import { SELL_TAX_BY_RANK, BONDING_CURVE_K, BASE_PRICE } from '../../common/cons
 export class PriceService {
   private prisma: PrismaClient;
   private io: SocketServer | null = null;
+  private pricesDirty = true;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -117,6 +118,9 @@ export class PriceService {
       }
     );
 
+    // Mark prices as dirty so emitAllPrices re-queries
+    this.pricesDirty = true;
+
     // Socket emission outside the transaction
     if (this.io && emitData) {
       const update: PriceUpdate = {
@@ -169,6 +173,8 @@ export class PriceService {
 
   async emitAllPrices(): Promise<void> {
     if (!this.io) return;
+    if (!this.pricesDirty && this.lastEmittedPrices.size > 0) return;
+    this.pricesDirty = false;
 
     const teams = await this.prisma.team.findMany({
       select: { symbol: true, currentPrice: true, priceChange24h: true },

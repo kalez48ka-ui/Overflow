@@ -18,28 +18,9 @@ import { MouseTrackCard } from "@/components/motion/MouseTrackCard";
 import { MagneticButton } from "@/components/effects/MagneticButton";
 import { TeamLogo } from "@/components/TeamLogo";
 import { formatCountdown } from "@/lib/utils";
+import { useCountdown } from "@/hooks/useCountdown";
 import { fanWarsApi } from "@/lib/api";
 import type { FanWarStatus } from "@/lib/api";
-
-// ---------------------------------------------------------------------------
-// Countdown hook
-// ---------------------------------------------------------------------------
-
-function useCountdown(deadline: string) {
-  const [remaining, setRemaining] = useState(0);
-
-  useEffect(() => {
-    const tick = () => {
-      const diff = new Date(deadline).getTime() - Date.now();
-      setRemaining(diff > 0 ? diff : 0);
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [deadline]);
-
-  return remaining;
-}
 
 // ---------------------------------------------------------------------------
 // Boost estimation helper

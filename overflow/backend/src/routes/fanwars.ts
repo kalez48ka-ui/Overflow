@@ -125,8 +125,9 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
-      if (
-        message.includes('No fan war found') ||
+      if (message.includes('No fan war found')) {
+        res.status(404).json({ error: message });
+      } else if (
         message.includes('not accepting locks') ||
         message.includes('deadline has passed') ||
         message.includes('Invalid team selection') ||
@@ -161,10 +162,10 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error';
 
-      if (
-        message.includes('No fan war found') ||
+      if (message.includes('No fan war found') || message.includes('No lock found')) {
+        res.status(404).json({ error: message });
+      } else if (
         message.includes('cannot claim yet') ||
-        message.includes('No lock found') ||
         message.includes('already claimed')
       ) {
         res.status(400).json({ error: message });

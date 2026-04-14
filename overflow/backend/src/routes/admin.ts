@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { OracleService } from '../modules/oracle/oracle.service';
 import { VaultService } from '../modules/vault/vault.service';
 import { getMultiplier } from '../common/constants';
+import { ADMIN_SECRET } from '../config';
 
 // ---------------------------------------------------------------------------
 // Startup validation: warn if ADMIN_SECRET is missing or weak
@@ -12,21 +13,15 @@ const KNOWN_WEAK_DEFAULTS = ['overflow2026'];
 const MIN_SECRET_LENGTH = 32;
 
 (function validateAdminSecret(): void {
-  const secret = process.env.ADMIN_SECRET;
-  if (!secret) {
-    console.warn(
-      '[Security] ADMIN_SECRET is not set. Admin endpoints will return 500 until configured.',
-    );
-    return;
-  }
-  if (KNOWN_WEAK_DEFAULTS.includes(secret)) {
+  // ADMIN_SECRET is guaranteed to exist via requireEnv() in config
+  if (KNOWN_WEAK_DEFAULTS.includes(ADMIN_SECRET)) {
     console.warn(
       '[Security] ADMIN_SECRET is set to a known weak default. Replace it with a strong random value (>= 32 chars).',
     );
   }
-  if (secret.length < MIN_SECRET_LENGTH) {
+  if (ADMIN_SECRET.length < MIN_SECRET_LENGTH) {
     console.warn(
-      `[Security] ADMIN_SECRET is only ${secret.length} characters. Use at least ${MIN_SECRET_LENGTH} characters for production.`,
+      `[Security] ADMIN_SECRET is only ${ADMIN_SECRET.length} characters. Use at least ${MIN_SECRET_LENGTH} characters for production.`,
     );
   }
 })();
@@ -103,17 +98,9 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
     return;
   }
 
-  const secret = process.env.ADMIN_SECRET;
-
-  if (!secret) {
-    console.error('[Security] Admin request rejected: ADMIN_SECRET environment variable is not set');
-    res.status(500).json({ error: 'Server misconfigured: admin authentication is unavailable' });
-    return;
-  }
-
   const token = req.headers['x-admin-token'];
 
-  if (!token || typeof token !== 'string' || !safeTokenCompare(token, secret)) {
+  if (!token || typeof token !== 'string' || !safeTokenCompare(token, ADMIN_SECRET)) {
     // Track per-IP failed attempt
     const current = authAttempts.get(clientIP) || { failures: 0, lockedUntil: 0 };
     current.failures += 1;

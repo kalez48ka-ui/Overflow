@@ -1,9 +1,29 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
+import rateLimit from 'express-rate-limit';
 import { AiSignal } from '../common/types';
 
 const AI_ENGINE_URL = process.env.AI_ENGINE_URL || 'http://localhost:5001';
+
+// Validate AI engine URL is local/internal only to prevent SSRF
+if (
+  !AI_ENGINE_URL.startsWith('http://localhost') &&
+  !AI_ENGINE_URL.startsWith('http://127.0.0.1')
+) {
+  console.warn(
+    '[Security] AI_ENGINE_URL points to non-local address:',
+    AI_ENGINE_URL.replace(/\/\/([^:]+):([^@]+)@/, '//$1:***@') // mask credentials if present
+  );
+}
+
+const aiQueryRateLimit = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: { error: 'Too many AI requests. Please wait a minute.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Concurrent request limiter to prevent event loop exhaustion
 let activeAIRequests = 0;
@@ -201,7 +221,7 @@ export function createAiRouter(prisma: PrismaClient): Router {
     }
   });
 
-  router.post('/query', async (req: Request, res: Response) => {
+  router.post('/query', aiQueryRateLimit, async (req: Request, res: Response) => {
     if (activeAIRequests >= MAX_CONCURRENT_AI) {
       res.status(503).json({
         error: 'AI service busy — too many concurrent requests. Please try again shortly.',

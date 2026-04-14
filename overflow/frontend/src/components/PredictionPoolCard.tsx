@@ -20,28 +20,9 @@ import { MouseTrackCard } from "@/components/motion/MouseTrackCard";
 import { MagneticButton } from "@/components/effects/MagneticButton";
 import { TeamLogo } from "@/components/TeamLogo";
 import { formatCountdown } from "@/lib/utils";
+import { useCountdown } from "@/hooks/useCountdown";
 import { predictionsApi } from "@/lib/api";
 import type { PredictionPoolStatus, PredictionQuestionData } from "@/lib/api";
-
-// ---------------------------------------------------------------------------
-// Countdown hook
-// ---------------------------------------------------------------------------
-
-function useCountdown(deadline: string) {
-  const [remaining, setRemaining] = useState(0);
-
-  useEffect(() => {
-    const tick = () => {
-      const diff = new Date(deadline).getTime() - Date.now();
-      setRemaining(diff > 0 ? diff : 0);
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [deadline]);
-
-  return remaining;
-}
 
 // ---------------------------------------------------------------------------
 // Estimate payout helper
@@ -109,6 +90,8 @@ function QuestionOption({
       whileTap={!disabled ? { scale: 0.98 } : undefined}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
+      role="radio"
+      aria-checked={selected}
       className="flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-medium transition-all duration-200"
       style={{
         borderColor,
@@ -613,7 +596,7 @@ function QuestionBlock({
           {question.points} pts
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label={question.questionText}>
         {question.options.map((opt, optIdx) => {
           const isSelected = userAnswer === optIdx;
           const isCorrectAnswer =

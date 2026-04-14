@@ -175,6 +175,14 @@ export function Navbar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [moreOpen]);
 
+  // Focus first menu item when "More" dropdown opens
+  useEffect(() => {
+    if (moreOpen) {
+      const firstItem = menuItemsRef.current.find(Boolean);
+      firstItem?.focus();
+    }
+  }, [moreOpen]);
+
   // Close menus on Escape key and return focus
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {

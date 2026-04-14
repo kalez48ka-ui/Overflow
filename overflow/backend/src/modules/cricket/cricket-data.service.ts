@@ -647,8 +647,8 @@ export class CricketDataService {
     return this.prisma.match.findMany({
       where: { status: 'LIVE' },
       include: {
-        homeTeam: true,
-        awayTeam: true,
+        homeTeam: { select: { id: true, name: true, symbol: true, color: true } },
+        awayTeam: { select: { id: true, name: true, symbol: true, color: true } },
         balls: {
           orderBy: { timestamp: 'desc' },
           take: 10,
@@ -660,7 +660,10 @@ export class CricketDataService {
   async getUpcomingMatches() {
     return this.prisma.match.findMany({
       where: { status: 'UPCOMING' },
-      include: { homeTeam: true, awayTeam: true },
+      include: {
+        homeTeam: { select: { id: true, name: true, symbol: true, color: true } },
+        awayTeam: { select: { id: true, name: true, symbol: true, color: true } },
+      },
       orderBy: { startTime: 'asc' },
     });
   }
@@ -668,7 +671,10 @@ export class CricketDataService {
   async getCompletedMatches(limit = 20) {
     return this.prisma.match.findMany({
       where: { status: 'COMPLETED' },
-      include: { homeTeam: true, awayTeam: true },
+      include: {
+        homeTeam: { select: { id: true, name: true, symbol: true, color: true } },
+        awayTeam: { select: { id: true, name: true, symbol: true, color: true } },
+      },
       orderBy: { startTime: 'desc' },
       take: limit,
     });
@@ -676,7 +682,10 @@ export class CricketDataService {
 
   async getAllMatches(limit = 50, offset = 0) {
     return this.prisma.match.findMany({
-      include: { homeTeam: true, awayTeam: true },
+      include: {
+        homeTeam: { select: { id: true, name: true, symbol: true, color: true } },
+        awayTeam: { select: { id: true, name: true, symbol: true, color: true } },
+      },
       orderBy: { startTime: 'desc' },
       take: limit,
       skip: offset,
@@ -689,7 +698,7 @@ export class CricketDataService {
       include: {
         homeTeam: true,
         awayTeam: true,
-        balls: { orderBy: { timestamp: 'asc' } },
+        balls: { orderBy: { timestamp: 'asc' }, take: 300 },
       },
     });
   }

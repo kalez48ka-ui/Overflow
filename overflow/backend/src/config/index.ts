@@ -9,9 +9,12 @@ function requireEnv(name: string): string {
   return value;
 }
 
+export const ADMIN_SECRET = requireEnv('ADMIN_SECRET');
+
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
   databaseUrl: requireEnv('DATABASE_URL'),
+  adminSecret: ADMIN_SECRET,
   cricketApi: {
     key: process.env.CRICKET_API_KEY || '',
     url: process.env.CRICKET_API_URL || 'https://api.cricapi.com/v1',

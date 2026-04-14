@@ -99,23 +99,37 @@ function formatMatchTime(iso: string): string {
 function StatusDot({ status }: { status: MatchInfo["status"] }) {
   if (status === "live") {
     return (
-      <span className="relative flex h-2 w-2 shrink-0">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E4002B] opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E4002B]" />
-      </span>
+      <>
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#E4002B] opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-[#E4002B]" />
+        </span>
+        <span className="sr-only">Live</span>
+      </>
     );
   }
   if (status === "completed") {
-    return <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#3FB950]" />;
+    return (
+      <>
+        <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#3FB950]" />
+        <span className="sr-only">Completed</span>
+      </>
+    );
   }
-  return <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#768390]" />;
+  return (
+    <>
+      <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#768390]" />
+      <span className="sr-only">Upcoming</span>
+    </>
+  );
 }
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3">
+    <div className="flex items-center gap-3 rounded-lg border border-[#21262D] bg-[#161B22] px-4 py-3" role="status">
       <div className="h-3 w-40 animate-pulse rounded bg-[#21262D]" />
       <div className="ml-auto h-3 w-28 animate-pulse rounded bg-[#21262D]" />
+      <span className="sr-only">Loading...</span>
     </div>
   );
 }

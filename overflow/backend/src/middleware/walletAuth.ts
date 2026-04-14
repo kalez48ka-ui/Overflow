@@ -30,6 +30,8 @@ const NONCE_MAX_AGE_MS = 5 * 60 * 1000;
 // Nonce replay protection — in-memory store with periodic cleanup
 // ---------------------------------------------------------------------------
 
+// NOTE: In-memory nonce store. Nonces are lost on server restart.
+// For production, move to Redis with TTL matching NONCE_MAX_AGE_MS.
 /** Map of used nonce values to their timestamp for expiry tracking. */
 const usedNonces = new Map<string, number>();
 

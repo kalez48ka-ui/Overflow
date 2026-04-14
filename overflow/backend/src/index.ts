@@ -26,6 +26,44 @@ import { PredictionsService } from './modules/predictions/predictions.service';
 import { createPredictionsRouter } from './routes/predictions';
 import { ChainSyncService } from './modules/sync/chain-sync.service';
 
+// ---------------------------------------------------------------------------
+// Startup environment validation — fail fast on missing critical vars
+// ---------------------------------------------------------------------------
+function validateEnvironment(): void {
+  const required: Record<string, string | undefined> = {
+    DATABASE_URL: process.env.DATABASE_URL,
+    ADMIN_SECRET: process.env.ADMIN_SECRET,
+  };
+
+  const missing = Object.entries(required)
+    .filter(([, v]) => !v)
+    .map(([k]) => k);
+
+  if (missing.length > 0) {
+    console.error(`[FATAL] Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+
+  // Warn for optional but important vars
+  if (!process.env.CRICKET_API_KEY) {
+    console.warn('[Config] CRICKET_API_KEY not set — using mock match data');
+  }
+  if (!process.env.RPC_URL) {
+    console.warn('[Config] RPC_URL not set — chain sync disabled');
+  }
+  if (!process.env.FRONTEND_URL && process.env.NODE_ENV === 'production') {
+    console.warn('[Config] FRONTEND_URL not set — CORS may block frontend requests');
+  }
+
+  // ADMIN_SECRET strength check
+  const adminSecret = process.env.ADMIN_SECRET!;
+  if (adminSecret.length < 12) {
+    console.warn('[Security] ADMIN_SECRET is shorter than 12 characters — consider using a stronger secret');
+  }
+}
+
+validateEnvironment();
+
 const prisma = new PrismaClient();
 let chainSyncInstance: ChainSyncService | null = null;
 
@@ -34,7 +72,7 @@ app.set('trust proxy', 1); // Trust first proxy for X-Forwarded-For (rate limite
 const server = http.createServer(app);
 
 const allowedOrigins = [
-  'http://localhost:3000',
+  ...(process.env.NODE_ENV !== 'production' ? ['http://localhost:3000'] : []),
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
@@ -94,6 +132,8 @@ const adminLimiter = rateLimit({
 app.use('/presentation', express.static(path.join(__dirname, '../public'), { dotfiles: 'deny', index: false }));
 
 // Middleware
+// CSP is handled by the frontend (next.config.ts). This backend serves JSON API
+// responses only, so CSP directives here would have no practical effect.
 app.use(helmet());
 app.use(cors({
   origin: allowedOrigins,
@@ -118,7 +158,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   req.setTimeout(30000, () => {
     if (!res.headersSent) {
-      res.status(408).json({ error: 'Request timeout' });
+      res.status(408).json({ error: 'Request timeout', requestId: req.requestId });
     }
   });
   next();
@@ -127,7 +167,7 @@ app.use((req, res, next) => {
 // Enforce JSON content type on state-mutating requests (CSRF mitigation)
 app.use((req, res, next) => {
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && !req.is('application/json')) {
-    return res.status(415).json({ error: 'Content-Type must be application/json' });
+    return res.status(415).json({ error: 'Content-Type must be application/json', requestId: req.requestId });
   }
   next();
 });
@@ -237,11 +277,6 @@ async function bootstrap(): Promise<void> {
   try {
     await prisma.$connect();
     console.log('[Database] Connected to PostgreSQL');
-
-    const adminSecret = process.env.ADMIN_SECRET;
-    if (!adminSecret) {
-      console.warn('[Security] WARNING: ADMIN_SECRET is not set. Admin panel will be inaccessible.');
-    }
 
     cricketService.startPolling();
 

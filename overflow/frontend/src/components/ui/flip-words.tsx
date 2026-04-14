@@ -31,6 +31,7 @@ export function FlipWords({
   }, [isAnimating, duration, startAnimation]);
 
   return (
+    <span aria-label={words.join(", ")} aria-live="off">
     <AnimatePresence
       onExitComplete={() => setIsAnimating(false)}
     >
@@ -69,5 +70,6 @@ export function FlipWords({
         ))}
       </motion.span>
     </AnimatePresence>
+    </span>
   );
 }

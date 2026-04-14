@@ -41,6 +41,7 @@ import { cn, formatPrice, formatPercent, formatCurrency } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import Link from "next/link";
 
 const LIVE_POLL_MS = 10_000;   // 10s when live match active
@@ -347,6 +348,7 @@ function mapApiMatchToMatchData(m: MatchInfo, base: MatchData): MatchData {
 }
 
 export default function MatchPage() {
+  const prefersReduced = useReducedMotion();
   const [activeChart, setActiveChart] = useState<string>(LIVE_MATCH.team1.teamId);
   const [matchData, setMatchData] = useState<MatchData>(LIVE_MATCH);
   const [upcomingMatch, setUpcomingMatch] = useState<MatchInfo | null>(null);
@@ -458,8 +460,7 @@ export default function MatchPage() {
       if (!cancelled) setLoading(false);
     })();
 
-    // 2) Start adaptive polling
-    startPolling();
+    // 2) Polling is owned by the hasLiveMatch effect — skip here
 
     // 3) Listen for visibility changes to pause/resume polling
     document.addEventListener("visibilitychange", handleVisibility);
@@ -469,7 +470,7 @@ export default function MatchPage() {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("[Match] WebSocket connected");
+      // WebSocket connected
     });
 
     // Backend emits this with CricAPI live score data
@@ -563,9 +564,9 @@ export default function MatchPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
+      transition={prefersReduced ? { duration: 0 } : { duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] }}
       className="min-h-screen bg-[#0D1117]"
     >
       <h1 className="sr-only">Live Match</h1>
@@ -751,7 +752,7 @@ export default function MatchPage() {
                 </div>
                 <div>
                   <TradingChart
-                    data={CANDLESTICK_DATA[activeChart] ?? CANDLESTICK_DATA["IU"]}
+                    data={CANDLESTICK_DATA[activeChart] ?? []}
                     teamColor={PSL_TEAMS.find((t) => t.id === activeChart)?.color ?? "#58A6FF"}
                     height={280}
                   />
@@ -822,7 +823,7 @@ export default function MatchPage() {
                 </div>
                 <div>
                   <TradingChart
-                    data={CANDLESTICK_DATA[activeChart] ?? CANDLESTICK_DATA["IU"]}
+                    data={CANDLESTICK_DATA[activeChart] ?? []}
                     teamColor={PSL_TEAMS.find((t) => t.id === activeChart)?.color ?? "#58A6FF"}
                     height={280}
                   />

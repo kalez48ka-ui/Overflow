@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, ChevronDown, Info, Loader2, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -60,6 +60,9 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
   const isBuy = tab === "buy";
   const useRealContracts = isConnected && areContractsDeployed();
 
+  // Track the active tab at submission time to avoid stale closure in tx callbacks
+  const submittedTabRef = useRef<TabType>("buy");
+
   // Estimate sell proceeds on-chain to enforce slippage protection
   const tokenAddr = team.contractAddress as Address;
   const sellTokenWei = !isBuy && numAmount > 0 ? parseEther(numAmount.toString()) : undefined;
@@ -78,12 +81,13 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
   // React to contract hook state changes
   useEffect(() => {
     if (useRealContracts && contractSuccess) {
+      const wasBuy = submittedTabRef.current === "buy";
       setIsLoading(false);
       setTxResult("success");
       setTxHash(contractTxHash ?? null);
       setAmount("");
       toast.success(
-        `${isBuy ? "Buy" : "Sell"} order for ${team.symbol} submitted`,
+        `${wasBuy ? "Buy" : "Sell"} order for ${team.symbol} submitted`,
         {
           description: contractTxHash
             ? `Tx: ${contractTxHash.slice(0, 10)}...${contractTxHash.slice(-6)}`
@@ -96,21 +100,22 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [contractSuccess, contractTxHash, useRealContracts, isBuy, team.symbol]);
+  }, [contractSuccess, contractTxHash, useRealContracts, team.symbol]);
 
   useEffect(() => {
     if (useRealContracts && contractError) {
+      const wasBuy = submittedTabRef.current === "buy";
       setIsLoading(false);
       setTxResult("error");
       const errorMsg = (buyError || sellError)?.message?.slice(0, 120) || "Unknown error";
       toast.error(
-        `${isBuy ? "Buy" : "Sell"} order for ${team.symbol} failed`,
+        `${wasBuy ? "Buy" : "Sell"} order for ${team.symbol} failed`,
         { description: errorMsg },
       );
       const timer = setTimeout(() => setTxResult(null), 5000);
       return () => clearTimeout(timer);
     }
-  }, [contractError, useRealContracts, isBuy, team.symbol, buyError, sellError]);
+  }, [contractError, useRealContracts, team.symbol, buyError, sellError]);
 
   useEffect(() => {
     if (useRealContracts) {
@@ -136,6 +141,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
 
     setTxResult(null);
     setTxHash(null);
+    submittedTabRef.current = tab;
 
     if (useRealContracts) {
       // Use real contract calls
@@ -270,6 +276,7 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
             <button
               key={qa}
               onClick={() => setAmount(qa.toString())}
+              aria-label={`Set amount to ${qa} ${isBuy ? 'WIRE' : team.symbol}`}
               className="rounded-md bg-[#21262D] px-2 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 text-xs font-medium text-[#9CA3AF] hover:bg-[#21262D]/80 hover:text-[#E6EDF3] transition-colors"
             >
               {isBuy ? qa : qa >= 1000 ? `${qa / 1000}K` : qa}

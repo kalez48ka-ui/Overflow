@@ -126,7 +126,7 @@ export const TeamCard = React.memo(function TeamCard({ team, index = 0 }: TeamCa
     <div>
       <Link href={`/trade/${team.id.toLowerCase()}`} className="block group">
         <div
-          className="card-border-glow relative overflow-hidden rounded-xl bg-[#161B22] p-4 transition-all duration-200 ease-out hover:translate-y-[-2px]"
+          className="relative overflow-hidden rounded-xl bg-[#161B22] p-4 transition-all duration-200 ease-out hover:translate-y-[-2px]"
           style={{
             border: "1px solid #21262D",
           }}

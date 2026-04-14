@@ -3,9 +3,12 @@ import { Prisma } from '@prisma/client';
 import { requireAdminAuth } from './admin';
 import { CricketDataService } from '../modules/cricket/cricket-data.service';
 
-/** Prisma Match with both homeTeam and awayTeam relations included. */
+/** Prisma Match with both homeTeam and awayTeam relations (selected fields). */
 type MatchWithTeams = Prisma.MatchGetPayload<{
-  include: { homeTeam: true; awayTeam: true };
+  include: {
+    homeTeam: { select: { id: true; name: true; symbol: true; color: true } };
+    awayTeam: { select: { id: true; name: true; symbol: true; color: true } };
+  };
 }>;
 
 function mapMatchToFrontend(match: MatchWithTeams) {

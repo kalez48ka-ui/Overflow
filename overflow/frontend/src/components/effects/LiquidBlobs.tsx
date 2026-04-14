@@ -92,12 +92,13 @@ export function LiquidBlobs() {
           }}
         >
           <svg
-            width="500"
-            height="500"
+            width="300"
+            height="300"
             viewBox="-100 -100 200 200"
             style={{
               transform: `scale(${blob.scale})`,
               filter: `blur(60px)`,
+              willChange: 'transform',
             }}
           >
             <motion.path

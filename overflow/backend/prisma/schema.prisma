@@ -216,6 +216,8 @@ model FanWar {
   homeTeam        Team             @relation("FanWarHome", fields: [homeTeamId], references: [id])
   awayTeam        Team             @relation("FanWarAway", fields: [awayTeamId], references: [id])
   locks           FanWarLock[]
+
+  @@index([status])
 }
 
 model FanWarLock {
@@ -233,6 +235,7 @@ model FanWarLock {
 
   @@unique([fanWarId, wallet])
   @@index([wallet])
+  @@index([fanWarId])
 }
 
 model PredictionPool {
@@ -255,6 +258,8 @@ model PredictionPool {
   updatedAt        DateTime  @updatedAt
   questions        PredictionQuestion[]
   entries          PredictionEntry[]
+
+  @@index([status])
 }
 
 model PredictionQuestion {

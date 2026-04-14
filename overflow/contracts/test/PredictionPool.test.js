@@ -374,26 +374,36 @@ describe("PredictionPool", function () {
   // =====================================================================
   // 15. Cancel pool — verify full refunds
   // =====================================================================
-  it("15. should cancel pool and refund all participants", async function () {
+  it("15. should cancel pool and refund all participants via pull-based claimRefund", async function () {
     await createPoolWithQuestions(MATCH_ID, false);
 
     await predictionPool.connect(user1).enterPrediction(MATCH_ID, [1, 1, 1, 1, 1], { value: ENTRY_FEE });
     await predictionPool.connect(user2).enterPrediction(MATCH_ID, [2, 2, 2, 2, 2], { value: ENTRY_FEE });
 
-    const u1Before = await ethers.provider.getBalance(user1.address);
-    const u2Before = await ethers.provider.getBalance(user2.address);
-
     await predictionPool.connect(keeper).cancelPool(MATCH_ID);
-
-    const u1After = await ethers.provider.getBalance(user1.address);
-    const u2After = await ethers.provider.getBalance(user2.address);
-
-    // Both users should receive their entry fee back
-    expect(u1After - u1Before).to.equal(ENTRY_FEE);
-    expect(u2After - u2Before).to.equal(ENTRY_FEE);
 
     const info = await predictionPool.getPoolInfo(MATCH_ID);
     expect(info.cancelled).to.be.true;
+
+    // C1 fix: users must pull their own refunds via claimRefund()
+    const u1Before = await ethers.provider.getBalance(user1.address);
+    const tx1 = await predictionPool.connect(user1).claimRefund(MATCH_ID);
+    const receipt1 = await tx1.wait();
+    const gas1 = receipt1.gasUsed * receipt1.gasPrice;
+    const u1After = await ethers.provider.getBalance(user1.address);
+    expect(u1After - u1Before + gas1).to.equal(ENTRY_FEE);
+
+    const u2Before = await ethers.provider.getBalance(user2.address);
+    const tx2 = await predictionPool.connect(user2).claimRefund(MATCH_ID);
+    const receipt2 = await tx2.wait();
+    const gas2 = receipt2.gasUsed * receipt2.gasPrice;
+    const u2After = await ethers.provider.getBalance(user2.address);
+    expect(u2After - u2Before + gas2).to.equal(ENTRY_FEE);
+
+    // Should reject double refund
+    await expect(
+      predictionPool.connect(user1).claimRefund(MATCH_ID)
+    ).to.be.revertedWithCustomError(predictionPool, "AlreadyRefunded");
   });
 
   // =====================================================================

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Server as SocketServer } from 'socket.io';
 import { UpsetEventData, VaultInfo } from '../../common/types';
 import { getMultiplier, VAULT_INITIAL_BALANCE } from '../../common/constants';
@@ -103,8 +103,8 @@ export class VaultService {
       const releasePercent = Math.min(50, upsetScore * 0.5 * multiplier);
       let vaultRelease = Number(vault.balance) * (releasePercent / 100);
 
-      // Guard: prevent vault from going negative
-      if (vaultRelease > Number(vault.balance)) {
+      // Guard: prevent vault from going negative (use Prisma Decimal for precision)
+      if (new Prisma.Decimal(vaultRelease).greaterThan(vault.balance)) {
         vaultRelease = Number(vault.balance);
       }
       if (vaultRelease <= 0) {

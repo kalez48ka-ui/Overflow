@@ -29,6 +29,7 @@ contract PredictionPool is Ownable, ReentrancyGuard {
     uint256 public constant ACCURACY_BPS = 6000;        // 60%
     uint256 public constant BASIS_POINTS = 10000;
     uint256 public constant CLAIM_WINDOW = 48 hours;
+    uint256 public constant MAX_PARTICIPANTS = 200;
 
     // -----------------------------------------------------------------------
     // Structs
@@ -75,6 +76,7 @@ contract PredictionPool is Ownable, ReentrancyGuard {
     mapping(uint256 => mapping(address => UserPrediction)) public predictions;
     mapping(uint256 => mapping(address => mapping(uint256 => uint8))) internal _answers;
     mapping(uint256 => address[]) internal _participants;
+    mapping(uint256 => uint256) public poolUnclaimedBalance; // M1: track claimable balance per pool
 
     address public treasury;
     address public keeper;
@@ -89,6 +91,8 @@ contract PredictionPool is Ownable, ReentrancyGuard {
     event MatchSettled(uint256 indexed matchId, uint256 totalPool, uint256 participantCount);
     event RewardClaimed(uint256 indexed matchId, address indexed user, uint256 amount);
     event PoolCancelled(uint256 indexed matchId, uint256 refundPerUser);
+    event RefundClaimed(uint256 indexed matchId, address indexed user, uint256 amount);
+    event ExpiredRewardsReleased(uint256 indexed matchId, uint256 amount);
 
     // -----------------------------------------------------------------------
     // Errors
@@ -118,6 +122,11 @@ contract PredictionPool is Ownable, ReentrancyGuard {
     error TransferFailed();
     error ZeroAddress();
     error NoParticipants();
+    error NoRefundAvailable();
+    error AlreadyRefunded();
+    error PoolFull();
+    error ClaimWindowStillActive();
+    error AlreadyReleased();
 
     // -----------------------------------------------------------------------
     // Modifiers
@@ -236,6 +245,9 @@ contract PredictionPool is Ownable, ReentrancyGuard {
         if (pool.cancelled) revert PoolCancelledError();
         if (block.timestamp >= pool.deadline) revert DeadlinePassed();
         if (msg.value != pool.entryFee) revert WrongFee();
+
+        // C2 fix: bound participants to prevent unbounded gas in settleMatch
+        if (_participants[matchId].length >= MAX_PARTICIPANTS) revert PoolFull();
 
         UserPrediction storage pred = predictions[matchId][msg.sender];
         if (pred.entered) revert AlreadyEntered();
@@ -379,6 +391,9 @@ contract PredictionPool is Ownable, ReentrancyGuard {
         pool.settledAt = block.timestamp;
         pool.claimDeadline = block.timestamp + CLAIM_WINDOW;
 
+        // M1: track claimable balance for this pool (everything minus platform share)
+        poolUnclaimedBalance[matchId] = totalPool - platformShare;
+
         (bool success,) = treasury.call{value: platformShare}("");
         if (!success) revert TransferFailed();
 
@@ -400,15 +415,34 @@ contract PredictionPool is Ownable, ReentrancyGuard {
 
         pool.cancelled = true;
 
-        // Refund all participants
-        address[] storage parts = _participants[matchId];
-        uint256 refundAmount = pool.entryFee;
-        for (uint256 i = 0; i < parts.length; i++) {
-            (bool success,) = parts[i].call{value: refundAmount}("");
-            if (!success) revert TransferFailed();
-        }
+        // C1 fix: pull-based refund — no push loop, users call claimRefund()
+        emit PoolCancelled(matchId, pool.entryFee);
+    }
 
-        emit PoolCancelled(matchId, refundAmount);
+    // -----------------------------------------------------------------------
+    // Core: Claim Refund (pull-based, for cancelled pools)
+    // -----------------------------------------------------------------------
+    /**
+     * @notice Claim a refund after a pool has been cancelled. Each user withdraws
+     *         their own entry fee to prevent a single reverting receive() from
+     *         blocking all refunds.
+     * @param matchId The cancelled match pool.
+     */
+    function claimRefund(uint256 matchId) external nonReentrant {
+        MatchPool storage pool = matchPools[matchId];
+        if (!pool.cancelled) revert PoolNotCancelled();
+
+        UserPrediction storage pred = predictions[matchId][msg.sender];
+        if (!pred.entered) revert NotEntered();
+        if (pred.claimed) revert AlreadyRefunded();
+
+        pred.claimed = true;
+        uint256 refundAmount = pool.entryFee;
+
+        (bool success,) = msg.sender.call{value: refundAmount}("");
+        if (!success) revert TransferFailed();
+
+        emit RefundClaimed(matchId, msg.sender, refundAmount);
     }
 
     // -----------------------------------------------------------------------
@@ -431,11 +465,38 @@ contract PredictionPool is Ownable, ReentrancyGuard {
         uint256 payout = pred.payout;
 
         if (payout > 0) {
+            // M1: decrement per-pool unclaimed balance
+            poolUnclaimedBalance[matchId] -= payout;
+
             (bool success,) = msg.sender.call{value: payout}("");
             if (!success) revert TransferFailed();
         }
 
         emit RewardClaimed(matchId, msg.sender, payout);
+    }
+
+    // -----------------------------------------------------------------------
+    // Core: Release Expired Rewards
+    // -----------------------------------------------------------------------
+    /**
+     * @notice Sweep unclaimed rewards from a settled pool after the claim window
+     *         has expired. Sends the remaining balance to the treasury.
+     * @param matchId The settled match pool whose claim window has passed.
+     */
+    function releaseExpiredRewards(uint256 matchId) external onlyKeeper nonReentrant {
+        MatchPool storage pool = matchPools[matchId];
+        if (!pool.settled) revert PoolNotSettled();
+        if (block.timestamp <= pool.claimDeadline) revert ClaimWindowStillActive();
+
+        uint256 unclaimed = poolUnclaimedBalance[matchId];
+        if (unclaimed == 0) revert AlreadyReleased();
+
+        poolUnclaimedBalance[matchId] = 0;
+
+        (bool success,) = treasury.call{value: unclaimed}("");
+        if (!success) revert TransferFailed();
+
+        emit ExpiredRewardsReleased(matchId, unclaimed);
     }
 
     // -----------------------------------------------------------------------
