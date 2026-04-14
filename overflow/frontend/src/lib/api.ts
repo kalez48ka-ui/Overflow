@@ -301,6 +301,16 @@ export const api = {
     getRecent: (limit: number = 50, signal?: AbortSignal): Promise<TradeRecord[]> =>
       fetchWithRetry(`${API_URL}/api/trades/recent?limit=${limit}`, { signal }),
 
+    getRecentByTeam: (
+      teamSymbol: string,
+      limit: number = 20,
+      signal?: AbortSignal,
+    ): Promise<TradeRecord[]> =>
+      fetchWithRetry(
+        `${API_URL}/api/trades/${encodeURIComponent(teamSymbol)}/recent?limit=${limit}`,
+        { signal },
+      ),
+
     getByWallet: (wallet: string, signal?: AbortSignal): Promise<TradeRecord[]> =>
       fetchWithRetry(
         `${API_URL}/api/trades/wallet/${encodeURIComponent(wallet)}`,

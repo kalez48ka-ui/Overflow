@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useMemo } from "react";
+import { use, useState, useEffect, useMemo, useCallback } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -8,7 +8,9 @@ import { useReducedMotion } from "@/hooks/useReducedMotion";
 import dynamic from "next/dynamic";
 import {
   ArrowLeft,
+  ExternalLink,
   Info,
+  TrendingUp,
 } from "lucide-react";
 import { BuySellPanel } from "@/components/BuySellPanel";
 
@@ -27,23 +29,18 @@ import { CountUp } from "@/components/motion/CountUp";
 import {
   PSL_TEAMS,
   CANDLESTICK_DATA,
-  RECENT_TRADES,
-  ORDER_BOOKS,
 } from "@/lib/mockData";
-import { api } from "@/lib/api";
+import { api, type TradeRecord } from "@/lib/api";
 import { mapApiTeamToFrontend } from "@/lib/teamMapper";
-import type { PSLTeam, CandlestickData, TradeOrder } from "@/types";
+import type { PSLTeam, CandlestickData } from "@/types";
 import {
   cn,
   formatPrice,
   formatPercent,
   formatNumber,
-  formatTimeAgo,
 } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
-import { NumberTicker } from "@/components/ui/number-ticker";
 import { GlitchPrice } from "@/components/effects/GlitchPrice";
-import { StaggerReveal } from "@/components/motion/StaggerReveal";
 
 const Spotlight = dynamic(
   () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
@@ -54,49 +51,236 @@ interface PageProps {
   params: Promise<{ team: string }>;
 }
 
-function OrderBookTable({
-  title,
-  entries,
-  side,
-}: {
-  title: string;
-  entries: { price: number; amount: number; total: number }[];
-  side: "bid" | "ask";
-}) {
+/** Format a trade timestamp (ISO string) to a short relative or absolute time. */
+function formatTradeTime(timestamp: string): string {
+  const date = new Date(timestamp);
+  const now = Date.now();
+  const diffMs = now - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+/** Truncate a tx hash: 0x1234...abcd */
+function truncateHash(hash: string): string {
+  if (!hash || hash.length < 12) return hash;
+  return `${hash.slice(0, 6)}...${hash.slice(-4)}`;
+}
+
+/** Bonding Curve info card showing buy/sell prices, spread, and supply. */
+function BondingCurveCard({ team }: { team: PSLTeam }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  // Derive buy and sell prices from the team's price and tax rates
+  const buyPrice = team.price * (1 + team.buyTax / 100);
+  const sellPrice = team.price * (1 - team.sellTax / 100);
+  const spread = buyPrice > 0 ? ((buyPrice - sellPrice) / buyPrice) * 100 : 0;
+  const totalSupply = team.marketCap > 0 && team.price > 0 ? team.marketCap / team.price : 0;
+
+  // Price indicator: position of current price within 0..buyPrice range
+  const indicatorPct = buyPrice > 0
+    ? Math.min(Math.max((team.price / buyPrice) * 100, 5), 95)
+    : 50;
+
   return (
-    <div>
-      <h4 className="mb-1.5 text-[10px] text-[#768390] uppercase tracking-wider">
-        {title}
-      </h4>
-      <StaggerReveal staggerDelay={0.04} yOffset={8} duration={0.3}>
-        {entries.slice(0, 6).map((entry, i) => (
-          <div
-            key={`${entry.price}-${entry.amount}-${i}`}
-            className="relative flex items-center justify-between py-[2px] text-xs"
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <TrendingUp className="h-3.5 w-3.5 text-[#9CA3AF]" />
+        <span className="text-xs font-semibold text-[#E6EDF3]">Bonding Curve</span>
+        <div className="relative">
+          <button
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            onFocus={() => setShowTooltip(true)}
+            onBlur={() => setShowTooltip(false)}
+            className="text-[#768390] hover:text-[#9CA3AF] transition-colors"
+            aria-label="Bonding curve info"
           >
-            <div
-              className="absolute right-0 h-full"
-              style={{
-                width: `${Math.min((entry.total / 500) * 100, 100)}%`,
-                backgroundColor:
-                  side === "bid" ? "rgba(63,185,80,0.06)" : "rgba(248,81,73,0.06)",
-              }}
-            />
-            <span
-              className={cn(
-                "relative z-10 font-mono tabular-nums font-medium",
-                side === "bid" ? "text-[#3FB950]" : "text-[#F85149]"
-              )}
-            >
-              <span className="text-[10px] mr-0.5" aria-hidden="true">{side === "bid" ? "\u2191" : "\u2193"}</span>
-              ${formatPrice(entry.price)}
-            </span>
-            <span className="relative z-10 font-mono tabular-nums text-[#9CA3AF]">
-              {formatNumber(entry.amount)}
-            </span>
+            <Info className="h-3 w-3" />
+          </button>
+          {showTooltip && (
+            <div className="absolute left-0 top-6 z-50 w-56 rounded-lg border border-[#21262D] bg-[#161B22] p-2.5 shadow-xl">
+              <p className="text-[10px] leading-relaxed text-[#9CA3AF]">
+                Prices are determined by the bonding curve. Buy pressure increases price, sell pressure decreases it. There are no limit orders.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Buy / Sell prices */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="rounded-lg bg-[#0D1117] px-3 py-2">
+          <span className="text-[10px] text-[#768390] uppercase tracking-wider">Buy Price</span>
+          <p className="text-sm font-bold font-mono tabular-nums text-[#3FB950]">
+            ${formatPrice(buyPrice)}
+          </p>
+        </div>
+        <div className="rounded-lg bg-[#0D1117] px-3 py-2">
+          <span className="text-[10px] text-[#768390] uppercase tracking-wider">Sell Price</span>
+          <p className="text-sm font-bold font-mono tabular-nums text-[#F85149]">
+            ${formatPrice(sellPrice)}
+          </p>
+        </div>
+      </div>
+
+      {/* Spread + Supply */}
+      <div className="flex items-center justify-between mb-3 text-xs">
+        <div>
+          <span className="text-[#768390]">Spread </span>
+          <span className="font-mono tabular-nums text-[#E6EDF3] font-medium">
+            {spread.toFixed(2)}%
+          </span>
+        </div>
+        <div>
+          <span className="text-[#768390]">Supply </span>
+          <span className="font-mono tabular-nums text-[#E6EDF3] font-medium">
+            {formatNumber(totalSupply)}
+          </span>
+        </div>
+      </div>
+
+      {/* Visual price indicator bar */}
+      <div className="relative h-2 rounded-full bg-[#0D1117] overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{
+            width: `${indicatorPct}%`,
+            background: "linear-gradient(90deg, #F85149 0%, #3FB950 100%)",
+            opacity: 0.6,
+          }}
+        />
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-[#E6EDF3] border-2 border-[#161B22] shadow"
+          style={{ left: `${indicatorPct}%`, transform: `translate(-50%, -50%)` }}
+        />
+      </div>
+      <div className="flex justify-between mt-1 text-[9px] text-[#768390]">
+        <span>Sell</span>
+        <span>Buy</span>
+      </div>
+    </div>
+  );
+}
+
+/** Real recent trades fetched from the API. */
+function RecentTradesFeed({ teamSymbol }: { teamSymbol: string }) {
+  const [trades, setTrades] = useState<TradeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const fetchTrades = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const data = await api.trades.getRecentByTeam(teamSymbol, 20, signal);
+      setTrades(data);
+      setError(false);
+    } catch (err) {
+      if (signal?.aborted) return;
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [teamSymbol]);
+
+  // Initial fetch + 15s polling
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchTrades(controller.signal);
+
+    const interval = setInterval(() => {
+      fetchTrades();
+    }, 15_000);
+
+    return () => {
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, [fetchTrades]);
+
+  return (
+    <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-xs font-semibold text-[#E6EDF3]">Recent Trades</span>
+        <span className="text-[10px] text-[#768390]">auto-refresh</span>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-8" role="status">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#21262D] border-t-[#9CA3AF]" />
+          <span className="sr-only">Loading trades...</span>
+        </div>
+      ) : error ? (
+        <p className="py-6 text-center text-xs text-[#768390]">
+          Failed to load trades
+        </p>
+      ) : trades.length === 0 ? (
+        <p className="py-6 text-center text-xs text-[#768390]">
+          No trades yet &mdash; be the first!
+        </p>
+      ) : (
+        <div>
+          {/* Column headers */}
+          <div className="mb-1.5 grid grid-cols-[auto_1fr_1fr_1fr] gap-2 text-[10px] text-[#768390] uppercase tracking-wider">
+            <span>Side</span>
+            <span>Price</span>
+            <span className="text-center">Amount</span>
+            <span className="text-right">Time</span>
           </div>
-        ))}
-      </StaggerReveal>
+          <div className="space-y-0">
+            {trades.slice(0, 15).map((trade) => {
+              const isBuy = trade.side === "buy";
+              return (
+                <div
+                  key={trade.id}
+                  className="grid grid-cols-[auto_1fr_1fr_1fr] gap-2 items-center py-[3px] text-xs group"
+                >
+                  <span
+                    className={cn(
+                      "text-[10px] font-semibold uppercase w-6",
+                      isBuy ? "text-[#3FB950]" : "text-[#F85149]"
+                    )}
+                  >
+                    {isBuy ? "BUY" : "SELL"}
+                  </span>
+                  <span
+                    className={cn(
+                      "font-mono tabular-nums font-medium",
+                      isBuy ? "text-[#3FB950]" : "text-[#F85149]"
+                    )}
+                  >
+                    ${formatPrice(trade.price)}
+                  </span>
+                  <span className="text-center font-mono tabular-nums text-[#9CA3AF]">
+                    {formatNumber(trade.amount)}
+                  </span>
+                  <span className="text-right text-[#768390] flex items-center justify-end gap-1">
+                    <span>{formatTradeTime(trade.timestamp)}</span>
+                    {trade.txHash && (
+                      <a
+                        href={`https://wirefluidscan.com/tx/${trade.txHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hidden group-hover:inline-flex text-[#768390] hover:text-[#E6EDF3] transition-colors"
+                        aria-label={`View transaction ${truncateHash(trade.txHash)}`}
+                        title={trade.txHash}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -171,7 +355,6 @@ export default function TradePage({ params }: PageProps) {
   const mockTeam = PSL_TEAMS.find((t) => t.id === teamId);
   const [team, setTeam] = useState<PSLTeam | null>(mockTeam || null);
   const [chartData, setChartData] = useState<CandlestickData[]>(CANDLESTICK_DATA[teamId] || []);
-  const [recentTrades, setRecentTrades] = useState<TradeOrder[]>(RECENT_TRADES[teamId] || []);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState("24h");
   const [chartLoading, setChartLoading] = useState(false);
@@ -238,7 +421,6 @@ export default function TradePage({ params }: PageProps) {
   if (!team) notFound();
 
   const prefersReduced = useReducedMotion();
-  const orderBook = ORDER_BOOKS[teamId];
   const isPositive = team.change24h >= 0;
 
   // Compute real 24h high/low from chart data instead of fake multipliers
@@ -331,7 +513,7 @@ export default function TradePage({ params }: PageProps) {
       <div className="relative overflow-hidden mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <Spotlight className="-top-40 left-0 md:left-40 md:-top-20" fill="white" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-          {/* Left column: chart + order book */}
+          {/* Left column: chart + bonding curve + trades */}
           <div className="space-y-6">
             {/* Chart */}
             <div>
@@ -382,64 +564,10 @@ export default function TradePage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Order book + Recent trades */}
+            {/* Bonding curve + Recent trades */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Order book */}
-              <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
-                <div className="mb-2 flex items-center">
-                  <span className="text-xs font-semibold text-[#E6EDF3]">Order Book</span>
-                  <span className="ml-2 text-[10px] text-[#768390] border border-[#21262D] rounded px-1">Demo</span>
-                </div>
-                <div className="space-y-3">
-                  <OrderBookTable title="Asks" entries={orderBook.asks} side="ask" />
-                  <div className="py-1.5 text-center border-y border-[#21262D]">
-                    <span className="text-sm font-bold font-mono tabular-nums text-[#E6EDF3]">
-                      ${formatPrice(team.price)}
-                    </span>
-                    <span className="ml-2 text-[10px] text-[#768390]">spread</span>
-                  </div>
-                  <OrderBookTable title="Bids" entries={orderBook.bids} side="bid" />
-                </div>
-              </div>
-
-              {/* Recent trades */}
-              <div className="rounded-xl border border-[#21262D] bg-[#161B22] p-4">
-                <div className="mb-2 flex items-center">
-                  <span className="text-xs font-semibold text-[#E6EDF3]">Recent Trades</span>
-                  <span className="ml-2 text-[10px] text-[#768390] border border-[#21262D] rounded px-1">Demo</span>
-                </div>
-                <div className="space-y-0">
-                  <div className="mb-2 grid grid-cols-3 text-[10px] text-[#768390] uppercase tracking-wider">
-                    <span>Price</span>
-                    <span className="text-center">Amt</span>
-                    <span className="text-right">Time</span>
-                  </div>
-                  {recentTrades.slice(0, 12).map((trade, tradeIdx) => (
-                    <div
-                      key={trade.id}
-                      className="grid grid-cols-3 items-center py-[3px] text-xs"
-                    >
-                      <span
-                        className={cn(
-                          "font-mono tabular-nums font-medium",
-                          trade.side === "buy"
-                            ? "text-[#3FB950]"
-                            : "text-[#F85149]"
-                        )}
-                      >
-                        <span className="text-[10px] mr-0.5 font-sans" aria-hidden="true">{trade.side === "buy" ? "B" : "S"}</span>
-                        ${formatPrice(trade.price)}
-                      </span>
-                      <span className="text-center font-mono tabular-nums text-[#9CA3AF]">
-                        {formatNumber(trade.amount)}
-                      </span>
-                      <span className="text-right text-[#768390]">
-                        {formatTimeAgo(trade.timestamp)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <BondingCurveCard team={team} />
+              <RecentTradesFeed teamSymbol={team.symbol} />
             </div>
           </div>
 
