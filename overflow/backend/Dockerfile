@@ -45,6 +45,9 @@ COPY . .
 # Generate Prisma client for the linux-musl target (Alpine)
 RUN npx prisma generate
 
+# Switch to non-root user for the build step
+USER node
+
 # Compile TypeScript → dist/
 RUN npm run build
 

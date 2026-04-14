@@ -29,11 +29,13 @@ export function TradingChart({ data, teamColor, height = 380, floorPrice }: Trad
     cleanupRef.current?.();
     cleanupRef.current = undefined;
 
+    let destroyed = false;
+
     const initChart = async () => {
       try {
         const { createChart, ColorType, CandlestickSeries } = await import("lightweight-charts");
 
-        if (!containerRef.current) return;
+        if (destroyed || !containerRef.current) return;
 
         const chart = createChart(containerRef.current, {
           layout: {
@@ -123,10 +125,11 @@ export function TradingChart({ data, teamColor, height = 380, floorPrice }: Trad
     initChart();
 
     return () => {
+      destroyed = true;
       cleanupRef.current?.();
       cleanupRef.current = undefined;
     };
-  }, [mounted, data, height]);
+  }, [mounted, data, height, teamColor, floorPrice]);
 
   if (!mounted) {
     return (

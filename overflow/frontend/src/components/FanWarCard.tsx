@@ -25,10 +25,7 @@ import type { FanWarStatus } from "@/lib/api";
 // ---------------------------------------------------------------------------
 
 function useCountdown(deadline: string) {
-  const [remaining, setRemaining] = useState(() => {
-    const diff = new Date(deadline).getTime() - Date.now();
-    return diff > 0 ? diff : 0;
-  });
+  const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
     const tick = () => {

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Server as SocketServer } from 'socket.io';
 import { OHLCVCandle, PriceUpdate, Timeframe } from '../../common/types';
+import { SELL_TAX_BY_RANK } from '../../common/constants';
 
 const BONDING_CURVE_K = 0.0001;
 const BASE_PRICE = 1.0;
@@ -23,17 +24,7 @@ export class PriceService {
   }
 
   calculateSellTax(teamRanking: number): number {
-    const taxMap: Record<number, number> = {
-      1: 2,
-      2: 3,
-      3: 5,
-      4: 7,
-      5: 9,
-      6: 12,
-      7: 15,
-      8: 15,
-    };
-    return taxMap[teamRanking] ?? 5;
+    return SELL_TAX_BY_RANK[teamRanking] ?? 5;
   }
 
   async updatePriceAfterTrade(
@@ -47,7 +38,7 @@ export class PriceService {
 
     const direction = tradeType === 'BUY' ? 1 : -1;
     const impact = amount * BONDING_CURVE_K * direction;
-    const newPrice = Math.max(0.01, team.currentPrice + impact);
+    const newPrice = Math.max(0.01, Number(team.currentPrice) + impact);
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const oldPricePoint = await this.prisma.pricePoint.findFirst({
@@ -58,7 +49,7 @@ export class PriceService {
       orderBy: { timestamp: 'desc' },
     });
 
-    const oldPrice = oldPricePoint?.close ?? team.currentPrice;
+    const oldPrice = Number(oldPricePoint?.close ?? team.currentPrice);
     const priceChange24h = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
 
     await this.prisma.team.update({
@@ -85,11 +76,11 @@ export class PriceService {
       await this.prisma.pricePoint.update({
         where: { id: existingCandle.id },
         data: {
-          high: Math.max(existingCandle.high, newPrice),
-          low: Math.min(existingCandle.low, newPrice),
+          high: Math.max(Number(existingCandle.high), newPrice),
+          low: Math.min(Number(existingCandle.low), newPrice),
           close: newPrice,
           price: newPrice,
-          volume: existingCandle.volume + amount * price,
+          volume: Number(existingCandle.volume) + amount * price,
         },
       });
     } else {
@@ -97,9 +88,9 @@ export class PriceService {
         data: {
           teamId,
           price: newPrice,
-          open: team.currentPrice,
-          high: Math.max(team.currentPrice, newPrice),
-          low: Math.min(team.currentPrice, newPrice),
+          open: Number(team.currentPrice),
+          high: Math.max(Number(team.currentPrice), newPrice),
+          low: Math.min(Number(team.currentPrice), newPrice),
           close: newPrice,
           volume: amount * price,
           timestamp: now,
@@ -145,11 +136,11 @@ export class PriceService {
     });
 
     return points.map((p) => ({
-      open: p.open,
-      high: p.high,
-      low: p.low,
-      close: p.close,
-      volume: p.volume,
+      open: Number(p.open),
+      high: Number(p.high),
+      low: Number(p.low),
+      close: Number(p.close),
+      volume: Number(p.volume),
       timestamp: p.timestamp,
     }));
   }
@@ -161,8 +152,8 @@ export class PriceService {
     for (const team of teams) {
       const update: PriceUpdate = {
         symbol: team.symbol,
-        price: team.currentPrice,
-        change24h: team.priceChange24h,
+        price: Number(team.currentPrice),
+        change24h: Number(team.priceChange24h),
         timestamp: Date.now(),
       };
       this.io.emit('price:update', update);

@@ -1539,9 +1539,9 @@ describe("Overflow Platform", function () {
       ).to.be.revertedWithCustomError(upsetVault, "OwnableUnauthorizedAccount");
     });
 
-    it("should revert non-deployer calling oracle.setOracle", async function () {
+    it("should revert non-deployer calling oracle.proposeOracleChange", async function () {
       await expect(
-        oracle.connect(user1).setOracle(0, user1.address)
+        oracle.connect(user1).proposeOracleChange(0, user1.address)
       ).to.be.revertedWithCustomError(oracle, "OwnableUnauthorizedAccount");
     });
 
@@ -1814,16 +1814,20 @@ describe("Overflow Platform", function () {
       ).to.be.revertedWithCustomError(oracle, "ScoreMismatch");
     });
 
-    it("should revert when update has expired (>1 hour)", async function () {
+    it("should auto-clear expired update and create new proposal (M-5 deadlock fix)", async function () {
       const team = teamTokens["HKM"];
+      const nonceBefore = await oracle.updateNonce(team);
       await oracle.connect(deployer).updateMatchResult(team, 55, 55, 55, 55);
 
       // Advance past 1 hour expiry
       await time.increase(3601);
 
-      await expect(
-        oracle.connect(oracle2).updateMatchResult(team, 55, 55, 55, 55)
-      ).to.be.revertedWithCustomError(oracle, "UpdateExpired");
+      // M-5 fix: instead of reverting, the expired update is cleared and nonce advances.
+      // The second oracle's call creates a fresh proposal at the new nonce.
+      await oracle.connect(oracle2).updateMatchResult(team, 55, 55, 55, 55);
+      const nonceAfter = await oracle.updateNonce(team);
+      // Nonce should have advanced past the expired one (old nonce + 1) and now a new proposal exists
+      expect(nonceAfter).to.equal(nonceBefore + 1n);
     });
   });
 

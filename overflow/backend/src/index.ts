@@ -20,6 +20,8 @@ import { createAdminRouter } from './routes/admin';
 import { createLeaderboardRouter } from './routes/leaderboard';
 import { FanWarsService } from './modules/fanwars/fanwars.service';
 import { createFanWarsRouter } from './routes/fanwars';
+import { PredictionsService } from './modules/predictions/predictions.service';
+import { createPredictionsRouter } from './routes/predictions';
 
 const prisma = new PrismaClient();
 
@@ -78,6 +80,14 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(globalLimiter);
 
+// Enforce JSON content type on state-mutating requests (CSRF mitigation)
+app.use((req, res, next) => {
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && !req.is('application/json')) {
+    return res.status(415).json({ error: 'Content-Type must be application/json' });
+  }
+  next();
+});
+
 // Services
 const priceService = new PriceService(prisma);
 priceService.setSocket(io);
@@ -87,6 +97,9 @@ vaultService.setSocket(io);
 
 const fanWarsService = new FanWarsService(prisma);
 fanWarsService.setSocket(io);
+
+const predictionsService = new PredictionsService(prisma);
+predictionsService.setSocket(io);
 
 const cricketService = new CricketDataService(prisma);
 cricketService.setSocket(io);
@@ -105,6 +118,7 @@ app.use('/api/ai', createAiRouter(prisma));
 app.use('/api/admin', adminLimiter, createAdminRouter(prisma, oracleService, vaultService));
 app.use('/api/leaderboard', createLeaderboardRouter(prisma));
 app.use('/api/fanwars', createFanWarsRouter(fanWarsService));
+app.use('/api/predictions', createPredictionsRouter(predictionsService));
 
 // Health check
 app.get('/api/health', (_req, res) => {
@@ -145,6 +159,15 @@ io.on('connection', (socket) => {
     console.log(`[Socket] ${socket.id} subscribed to fanwar:${matchId}`);
   });
 
+  socket.on('subscribe:prediction', (matchId: unknown) => {
+    if (typeof matchId !== 'string' || !ALPHANUMERIC_PATTERN.test(matchId)) {
+      socket.emit('error', { message: 'Invalid match ID format' });
+      return;
+    }
+    socket.join(`prediction:${matchId}`);
+    console.log(`[Socket] ${socket.id} subscribed to prediction:${matchId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log(`[Socket] Client disconnected: ${socket.id}`);
   });
@@ -155,6 +178,13 @@ async function bootstrap(): Promise<void> {
   try {
     await prisma.$connect();
     console.log('[Database] Connected to PostgreSQL');
+
+    const adminSecret = process.env.ADMIN_SECRET;
+    if (!adminSecret) {
+      console.warn('[Security] WARNING: ADMIN_SECRET is not set. Admin panel will be inaccessible.');
+    } else if (adminSecret === 'overflow2026') {
+      console.warn('[Security] WARNING: ADMIN_SECRET is set to the known default "overflow2026". Change it immediately.');
+    }
 
     cricketService.startPolling();
 
@@ -195,6 +225,8 @@ process.on('SIGTERM', async () => {
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[Server] Unhandled Rejection at:', promise, 'reason:', reason);
+  // Give logs time to flush, then exit so PM2/supervisor can restart
+  setTimeout(() => process.exit(1), 1000);
 });
 
 process.on('uncaughtException', (err) => {

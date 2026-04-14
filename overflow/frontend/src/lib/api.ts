@@ -1,5 +1,4 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-const AI_API_URL = process.env.NEXT_PUBLIC_AI_API_URL || "http://localhost:5001";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -148,7 +147,7 @@ export interface AIQueryResponse {
 
 async function fetchJSON<T>(
   url: string,
-  options?: RequestInit,
+  options?: RequestInit & { signal?: AbortSignal },
 ): Promise<T> {
   const res = await fetch(url, {
     headers: { "Content-Type": "application/json" },
@@ -161,6 +160,33 @@ async function fetchJSON<T>(
   }
 
   return res.json() as Promise<T>;
+}
+
+// ---------------------------------------------------------------------------
+// Retry wrapper for GET requests (transient failure resilience)
+// ---------------------------------------------------------------------------
+
+async function fetchWithRetry<T>(
+  url: string,
+  options?: RequestInit & { signal?: AbortSignal },
+  maxRetries = 2,
+): Promise<T> {
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetchJSON<T>(url, options);
+    } catch (err) {
+      lastError = err as Error;
+      // Don't retry if the request was intentionally aborted
+      if (options?.signal?.aborted) break;
+      // Don't retry on client errors (4xx) — only retry on network/server errors
+      if (lastError.message.includes("API error 4")) break;
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
 }
 
 /** Build headers that include the admin token when available. */
@@ -200,18 +226,20 @@ async function adminFetchJSON<T>(
 export const api = {
   // ---- Teams ----
   teams: {
-    getAll: (): Promise<TeamData[]> =>
-      fetchJSON(`${API_URL}/api/teams`),
+    getAll: (signal?: AbortSignal): Promise<TeamData[]> =>
+      fetchWithRetry(`${API_URL}/api/teams`, { signal }),
 
-    getBySymbol: (symbol: string): Promise<TeamData> =>
-      fetchJSON(`${API_URL}/api/teams/${encodeURIComponent(symbol)}`),
+    getBySymbol: (symbol: string, signal?: AbortSignal): Promise<TeamData> =>
+      fetchWithRetry(`${API_URL}/api/teams/${encodeURIComponent(symbol)}`, { signal }),
 
     getPriceHistory: (
       symbol: string,
       timeframe: string = "1h",
+      signal?: AbortSignal,
     ): Promise<PricePoint[]> =>
-      fetchJSON(
+      fetchWithRetry(
         `${API_URL}/api/teams/${encodeURIComponent(symbol)}/prices?timeframe=${encodeURIComponent(timeframe)}`,
+        { signal },
       ),
   },
 
@@ -223,83 +251,87 @@ export const api = {
         body: JSON.stringify(trade),
       }),
 
-    getRecent: (limit: number = 50): Promise<TradeRecord[]> =>
-      fetchJSON(`${API_URL}/api/trades/recent?limit=${limit}`),
+    getRecent: (limit: number = 50, signal?: AbortSignal): Promise<TradeRecord[]> =>
+      fetchWithRetry(`${API_URL}/api/trades/recent?limit=${limit}`, { signal }),
 
-    getByWallet: (wallet: string): Promise<TradeRecord[]> =>
-      fetchJSON(
+    getByWallet: (wallet: string, signal?: AbortSignal): Promise<TradeRecord[]> =>
+      fetchWithRetry(
         `${API_URL}/api/trades/wallet/${encodeURIComponent(wallet)}`,
+        { signal },
       ),
   },
 
   // ---- Matches ----
   matches: {
-    getLive: (): Promise<MatchInfo[]> =>
-      fetchJSON(`${API_URL}/api/matches/live`),
+    getLive: (signal?: AbortSignal): Promise<MatchInfo[]> =>
+      fetchWithRetry(`${API_URL}/api/matches/live`, { signal }),
 
-    getUpcoming: (): Promise<MatchInfo[]> =>
-      fetchJSON(`${API_URL}/api/matches/upcoming`),
+    getUpcoming: (signal?: AbortSignal): Promise<MatchInfo[]> =>
+      fetchWithRetry(`${API_URL}/api/matches/upcoming`, { signal }),
 
-    getAll: (): Promise<MatchInfo[]> =>
-      fetchJSON(`${API_URL}/api/matches`),
+    getAll: (signal?: AbortSignal): Promise<MatchInfo[]> =>
+      fetchWithRetry(`${API_URL}/api/matches`, { signal }),
 
-    getCompleted: (): Promise<MatchInfo[]> =>
-      fetchJSON(`${API_URL}/api/matches/completed`),
+    getCompleted: (signal?: AbortSignal): Promise<MatchInfo[]> =>
+      fetchWithRetry(`${API_URL}/api/matches/completed`, { signal }),
 
-    getById: (id: string): Promise<MatchInfo> =>
-      fetchJSON(`${API_URL}/api/matches/${encodeURIComponent(id)}`),
+    getById: (id: string, signal?: AbortSignal): Promise<MatchInfo> =>
+      fetchWithRetry(`${API_URL}/api/matches/${encodeURIComponent(id)}`, { signal }),
   },
 
   // ---- Portfolio ----
   portfolio: {
-    get: (wallet: string): Promise<PortfolioData> =>
-      fetchJSON(
+    get: (wallet: string, signal?: AbortSignal): Promise<PortfolioData> =>
+      fetchWithRetry(
         `${API_URL}/api/portfolio/${encodeURIComponent(wallet)}`,
+        { signal },
       ),
 
     getHistory: (
       wallet: string,
       days: number = 30,
+      signal?: AbortSignal,
     ): Promise<{ date: string; value: number }[]> =>
-      fetchJSON(
+      fetchWithRetry(
         `${API_URL}/api/portfolio/${encodeURIComponent(wallet)}/history?days=${days}`,
+        { signal },
       ),
   },
 
   // ---- Vault ----
   vault: {
-    getState: (): Promise<VaultState> =>
-      fetchJSON(`${API_URL}/api/vault`),
+    getState: (signal?: AbortSignal): Promise<VaultState> =>
+      fetchWithRetry(`${API_URL}/api/vault`, { signal }),
 
-    getUpsets: (): Promise<UpsetRecord[]> =>
-      fetchJSON(`${API_URL}/api/vault/upsets`),
+    getUpsets: (signal?: AbortSignal): Promise<UpsetRecord[]> =>
+      fetchWithRetry(`${API_URL}/api/vault/upsets`, { signal }),
   },
 
   // ---- Leaderboard ----
   leaderboard: {
-    get: (sort: string = 'pnl', limit: number = 50): Promise<LeaderboardEntry[]> =>
-      fetchJSON(`${API_URL}/api/leaderboard?sort=${sort}&limit=${limit}`),
+    get: (sort: string = 'pnl', limit: number = 50, signal?: AbortSignal): Promise<LeaderboardEntry[]> =>
+      fetchWithRetry(`${API_URL}/api/leaderboard?sort=${sort}&limit=${limit}`, { signal }),
   },
 
-  // ---- AI Engine ----
+  // ---- AI Engine (proxied through backend for auth & rate limiting) ----
   ai: {
     analyze: (
       homeTeam: string,
       awayTeam: string,
     ): Promise<AIAnalysis> =>
-      fetchJSON(`${AI_API_URL}/api/ai/analyze`, {
+      fetchJSON(`${API_URL}/api/ai/analyze`, {
         method: "POST",
         body: JSON.stringify({ homeTeam, awayTeam }),
       }),
 
     signal: (matchState: Record<string, unknown>): Promise<AISignal> =>
-      fetchJSON(`${AI_API_URL}/api/ai/signal`, {
+      fetchJSON(`${API_URL}/api/ai/signal`, {
         method: "POST",
         body: JSON.stringify({ matchState }),
       }),
 
     query: (question: string): Promise<AIQueryResponse> =>
-      fetchJSON(`${AI_API_URL}/api/ai/query`, {
+      fetchJSON(`${API_URL}/api/ai/query`, {
         method: "POST",
         body: JSON.stringify({ question }),
       }),
@@ -473,7 +505,7 @@ export interface FanWarLock {
 
 export const fanWarsApi = {
   getStatus: (matchId: string): Promise<FanWarStatus> =>
-    fetchJSON(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}`),
+    fetchWithRetry(`${API_URL}/api/fanwars/${encodeURIComponent(matchId)}`),
 
   lock: (
     matchId: string,
@@ -494,16 +526,95 @@ export const fanWarsApi = {
     }),
 
   getActive: (): Promise<FanWarStatus[]> =>
-    fetchJSON(`${API_URL}/api/fanwars/active`),
+    fetchWithRetry(`${API_URL}/api/fanwars/active`),
 
   getUserLocks: (wallet: string): Promise<FanWarLock[]> =>
-    fetchJSON(
+    fetchWithRetry(
       `${API_URL}/api/fanwars/user/${encodeURIComponent(wallet)}`,
     ),
 
   getLeaderboard: (): Promise<
     { rank: number; wallet: string; totalBoost: number; warsWon: number }[]
-  > => fetchJSON(`${API_URL}/api/fanwars/leaderboard`),
+  > => fetchWithRetry(`${API_URL}/api/fanwars/leaderboard`),
+};
+
+// ---------------------------------------------------------------------------
+// Predictions types
+// ---------------------------------------------------------------------------
+
+export interface PredictionPoolStatus {
+  id: string;
+  matchId: string;
+  homeTeamName: string;
+  homeTeamSymbol: string;
+  homeTeamColor: string;
+  awayTeamName: string;
+  awayTeamSymbol: string;
+  awayTeamColor: string;
+  entryFee: number;
+  totalPool: number;
+  participantCount: number;
+  status: "OPEN" | "LIVE" | "SETTLED" | "CANCELLED";
+  deadline: string;
+  matchStartTime: string;
+  matchVenue: string;
+  highestScore: number | null;
+  questions: PredictionQuestionData[];
+  userEntry: {
+    answers: { questionIndex: number; chosenOption: number; isCorrect: boolean | null; pointsEarned: number | null }[];
+    totalScore: number | null;
+    payout: number | null;
+    claimed: boolean;
+  } | null;
+}
+
+export interface PredictionQuestionData {
+  questionIndex: number;
+  questionText: string;
+  options: string[];
+  points: number;
+  isLive: boolean;
+  deadline: string;
+  resolved: boolean;
+  correctOption: number | null;
+}
+
+export interface PredictionLeaderboardEntry {
+  wallet: string;
+  avgScore: number;
+  totalProfit: number;
+  matchesPlayed: number;
+  bestScore: number;
+}
+
+// ---------------------------------------------------------------------------
+// Predictions API client
+// ---------------------------------------------------------------------------
+
+export const predictionsApi = {
+  getActivePools: (signal?: AbortSignal): Promise<PredictionPoolStatus[]> =>
+    fetchWithRetry(`${API_URL}/api/predictions/active`, { signal }),
+
+  getPoolStatus: (matchId: string, wallet?: string, signal?: AbortSignal): Promise<PredictionPoolStatus> =>
+    fetchWithRetry(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}${wallet ? `?wallet=${wallet}` : ''}`, { signal }),
+
+  enter: (matchId: string, body: { wallet: string; answers: { questionIndex: number; chosenOption: number }[] }): Promise<{ success: boolean }> =>
+    fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/enter`, { method: "POST", body: JSON.stringify(body) }),
+
+  submitLiveAnswer: (matchId: string, body: { wallet: string; questionIndex: number; chosenOption: number }): Promise<{ success: boolean }> =>
+    fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/live-answer`, { method: "POST", body: JSON.stringify(body) }),
+
+  claim: (matchId: string, body: { wallet: string }): Promise<{ payout: number }> =>
+    fetchJSON(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/claim`, { method: "POST", body: JSON.stringify(body) }),
+
+  getUserPredictions: (wallet: string, signal?: AbortSignal): Promise<PredictionPoolStatus[]> =>
+    fetchWithRetry(`${API_URL}/api/predictions/user/${encodeURIComponent(wallet)}`, { signal }),
+
+  getLeaderboard: (limit?: number, signal?: AbortSignal): Promise<PredictionLeaderboardEntry[]> =>
+    fetchWithRetry(`${API_URL}/api/predictions/leaderboard${limit ? `?limit=${limit}` : ''}`, { signal }),
+
+  getEstimatedPayout: (matchId: string, score: number, signal?: AbortSignal): Promise<{ estimatedPayout: number }> =>
+    fetchWithRetry(`${API_URL}/api/predictions/${encodeURIComponent(matchId)}/estimate/${score}`, { signal }),
 };
 
 export default api;

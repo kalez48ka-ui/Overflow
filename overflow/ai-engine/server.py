@@ -39,7 +39,11 @@ logger = logging.getLogger("overflow.server")
 # ── Flask app ──────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
-CORS(app, origins="*")
+CORS(app, origins=[
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    os.getenv("BACKEND_URL", "http://localhost:3001"),
+])
 
 # ── lazy globals ───────────────────────────────────────────────────────────
 

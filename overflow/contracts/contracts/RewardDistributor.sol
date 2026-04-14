@@ -10,11 +10,12 @@ import "./TeamToken.sol";
  * @notice Collects all Overflow trading fees and distributes them across platform pools.
  * @dev
  *   Fee split:
- *     30% -> Platform treasury
+ *     25% -> Platform treasury
  *     25% -> Performance Reward Pool
  *     15% -> Upset Vault
- *     20% -> Liquidity backing
+ *     15% -> Liquidity backing
  *     10% -> Development fund
+ *     10% -> Fan Wars
  *
  *   After each match, the Performance Reward Pool is distributed to token holders by ranking:
  *     1st: 30%, 2nd: 22%, 3rd: 17%, 4th: 11%, 5th: 8%, 6th: 5%, 7th: 4%, 8th: 3%
@@ -60,6 +61,8 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         uint256 totalRewardPool;         // ETH amount for this epoch
         uint256 distributionTimestamp;   // when distribution was triggered
         bool distributed;
+        bool expired;                    // true after unclaimed rewards are released
+        uint256 claimedAmount;           // total ETH claimed by users in this epoch
         address[8] rankedTeams;          // teams sorted by ranking (0=1st)
         mapping(address => uint256) teamRewardShare; // team -> ETH share
         mapping(address => mapping(address => bool)) claimed; // team -> user -> claimed
@@ -88,6 +91,7 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
     event MatchRewardsDistributed(uint256 indexed epoch, uint256 totalPool);
     event RewardClaimed(uint256 indexed epoch, address indexed user, address indexed team, uint256 amount);
     event TeamTokenRegistered(address indexed token);
+    event ExpiredRewardsReleased(uint256 indexed epochId, uint256 unclaimedAmount);
 
     // -----------------------------------------------------------------------
     // Errors
@@ -100,6 +104,8 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
     error InvalidRanking();
     error TransferFailed();
     error TokensBoughtAfterSnapshot();
+    error ClaimWindowStillOpen();
+    error AlreadyReleased();
 
     // -----------------------------------------------------------------------
     // Constructor
@@ -265,9 +271,34 @@ contract RewardDistributor is Ownable, ReentrancyGuard {
         if (userReward == 0) revert NoRewardsAvailable();
 
         e.claimed[teamAddress][msg.sender] = true;
+        e.claimedAmount += userReward;
         _safeTransfer(msg.sender, userReward);
 
         emit RewardClaimed(epoch, msg.sender, teamAddress, userReward);
+    }
+
+    // -----------------------------------------------------------------------
+    // Core: Release Expired Epoch Rewards
+    // -----------------------------------------------------------------------
+    /**
+     * @notice Reclaim unclaimed rewards from an expired epoch back into the performance reward pool.
+     * @dev Only callable after the 24-hour claim window has passed. Prevents permanent ETH lockup.
+     * @param epochId The epoch whose unclaimed rewards should be released.
+     */
+    function releaseExpiredEpochRewards(uint256 epochId) external onlyOwner {
+        MatchRewardEpoch storage e = epochs[epochId];
+        if (!e.distributed) revert EpochNotDistributed();
+        if (block.timestamp <= e.distributionTimestamp + CLAIM_WINDOW) revert ClaimWindowStillOpen();
+        if (e.expired) revert AlreadyReleased();
+
+        e.expired = true;
+
+        uint256 unclaimed = e.totalRewardPool - e.claimedAmount;
+        if (unclaimed > 0) {
+            performanceRewardPool += unclaimed;
+        }
+
+        emit ExpiredRewardsReleased(epochId, unclaimed);
     }
 
     // -----------------------------------------------------------------------

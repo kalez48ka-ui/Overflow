@@ -157,13 +157,14 @@ export default function TradePage({ params }: PageProps) {
 
   // Fetch team data on mount
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
 
     (async () => {
       // Fetch team data and price history in parallel
       const [teamResult, priceResult] = await Promise.allSettled([
-        api.teams.getBySymbol(teamId),
-        api.teams.getPriceHistory(teamId, timeframe),
+        api.teams.getBySymbol(teamId, controller.signal),
+        api.teams.getPriceHistory(teamId, timeframe, controller.signal),
       ]);
 
       if (cancelled) return;
@@ -219,7 +220,7 @@ export default function TradePage({ params }: PageProps) {
       initialFetchDone.current = true;
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [teamId]);
 
   // Refetch chart data when timeframe changes (skip initial mount — handled above)
@@ -227,12 +228,13 @@ export default function TradePage({ params }: PageProps) {
     // The initial fetch already uses the default timeframe
     if (!initialFetchDone.current) return;
 
+    const controller = new AbortController();
     let cancelled = false;
     setChartLoading(true);
 
     (async () => {
       try {
-        const priceData = await api.teams.getPriceHistory(teamId, timeframe);
+        const priceData = await api.teams.getPriceHistory(teamId, timeframe, controller.signal);
         if (cancelled) return;
 
         if (priceData && priceData.length > 0) {
@@ -260,7 +262,7 @@ export default function TradePage({ params }: PageProps) {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [teamId, timeframe, loading]);
 
   if (!team) notFound();
@@ -312,7 +314,24 @@ export default function TradePage({ params }: PageProps) {
       {/* Stats strip */}
       <div className="border-b border-[#21262D]">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex items-center divide-x divide-[#21262D] overflow-x-auto py-2.5 text-xs font-mono">
+          {/* Mobile: 2-column grid */}
+          <div className="grid grid-cols-2 gap-2 py-2.5 text-xs font-mono sm:hidden">
+            {[
+              { label: "High", value: <CountUp value={team.price * 1.08} prefix="$" decimals={4} duration={1} />, color: "#3FB950" },
+              { label: "Low", value: <CountUp value={team.price * 0.91} prefix="$" decimals={4} duration={1} />, color: "#F85149" },
+              { label: "Volume", value: <CountUp value={team.volume24h} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
+              { label: "Mkt Cap", value: <CountUp value={team.marketCap} prefix="$" decimals={0} duration={1.2} />, color: "#E6EDF3" },
+              { label: "Buy Tax", value: <CountUp value={team.buyTax} suffix="%" decimals={1} duration={0.8} />, color: "#3FB950" },
+              { label: "Sell Tax", value: <CountUp value={team.sellTax} suffix="%" decimals={1} duration={0.8} />, color: "#F85149" },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="px-2 py-1 rounded-md bg-[#161B22]">
+                <span className="text-[#484F58]">{label} </span>
+                <span className="font-semibold tabular-nums" style={{ color }}>{value}</span>
+              </div>
+            ))}
+          </div>
+          {/* Desktop: horizontal flex with dividers */}
+          <div className="hidden sm:flex items-center divide-x divide-[#21262D] py-2.5 text-xs font-mono">
             {[
               { label: "High", value: <CountUp value={team.price * 1.08} prefix="$" decimals={4} duration={1} />, color: "#3FB950" },
               { label: "Low", value: <CountUp value={team.price * 0.91} prefix="$" decimals={4} duration={1} />, color: "#F85149" },

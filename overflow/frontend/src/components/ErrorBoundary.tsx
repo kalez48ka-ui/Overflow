@@ -93,8 +93,8 @@ export class ErrorBoundary extends React.Component<
             try again, or refresh the page if the problem persists.
           </p>
 
-          {/* Error details (dev-friendly) */}
-          {this.state.error && (
+          {/* Error details — only shown in development to avoid leaking internals */}
+          {process.env.NODE_ENV === "development" && this.state.error && (
             <pre
               className="max-w-lg overflow-auto rounded-lg p-3 text-xs"
               style={{
@@ -104,6 +104,7 @@ export class ErrorBoundary extends React.Component<
               }}
             >
               {this.state.error.message}
+              {this.state.error.stack && `\n\n${this.state.error.stack}`}
             </pre>
           )}
 

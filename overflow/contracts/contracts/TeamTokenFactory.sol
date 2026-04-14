@@ -50,6 +50,9 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
     event TeamTokenCreated(address indexed token, string name, string symbol);
     event TokensPurchased(address indexed token, address indexed buyer, uint256 amount, uint256 cost, uint256 fee);
     event TokensSold(address indexed token, address indexed seller, uint256 amount, uint256 proceeds, uint256 fee);
+    event OracleUpdated(address indexed newOracle);
+    event CircuitBreakerUpdated(address indexed newCircuitBreaker);
+    event RewardDistributorUpdated(address indexed newRewardDistributor);
 
     // -----------------------------------------------------------------------
     // Errors
@@ -88,16 +91,35 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
     function setOracle(address _oracle) external onlyOwner {
         require(_oracle != address(0), "Zero address");
         oracle = PerformanceOracle(_oracle);
+        emit OracleUpdated(_oracle);
     }
 
     function setCircuitBreaker(address _circuitBreaker) external onlyOwner {
         require(_circuitBreaker != address(0), "Zero address");
         circuitBreaker = CircuitBreaker(_circuitBreaker);
+        emit CircuitBreakerUpdated(_circuitBreaker);
     }
 
     function setRewardDistributor(address _rewardDistributor) external onlyOwner {
         require(_rewardDistributor != address(0), "Zero address");
         rewardDistributor = _rewardDistributor;
+        emit RewardDistributorUpdated(_rewardDistributor);
+    }
+
+    /**
+     * @notice Set exemption on a team token (proxy through factory since tokens use onlyFactory).
+     * @param tokenAddress The team token address.
+     * @param account The account to exempt.
+     * @param exempt Whether to exempt or un-exempt.
+     */
+    function setTokenExempt(address tokenAddress, address account, bool exempt) external onlyOwner {
+        if (!isTeamToken[tokenAddress]) revert InvalidToken();
+        TeamToken(tokenAddress).setExempt(account, exempt);
+    }
+
+    function setTokenExemptTo(address tokenAddress, address account, bool exempt) external onlyOwner {
+        if (!isTeamToken[tokenAddress]) revert InvalidToken();
+        TeamToken(tokenAddress).setExemptTo(account, exempt);
     }
 
     // -----------------------------------------------------------------------
@@ -149,7 +171,7 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         uint256 netPayment = msg.value - fee;
 
         // Calculate how many tokens the user gets for netPayment
-        uint256 tokensOut = _calculateBuyTokens(currentSupply, netPayment);
+        (uint256 tokensOut, uint256 ethSpent) = _calculateBuyTokens(currentSupply, netPayment);
         if (tokensOut == 0) revert ZeroAmount();
         if (currentSupply + tokensOut > MAX_SUPPLY) revert ExceedsMaxSupply();
 
@@ -159,12 +181,21 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         // Mint tokens to buyer
         token.mint(msg.sender, tokensOut);
 
-        // C-3 fix: track actual ETH reserves (net of fee sent to distributor)
-        tokenReserves[tokenAddress] += netPayment;
+        // C-3 fix: track actual ETH reserves (only the ETH actually spent on the curve)
+        tokenReserves[tokenAddress] += ethSpent;
 
-        // Send fee to reward distributor
-        if (fee > 0 && rewardDistributor != address(0)) {
-            (bool success,) = rewardDistributor.call{value: fee}("");
+        // Refund unspent ETH to buyer (handles MAX_SUPPLY cap and MAX_ITERATIONS break)
+        // Recalculate fee proportional to actual spend so user isn't overcharged
+        uint256 actualFee = (ethSpent * BUY_FEE_BPS) / (BASIS_POINTS - BUY_FEE_BPS);
+        uint256 refund = msg.value - ethSpent - actualFee;
+        if (refund > 0) {
+            (bool refundSuccess,) = msg.sender.call{value: refund}("");
+            if (!refundSuccess) revert TransferFailed();
+        }
+
+        // Send fee to reward distributor (only the proportional fee)
+        if (actualFee > 0 && rewardDistributor != address(0)) {
+            (bool success,) = rewardDistributor.call{value: actualFee}("");
             if (!success) revert TransferFailed();
         }
 
@@ -273,7 +304,8 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         if (!isTeamToken[tokenAddress]) revert InvalidToken();
         uint256 supply = TeamToken(tokenAddress).totalSupply();
         uint256 net = ethAmount - (ethAmount * BUY_FEE_BPS) / BASIS_POINTS;
-        return _calculateBuyTokens(supply, net);
+        (uint256 tokens,) = _calculateBuyTokens(supply, net);
+        return tokens;
     }
 
     /**
@@ -323,9 +355,10 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
     /// @dev C-4 fix: maximum iterations to prevent unbounded gas consumption
     uint256 internal constant MAX_ITERATIONS = 10000;
 
-    function _calculateBuyTokens(uint256 currentSupply, uint256 ethAmount) internal pure returns (uint256) {
+    function _calculateBuyTokens(uint256 currentSupply, uint256 ethAmount) internal pure returns (uint256 totalTokens, uint256 ethSpent) {
         uint256 remaining = ethAmount;
-        uint256 totalTokens = 0;
+        totalTokens = 0;
+        ethSpent = 0;
         uint256 supply = currentSupply;
         uint256 iterations = 0;
 
@@ -355,15 +388,17 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
             if (remaining >= stepCost) {
                 remaining -= stepCost;
                 totalTokens += step;
+                ethSpent += stepCost;
                 supply += step;
             } else {
                 // Partial step
                 uint256 partialTokens = (remaining * step) / stepCost;
                 totalTokens += partialTokens;
+                ethSpent += remaining;
                 remaining = 0;
             }
 
-            // Safety: prevent infinite loop
+            // Safety: prevent infinite loop — cap at MAX_SUPPLY
             if (supply + step > MAX_SUPPLY) break;
 
             // C-4 fix: bound iterations
@@ -371,7 +406,7 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
             if (iterations >= MAX_ITERATIONS) break;
         }
 
-        return totalTokens;
+        return (totalTokens, ethSpent);
     }
 
     /**
@@ -387,18 +422,16 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         uint256 iterations = 0;
 
         while (remaining > 0) {
-            // MEDIUM-01 fix: adaptive step sizing mirroring the buy-side logic
+            // Symmetric step sizing matching the buy-side logic
             uint256 step;
-            if (remaining > 1000e18) {
-                step = 100e18;  // 100 tokens for very large sells
-            } else if (remaining > 100e18) {
+            if (remaining > 100e18) {
                 step = 10e18;   // 10 tokens
             } else if (remaining > 10e18) {
-                step = 1e18;    // 1 token
+                step = 5e18;    // 5 tokens
             } else if (remaining > 1e18) {
-                step = 1e17;    // 0.1 token
+                step = 1e18;    // 1 token
             } else {
-                step = 1e16;    // 0.01 token for small remainder precision
+                step = 1e17;    // 0.1 token
             }
 
             uint256 currentStep = remaining >= step ? step : remaining;
@@ -497,6 +530,21 @@ contract TeamTokenFactory is Ownable, ReentrancyGuard {
         } catch {
             // Oracle not available or team not registered; keep default
         }
+    }
+
+    /**
+     * @notice Withdraw ETH that is not tracked in any token's reserves.
+     * @dev Recovers ETH sent directly to the contract outside of buy().
+     */
+    function withdrawUntracked() external onlyOwner {
+        uint256 tracked = 0;
+        for (uint256 i = 0; i < teamTokens.length; i++) {
+            tracked += tokenReserves[teamTokens[i]];
+        }
+        uint256 untracked = address(this).balance - tracked;
+        require(untracked > 0, "No untracked ETH");
+        (bool success,) = owner().call{value: untracked}("");
+        if (!success) revert TransferFailed();
     }
 
     // Allow the contract to receive ETH (for liquidity backing)

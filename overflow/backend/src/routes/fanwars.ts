@@ -62,6 +62,12 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
   router.get('/:matchId', async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
+
+      if (typeof matchId !== 'string' || matchId.length > 128 || !/^[a-zA-Z0-9-]+$/.test(matchId)) {
+        res.status(400).json({ error: 'Invalid matchId format' });
+        return;
+      }
+
       const status = await fanWarsService.getStatus(matchId);
       res.json(status);
     } catch (err: unknown) {
@@ -83,6 +89,12 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
   router.post('/:matchId/lock', async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
+
+      if (typeof matchId !== 'string' || matchId.length > 128 || !/^[a-zA-Z0-9-]+$/.test(matchId)) {
+        res.status(400).json({ error: 'Invalid matchId format' });
+        return;
+      }
+
       const { wallet, teamId, amount } = req.body;
 
       if (!wallet || !teamId || amount === undefined) {
@@ -137,6 +149,12 @@ export function createFanWarsRouter(fanWarsService: FanWarsService): Router {
   router.post('/:matchId/claim', async (req: Request, res: Response) => {
     try {
       const matchId = String(req.params.matchId);
+
+      if (typeof matchId !== 'string' || matchId.length > 128 || !/^[a-zA-Z0-9-]+$/.test(matchId)) {
+        res.status(400).json({ error: 'Invalid matchId format' });
+        return;
+      }
+
       const { wallet } = req.body;
 
       if (!wallet) {

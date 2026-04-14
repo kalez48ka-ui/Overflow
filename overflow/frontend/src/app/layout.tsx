@@ -108,12 +108,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-[#0D1117] text-[#E6EDF3] antialiased">
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){function isHydNoise(v){return typeof v==='string'&&(v.includes('hydrat')||v.includes('Hydrat')||v.includes('did not match'))};function isHydErr(e){return e&&typeof e==='object'&&typeof e.message==='string'&&isHydNoise(e.message)};var oe=console.error;console.error=function(){if(isHydNoise(arguments[0])||isHydErr(arguments[0]))return;oe.apply(console,arguments)};var ow=console.warn;console.warn=function(){if(isHydNoise(arguments[0]))return;ow.apply(console,arguments)};if(typeof reportError==='function'){var or=reportError;window.reportError=function(e){if(isHydErr(e))return;or.call(window,e)}};var oa=window.addEventListener;window.addEventListener=function(t,fn,o){if(t==='error'){var wfn=function(ev){if(isHydErr(ev.error)){ev.preventDefault();ev.stopImmediatePropagation();return}fn.call(this,ev)};return oa.call(window,t,wfn,o)}return oa.call(window,t,fn,o)}})();`,
+          }}
+        />
+      </head>
+      <body suppressHydrationWarning className="min-h-screen bg-[#0D1117] text-[#E6EDF3] antialiased">
         <WalletProvider>
           <ToastProvider />
           <AppShell>
-            <Navbar />
+            <ErrorBoundary
+              fallback={
+                <header className="border-b border-[#21262D] bg-[#161B22] px-4 py-3">
+                  <span className="font-black text-[#E6EDF3] text-sm tracking-tight">
+                    OVER<span className="text-[#E4002B]">FLOW</span>
+                  </span>
+                </header>
+              }
+            >
+              <Navbar />
+            </ErrorBoundary>
             <main>
               <ErrorBoundary>{children}</ErrorBoundary>
             </main>

@@ -85,14 +85,14 @@ async function main() {
   // -----------------------------------------------------------------------
   console.log("\n--- Creating PSL team tokens ---");
   const teams = [
-    { name: "Islamabad United", symbol: "ISU" },
-    { name: "Lahore Qalandars", symbol: "LHQ" },
-    { name: "Multan Sultans", symbol: "MLS" },
-    { name: "Karachi Kings", symbol: "KRK" },
-    { name: "Peshawar Zalmi", symbol: "PSZ" },
-    { name: "Quetta Gladiators", symbol: "QTG" },
-    { name: "Hyderabad Kingsmen", symbol: "HKM" },
-    { name: "Rawalpindiz", symbol: "RWP" },
+    { name: "Islamabad United", symbol: "IU" },
+    { name: "Lahore Qalandars", symbol: "LQ" },
+    { name: "Multan Sultans", symbol: "MS" },
+    { name: "Karachi Kings", symbol: "KK" },
+    { name: "Peshawar Zalmi", symbol: "PZ" },
+    { name: "Quetta Gladiators", symbol: "QG" },
+    { name: "Hyderabad Kingsmen", symbol: "HK" },
+    { name: "Rawalpindiz", symbol: "RW" },
   ];
 
   const tokenAddresses = [];

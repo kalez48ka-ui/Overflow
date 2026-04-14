@@ -176,12 +176,13 @@ export default function PortfolioPage() {
       return;
     }
 
+    const controller = new AbortController();
     let cancelled = false;
     setLoading(true);
 
     (async () => {
       try {
-        const data = await api.portfolio.get(address);
+        const data = await api.portfolio.get(address, controller.signal);
         if (!cancelled && data && data.positions && data.positions.length > 0) {
           // Map API PortfolioPosition to local Position type
           const mapped: Position[] = data.positions.map((p) => {
@@ -210,7 +211,7 @@ export default function PortfolioPage() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [address, isConnected]);
 
   // Fetch trade history when wallet is connected and history tab is active
@@ -221,12 +222,13 @@ export default function PortfolioPage() {
     }
     if (activeTab !== "history") return;
 
+    const controller = new AbortController();
     let cancelled = false;
     setTxLoading(true);
 
     (async () => {
       try {
-        const records = await api.trades.getByWallet(address);
+        const records = await api.trades.getByWallet(address, controller.signal);
         if (!cancelled && records && records.length > 0) {
           setTransactions(records.map(tradeRecordToTransaction));
         } else if (!cancelled) {
@@ -241,7 +243,7 @@ export default function PortfolioPage() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [address, isConnected, activeTab]);
 
   const totalValue = positions.reduce((sum, p) => sum + p.value, 0);

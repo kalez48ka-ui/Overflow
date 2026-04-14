@@ -65,7 +65,13 @@ export function createTeamsRouter(prisma: PrismaClient, priceService: PriceServi
   const priceHistoryHandler = async (req: Request, res: Response) => {
     try {
       const symbol = String(req.params.symbol).toUpperCase();
-      const timeframe = (String(req.query.timeframe || '24h')) as Timeframe;
+      const ALLOWED_TIMEFRAMES: Timeframe[] = ['1h', '24h', '7d'];
+      const rawTimeframe = String(req.query.timeframe || '24h');
+      if (!ALLOWED_TIMEFRAMES.includes(rawTimeframe as Timeframe)) {
+        res.status(400).json({ error: `Invalid timeframe. Allowed: ${ALLOWED_TIMEFRAMES.join(', ')}` });
+        return;
+      }
+      const timeframe = rawTimeframe as Timeframe;
 
       const team = await prisma.team.findUnique({
         where: { symbol },

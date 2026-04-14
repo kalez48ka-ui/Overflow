@@ -61,7 +61,7 @@ export interface UpsetEventData {
   vaultRelease: number;
   totalPayout: number;
   holdersCount: number;
-  perHolderPayout: number;
+  avgHolderPayout: number;
 }
 
 export interface OHLCVCandle {
@@ -142,4 +142,59 @@ export interface LeaderboardEntry {
 export interface FanWarClaimResult {
   boostReward: number;
   tokensReturned: number;
+}
+
+export interface PredictionPoolStatus {
+  id: string;
+  matchId: string;
+  entryFee: number;
+  totalPool: number;
+  participantCount: number;
+  status: string;
+  deadline: Date;
+  settledAt: Date | null;
+  claimDeadline: Date | null;
+  highestScore: number | null;
+  questions: PredictionQuestionInfo[];
+  userEntry?: PredictionEntryInfo | null;
+}
+
+export interface PredictionQuestionInfo {
+  id: string;
+  questionIndex: number;
+  questionText: string;
+  options: string[];
+  correctOption: number | null;
+  points: number;
+  isLive: boolean;
+  deadline: Date;
+  resolved: boolean;
+}
+
+export interface PredictionEntryInfo {
+  id: string;
+  wallet: string;
+  totalScore: number | null;
+  payout: number | null;
+  claimed: boolean;
+  answers: PredictionAnswerInfo[];
+}
+
+export interface PredictionAnswerInfo {
+  questionIndex: number;
+  chosenOption: number;
+  isCorrect: boolean | null;
+  pointsEarned: number | null;
+}
+
+export interface PredictionClaimResult {
+  payout: number;
+  matchId: string;
+}
+
+export interface PredictionLeaderboardEntry {
+  wallet: string;
+  totalEarnings: number;
+  totalPools: number;
+  avgScore: number;
 }

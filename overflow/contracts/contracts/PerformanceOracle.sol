@@ -61,9 +61,19 @@ contract PerformanceOracle is Ownable {
     // tracks which oracle confirmed: [team][nonce][oracle] => bool
     mapping(address => mapping(uint256 => mapping(address => bool))) public oracleConfirmed;
 
+    // Oracle replacement timelock
+    struct PendingOracleChange {
+        address newOracle;
+        uint256 effectiveAt;
+    }
+    mapping(uint256 => PendingOracleChange) public pendingOracleChanges;
+    uint256 public constant ORACLE_CHANGE_DELAY = 24 hours;
+
     // -----------------------------------------------------------------------
     // Events
     // -----------------------------------------------------------------------
+    event OracleChangeProposed(uint256 indexed index, address indexed newOracle, uint256 effectiveAt);
+    event OracleChanged(uint256 indexed index, address indexed newOracle);
     event OracleSet(uint256 indexed index, address indexed oracle);
     event TeamRegistered(address indexed teamToken);
     event UpdateProposed(address indexed teamToken, uint256 indexed nonce, address indexed oracle);
@@ -85,6 +95,8 @@ contract PerformanceOracle is Ownable {
     error InvalidOracleIndex();
     error ScoreMismatch();
     error ConfirmTooSoon();
+    error OracleChangeNotPending();
+    error TimelockNotExpired();
 
     // -----------------------------------------------------------------------
     // Modifiers
@@ -117,14 +129,37 @@ contract PerformanceOracle is Ownable {
     // -----------------------------------------------------------------------
     // Admin
     // -----------------------------------------------------------------------
-    function setOracle(uint256 index, address newOracle) external onlyOwner {
+    /**
+     * @notice Propose replacing an oracle. Subject to 24-hour timelock to prevent
+     *         owner from instantly replacing all 3 oracles and bypassing 2-of-3 multisig.
+     */
+    function proposeOracleChange(uint256 index, address newOracle) external onlyOwner {
         if (index >= MAX_ORACLES) revert InvalidOracleIndex();
         require(newOracle != address(0), "Zero address");
-        address old = oracles[index];
-        isOracle[old] = false;
+        uint256 effectiveAt = block.timestamp + ORACLE_CHANGE_DELAY;
+        pendingOracleChanges[index] = PendingOracleChange(newOracle, effectiveAt);
+        emit OracleChangeProposed(index, newOracle, effectiveAt);
+    }
+
+    /**
+     * @notice Execute a pending oracle replacement after the timelock has expired.
+     */
+    function executeOracleChange(uint256 index) external onlyOwner {
+        if (index >= MAX_ORACLES) revert InvalidOracleIndex();
+        PendingOracleChange storage pending = pendingOracleChanges[index];
+        if (pending.effectiveAt == 0) revert OracleChangeNotPending();
+        if (block.timestamp < pending.effectiveAt) revert TimelockNotExpired();
+
+        address oldOracle = oracles[index];
+        address newOracle = pending.newOracle;
+
+        isOracle[oldOracle] = false;
         oracles[index] = newOracle;
         isOracle[newOracle] = true;
-        emit OracleSet(index, newOracle);
+
+        delete pendingOracleChanges[index];
+
+        emit OracleChanged(index, newOracle);
     }
 
     function registerTeam(address teamToken) external onlyOwner {
@@ -165,6 +200,19 @@ contract PerformanceOracle is Ownable {
 
         uint256 nonce = updateNonce[teamToken];
         PendingUpdate storage pending = pendingUpdates[teamToken][nonce];
+
+        // M-5 fix: if the pending update has expired, clear stale state and advance nonce
+        // so a new proposal can be created without deadlock from stale oracleConfirmed entries
+        if (pending.createdAt != 0 && !pending.executed && block.timestamp > pending.createdAt + 1 hours) {
+            // Clear stale oracle confirmations for the expired nonce
+            for (uint256 i = 0; i < MAX_ORACLES; i++) {
+                delete oracleConfirmed[teamToken][nonce][oracles[i]];
+            }
+            // Advance nonce past the expired update
+            nonce = nonce + 1;
+            updateNonce[teamToken] = nonce;
+            pending = pendingUpdates[teamToken][nonce];
+        }
 
         if (pending.createdAt == 0) {
             // First oracle — create pending update

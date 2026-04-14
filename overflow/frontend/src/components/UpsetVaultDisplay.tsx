@@ -16,10 +16,12 @@ function AnimatedNumber({ value }: { value: number }) {
   const frameRef = useRef<number>(0);
   const startRef = useRef<number>(0);
   const startValueRef = useRef<number>(0);
+  const currentValueRef = useRef<number>(0);
+  currentValueRef.current = displayValue;
 
   useEffect(() => {
     const duration = 1500;
-    startValueRef.current = displayValue;
+    startValueRef.current = currentValueRef.current;
     startRef.current = performance.now();
 
     const animate = (now: number) => {
@@ -47,9 +49,10 @@ export function UpsetVaultDisplay({
   nextMatchTime,
   compact = false,
 }: UpsetVaultDisplayProps) {
-  const [countdown, setCountdown] = useState(nextMatchTime - Date.now());
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
+    setCountdown(nextMatchTime - Date.now());
     const interval = setInterval(() => {
       setCountdown(nextMatchTime - Date.now());
     }, 1000);

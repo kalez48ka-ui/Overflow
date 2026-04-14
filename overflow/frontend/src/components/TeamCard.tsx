@@ -55,7 +55,7 @@ function Sparkline({
   const gradId = `sparkGrad-${color.replace("#", "")}-${isPositive ? "up" : "dn"}`;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-28 h-12" preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-28 h-12" preserveAspectRatio="none" role="img" aria-label={`Price trend: ${isPositive ? "up" : "down"}`}>
       <defs>
         <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor={lineColor} stopOpacity="0.25" />
@@ -193,6 +193,7 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
               </motion.div>
             </div>
             <Sparkline
+              key={team.symbol}
               data={team.sparklineData}
               color={team.color}
               isPositive={isPositive}

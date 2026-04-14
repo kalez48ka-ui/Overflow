@@ -11,162 +11,270 @@ interface LeaderboardEntry {
   winRate: number;
 }
 
+type SortMode = 'pnl' | 'volume' | 'activity';
+
+// ---------------------------------------------------------------------------
+// In-memory cache with 30-second TTL per sort mode
+// ---------------------------------------------------------------------------
+interface CacheEntry {
+  data: LeaderboardEntry[];
+  timestamp: number;
+}
+
+const CACHE_TTL_MS = 30_000;
+const cache = new Map<SortMode, CacheEntry>();
+
+function getCached(sort: SortMode): LeaderboardEntry[] | null {
+  const entry = cache.get(sort);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL_MS) {
+    return entry.data;
+  }
+  return null;
+}
+
+function setCache(sort: SortMode, data: LeaderboardEntry[]): void {
+  cache.set(sort, { data, timestamp: Date.now() });
+}
+
+// ---------------------------------------------------------------------------
+// Aggregation queries (database-level, no large fetches)
+// ---------------------------------------------------------------------------
+
+async function aggregatePnl(prisma: PrismaClient): Promise<LeaderboardEntry[]> {
+  // Realized P&L: SUM sell proceeds minus SUM buy costs, grouped by wallet
+  // SELL contributes +(totalValue - fee), BUY contributes -(totalValue)
+  const rows = await prisma.$queryRaw<
+    Array<{
+      wallet: string;
+      total_pnl: number;
+      trade_count: bigint;
+      total_volume: number;
+      sell_count: bigint;
+      win_count: bigint;
+      favorite_team: string | null;
+    }>
+  >`
+    WITH wallet_pnl AS (
+      SELECT
+        wallet,
+        SUM(CASE WHEN type = 'SELL' THEN "totalValue" - fee ELSE -"totalValue" END) AS total_pnl,
+        COUNT(*)::bigint AS trade_count,
+        SUM("totalValue") AS total_volume,
+        COUNT(*) FILTER (WHERE type = 'SELL')::bigint AS sell_count
+      FROM "Trade"
+      GROUP BY wallet
+    ),
+    unrealized AS (
+      SELECT
+        p.wallet,
+        SUM((t."currentPrice" - p."avgBuyPrice") * p.amount) AS unrealized_pnl
+      FROM "Position" p
+      JOIN "Team" t ON t.id = p."teamId"
+      WHERE p.amount > 0
+      GROUP BY p.wallet
+    ),
+    win_counts AS (
+      SELECT
+        s.wallet,
+        COUNT(*) FILTER (WHERE s.price > COALESCE(b.avg_buy, 0))::bigint AS win_count
+      FROM "Trade" s
+      LEFT JOIN LATERAL (
+        SELECT AVG(price) AS avg_buy
+        FROM "Trade" b2
+        WHERE b2.wallet = s.wallet AND b2."teamId" = s."teamId" AND b2.type = 'BUY'
+      ) b ON true
+      WHERE s.type = 'SELL'
+      GROUP BY s.wallet
+    ),
+    fav_team AS (
+      SELECT DISTINCT ON (wallet)
+        tr.wallet,
+        tm.symbol AS favorite_team
+      FROM "Trade" tr
+      JOIN "Team" tm ON tm.id = tr."teamId"
+      GROUP BY tr.wallet, tm.symbol
+      ORDER BY tr.wallet, COUNT(*) DESC
+    )
+    SELECT
+      wp.wallet,
+      (wp.total_pnl + COALESCE(u.unrealized_pnl, 0)) AS total_pnl,
+      wp.trade_count,
+      wp.total_volume,
+      wp.sell_count,
+      COALESCE(wc.win_count, 0) AS win_count,
+      ft.favorite_team
+    FROM wallet_pnl wp
+    LEFT JOIN unrealized u ON u.wallet = wp.wallet
+    LEFT JOIN win_counts wc ON wc.wallet = wp.wallet
+    LEFT JOIN fav_team ft ON ft.wallet = wp.wallet
+    ORDER BY total_pnl DESC
+    LIMIT 100
+  `;
+
+  return rows.map((r, i) => {
+    const sellCount = Number(r.sell_count);
+    const winCount = Number(r.win_count);
+    const winRate = sellCount > 0 ? (winCount / sellCount) * 100 : 0;
+    return {
+      rank: i + 1,
+      wallet: r.wallet,
+      totalPnl: Math.round(Number(r.total_pnl) * 100) / 100,
+      tradeCount: Number(r.trade_count),
+      totalVolume: Math.round(Number(r.total_volume) * 100) / 100,
+      favoriteTeam: r.favorite_team ?? '',
+      winRate: Math.round(winRate * 10) / 10,
+    };
+  });
+}
+
+async function aggregateVolume(prisma: PrismaClient): Promise<LeaderboardEntry[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      wallet: string;
+      total_volume: number;
+      trade_count: bigint;
+      total_pnl: number;
+      favorite_team: string | null;
+    }>
+  >`
+    WITH wallet_stats AS (
+      SELECT
+        wallet,
+        SUM("totalValue") AS total_volume,
+        COUNT(*)::bigint AS trade_count,
+        SUM(CASE WHEN type = 'SELL' THEN "totalValue" - fee ELSE -"totalValue" END) AS total_pnl
+      FROM "Trade"
+      GROUP BY wallet
+    ),
+    fav_team AS (
+      SELECT DISTINCT ON (wallet)
+        tr.wallet,
+        tm.symbol AS favorite_team
+      FROM "Trade" tr
+      JOIN "Team" tm ON tm.id = tr."teamId"
+      GROUP BY tr.wallet, tm.symbol
+      ORDER BY tr.wallet, COUNT(*) DESC
+    )
+    SELECT
+      ws.wallet,
+      ws.total_volume,
+      ws.trade_count,
+      ws.total_pnl,
+      ft.favorite_team
+    FROM wallet_stats ws
+    LEFT JOIN fav_team ft ON ft.wallet = ws.wallet
+    ORDER BY ws.total_volume DESC
+    LIMIT 100
+  `;
+
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    wallet: r.wallet,
+    totalPnl: Math.round(Number(r.total_pnl) * 100) / 100,
+    tradeCount: Number(r.trade_count),
+    totalVolume: Math.round(Number(r.total_volume) * 100) / 100,
+    favoriteTeam: r.favorite_team ?? '',
+    winRate: 0,
+  }));
+}
+
+async function aggregateActivity(prisma: PrismaClient): Promise<LeaderboardEntry[]> {
+  const rows = await prisma.$queryRaw<
+    Array<{
+      wallet: string;
+      trade_count: bigint;
+      total_volume: number;
+      total_pnl: number;
+      favorite_team: string | null;
+    }>
+  >`
+    WITH wallet_stats AS (
+      SELECT
+        wallet,
+        COUNT(*)::bigint AS trade_count,
+        SUM("totalValue") AS total_volume,
+        SUM(CASE WHEN type = 'SELL' THEN "totalValue" - fee ELSE -"totalValue" END) AS total_pnl
+      FROM "Trade"
+      GROUP BY wallet
+    ),
+    fav_team AS (
+      SELECT DISTINCT ON (wallet)
+        tr.wallet,
+        tm.symbol AS favorite_team
+      FROM "Trade" tr
+      JOIN "Team" tm ON tm.id = tr."teamId"
+      GROUP BY tr.wallet, tm.symbol
+      ORDER BY tr.wallet, COUNT(*) DESC
+    )
+    SELECT
+      ws.wallet,
+      ws.trade_count,
+      ws.total_volume,
+      ws.total_pnl,
+      ft.favorite_team
+    FROM wallet_stats ws
+    LEFT JOIN fav_team ft ON ft.wallet = ws.wallet
+    ORDER BY ws.trade_count DESC
+    LIMIT 100
+  `;
+
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    wallet: r.wallet,
+    totalPnl: Math.round(Number(r.total_pnl) * 100) / 100,
+    tradeCount: Number(r.trade_count),
+    totalVolume: Math.round(Number(r.total_volume) * 100) / 100,
+    favoriteTeam: r.favorite_team ?? '',
+    winRate: 0,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Router
+// ---------------------------------------------------------------------------
+
+const VALID_SORTS: SortMode[] = ['pnl', 'volume', 'activity'];
+
 export function createLeaderboardRouter(prisma: PrismaClient): Router {
   const router = Router();
 
   router.get('/', async (req: Request, res: Response) => {
     try {
       const limit = Math.min(parseInt(String(req.query.limit || '50')) || 50, 100);
-      const sort = String(req.query.sort || 'pnl');
+      const rawSort = String(req.query.sort || 'pnl');
 
-      // Fetch recent trades with team data (bounded to prevent loading entire table)
-      const maxTrades = 10000;
-      const trades = await prisma.trade.findMany({
-        include: {
-          team: { select: { symbol: true, currentPrice: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: maxTrades,
-      });
-
-      // Aggregate per wallet
-      const walletMap = new Map<
-        string,
-        {
-          totalPnl: number;
-          tradeCount: number;
-          totalVolume: number;
-          teamCounts: Map<string, number>;
-          wins: number;
-        }
-      >();
-
-      // Group trades by wallet to compute P&L from buy/sell pairs
-      for (const trade of trades) {
-        const entry = walletMap.get(trade.wallet) || {
-          totalPnl: 0,
-          tradeCount: 0,
-          totalVolume: 0,
-          teamCounts: new Map<string, number>(),
-          wins: 0,
-        };
-
-        entry.tradeCount += 1;
-        entry.totalVolume += trade.totalValue;
-
-        const symbol = trade.team?.symbol || 'UNKNOWN';
-        entry.teamCounts.set(symbol, (entry.teamCounts.get(symbol) || 0) + 1);
-
-        // For SELL trades, calculate realized P&L:
-        // The fee is already deducted, so P&L = totalValue - fee (net proceeds) vs cost basis
-        // Since we track avgBuyPrice on Position, use a simpler approach:
-        // SELL P&L contribution = (sellPrice - avgBuyPrice) * amount - fee
-        // For BUY trades, no realized P&L yet
-        if (trade.type === 'SELL') {
-          // Approximate: the trade was profitable if net proceeds > 0 after fee
-          // For aggregate P&L we use (totalValue - fee) as a contribution metric
-          // Win counting is handled separately below using buy/sell price comparison
-          entry.totalPnl += trade.totalValue - trade.fee;
-        } else {
-          // BUY: subtract cost from P&L (will be offset by SELL proceeds)
-          entry.totalPnl -= trade.totalValue;
-        }
-
-        walletMap.set(trade.wallet, entry);
+      if (!VALID_SORTS.includes(rawSort as SortMode)) {
+        res.status(400).json({ error: `Invalid sort parameter. Allowed: ${VALID_SORTS.join(', ')}` });
+        return;
       }
 
-      // Add unrealized P&L from current positions
-      const positions = await prisma.position.findMany({
-        where: { amount: { gt: 0 } },
-        include: { team: { select: { symbol: true, currentPrice: true } } },
-      });
+      const sort = rawSort as SortMode;
 
-      for (const pos of positions) {
-        const entry = walletMap.get(pos.wallet);
-        if (entry) {
-          // Unrealized P&L: (currentPrice - avgBuyPrice) * amount
-          const unrealized = (pos.team.currentPrice - pos.avgBuyPrice) * pos.amount;
-          entry.totalPnl += unrealized;
-        }
+      // Return cached result if fresh
+      const cached = getCached(sort);
+      if (cached) {
+        res.json(cached.slice(0, limit));
+        return;
       }
 
-      // Compute win rate properly: for each wallet, count sell trades where price > avgBuyPrice
-      // Re-scan sell trades with position context
-      const sellTrades = trades.filter((t) => t.type === 'SELL');
-      const positionMap = new Map<string, Map<string, number>>();
-
-      // Build a map of wallet -> teamId -> avgBuyPrice from buy trades
-      const buyTrades = trades.filter((t) => t.type === 'BUY');
-      for (const bt of buyTrades) {
-        if (!positionMap.has(bt.wallet)) positionMap.set(bt.wallet, new Map());
-        const teamAvg = positionMap.get(bt.wallet)!;
-        // Use the trade price as proxy for avg buy price
-        if (!teamAvg.has(bt.teamId)) {
-          teamAvg.set(bt.teamId, bt.price);
-        }
-      }
-
-      // Recalculate wins per wallet
-      for (const [wallet, entry] of walletMap) {
-        const walletSells = sellTrades.filter((t) => t.wallet === wallet);
-        let wins = 0;
-        for (const st of walletSells) {
-          const avgBuy = positionMap.get(wallet)?.get(st.teamId);
-          if (avgBuy && st.price > avgBuy) {
-            wins += 1;
-          }
-        }
-        entry.wins = wins;
-      }
-
-      // Build leaderboard entries
-      const entries: LeaderboardEntry[] = [];
-      for (const [wallet, data] of walletMap) {
-        const sellCount = sellTrades.filter((t) => t.wallet === wallet).length;
-        const winRate = sellCount > 0 ? (data.wins / sellCount) * 100 : 0;
-
-        // Find favorite team (most traded)
-        let favoriteTeam = '';
-        let maxCount = 0;
-        for (const [symbol, count] of data.teamCounts) {
-          if (count > maxCount) {
-            maxCount = count;
-            favoriteTeam = symbol;
-          }
-        }
-
-        entries.push({
-          rank: 0,
-          wallet,
-          totalPnl: Math.round(data.totalPnl * 100) / 100,
-          tradeCount: data.tradeCount,
-          totalVolume: Math.round(data.totalVolume * 100) / 100,
-          favoriteTeam,
-          winRate: Math.round(winRate * 10) / 10,
-        });
-      }
-
-      // Sort
+      // Run the appropriate aggregation query
+      let entries: LeaderboardEntry[];
       switch (sort) {
         case 'volume':
-          entries.sort((a, b) => b.totalVolume - a.totalVolume);
+          entries = await aggregateVolume(prisma);
           break;
-        case 'trades':
-          entries.sort((a, b) => b.tradeCount - a.tradeCount);
+        case 'activity':
+          entries = await aggregateActivity(prisma);
           break;
         case 'pnl':
         default:
-          entries.sort((a, b) => b.totalPnl - a.totalPnl);
+          entries = await aggregatePnl(prisma);
           break;
       }
 
-      // Assign ranks and limit
-      const limited = entries.slice(0, limit).map((e, i) => ({
-        ...e,
-        rank: i + 1,
-      }));
-
-      res.json(limited);
+      // Cache the full top-100 result, return requested slice
+      setCache(sort, entries);
+      res.json(entries.slice(0, limit));
     } catch (err) {
       console.error('[Leaderboard] GET / error:', err);
       res.status(500).json({ error: 'Failed to fetch leaderboard' });

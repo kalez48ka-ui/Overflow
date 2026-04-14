@@ -54,6 +54,8 @@ TEAM_SYMBOLS: dict[str, str] = {
     "Multan Sultans": "MS",
     "Peshawar Zalmi": "PZ",
     "Quetta Gladiators": "QG",
+    "Hyderabad Kingsmen": "HK",
+    "Rawalpindiz": "RW",
 }
 
 SYMBOL_TO_TEAM: dict[str, str] = {v: k for k, v in TEAM_SYMBOLS.items()}
@@ -66,6 +68,8 @@ TEAM_ALIASES: dict[str, str] = {
     "Multan Sultans": "MS",
     "Peshawar Zalmi": "PZ",
     "Quetta Gladiators": "QG",
+    "Hyderabad Kingsmen": "HK",
+    "Rawalpindiz": "RW",
     # Common abbreviations
     "IU": "IU",
     "KK": "KK",
@@ -73,6 +77,8 @@ TEAM_ALIASES: dict[str, str] = {
     "MS": "MS",
     "PZ": "PZ",
     "QG": "QG",
+    "HK": "HK",
+    "RW": "RW",
 }
 
 # ---------------------------------------------------------------------------
@@ -87,6 +93,7 @@ PSL_VENUES: list[str] = [
     "Sharjah Cricket Stadium, Sharjah",
     "Dubai International Cricket Stadium, Dubai",
     "Sheikh Zayed Stadium, Abu Dhabi",
+    "Niaz Stadium, Hyderabad",
 ]
 
 # ---------------------------------------------------------------------------
@@ -113,13 +120,17 @@ class TradingContext:
     def __post_init__(self) -> None:
         if not self.rankings:
             # sensible defaults for demo
+            # Sell tax defaults must match backend SELL_TAX_BY_RANK and the on-chain
+            # PerformanceOracle MAX_SELL_TAX cap of 15%.
             self.rankings = [
                 TeamRanking("IU", 1, 2.0, "W W W L W"),
-                TeamRanking("LQ", 2, 5.0, "W L W W L"),
-                TeamRanking("MS", 3, 8.0, "L W W L W"),
-                TeamRanking("PZ", 4, 10.0, "W L L W L"),
-                TeamRanking("KK", 5, 12.0, "L L W L W"),
-                TeamRanking("QG", 6, 15.0, "L L L W L"),
+                TeamRanking("LQ", 2, 3.0, "W L W W L"),
+                TeamRanking("MS", 3, 5.0, "L W W L W"),
+                TeamRanking("PZ", 4, 7.0, "W L L W L"),
+                TeamRanking("KK", 5, 9.0, "L L W L W"),
+                TeamRanking("QG", 6, 12.0, "L L L W L"),
+                TeamRanking("HK", 7, 15.0, "L W L L L"),
+                TeamRanking("RW", 8, 15.0, "L L L L W"),
             ]
 
     def get_ranking(self, symbol: str) -> TeamRanking | None:

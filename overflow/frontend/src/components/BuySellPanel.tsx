@@ -132,10 +132,14 @@ export function BuySellPanel({ team }: BuySellPanelProps) {
       const tokenAddr = team.contractAddress as Address;
 
       if (isBuy) {
-        buy(tokenAddr, numAmount.toString());
+        // 3% default slippage; no on-chain estimate available here so
+        // the hook falls back to inputWei * (1 - slippage) as a floor.
+        buy(tokenAddr, numAmount.toString(), undefined, 300);
       } else {
         const tokenWei = parseEther(numAmount.toString());
-        sell(tokenAddr, tokenWei);
+        // 3% default slippage; no on-chain estimate so minProceeds = 0
+        // (the hook handles this gracefully).
+        sell(tokenAddr, tokenWei, undefined, 300);
       }
     } else {
       // Fallback: simulate transaction (mock)

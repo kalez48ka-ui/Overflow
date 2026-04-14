@@ -11,38 +11,69 @@ import {
 } from "@/contracts/abis";
 
 // ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/** WireFluid Testnet chain ID — all write transactions target this chain. */
+const WIREFLUID_CHAIN_ID = 92533 as const;
+
+/** Sentinel zero address used when env vars are missing. */
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
+
+// ---------------------------------------------------------------------------
 // Contract addresses -- populated from env vars, fallback to zero-placeholders
 // ---------------------------------------------------------------------------
 export const CONTRACTS = {
   factory: (process.env.NEXT_PUBLIC_FACTORY_ADDRESS ||
-    "0x0000000000000000000000000000000000000000") as Address,
+    ZERO_ADDRESS) as Address,
   oracle: (process.env.NEXT_PUBLIC_ORACLE_ADDRESS ||
-    "0x0000000000000000000000000000000000000000") as Address,
+    ZERO_ADDRESS) as Address,
   rewards: (process.env.NEXT_PUBLIC_REWARDS_ADDRESS ||
-    "0x0000000000000000000000000000000000000000") as Address,
+    ZERO_ADDRESS) as Address,
   vault: (process.env.NEXT_PUBLIC_VAULT_ADDRESS ||
-    "0x0000000000000000000000000000000000000000") as Address,
+    ZERO_ADDRESS) as Address,
   circuitBreaker: (process.env.NEXT_PUBLIC_CIRCUIT_BREAKER_ADDRESS ||
-    "0x0000000000000000000000000000000000000000") as Address,
+    ZERO_ADDRESS) as Address,
 } as const;
+
+/** Returns true when contract address is deployed (not zero). */
+function isDeployed(addr: Address): boolean {
+  return addr !== ZERO_ADDRESS;
+}
 
 // ---------------------------------------------------------------------------
 // Factory hooks
 // ---------------------------------------------------------------------------
 
-/** Buy team tokens via the Factory's bonding curve (payable). */
+/** Buy team tokens via the Factory's bonding curve (payable).
+ *  @param slippageBps — max acceptable slippage in basis points (default 300 = 3%).
+ *  @param estimatedTokens — estimated output from useEstimateBuyTokens. When
+ *         provided the min-output is `estimated * (1 - slippage)`; otherwise a
+ *         rough floor of `inputWei * (1 - slippage)` is used as a last resort.
+ */
 export function useBuyTokens() {
   const { writeContract, isPending, isSuccess, isError, error, data } =
     useWriteContract();
 
   const buy = useCallback(
-    (tokenAddress: Address, ethAmount: string, minTokensOut: bigint = BigInt(0)) => {
+    (
+      tokenAddress: Address,
+      ethAmount: string,
+      estimatedTokens?: bigint,
+      slippageBps: number = 300,
+    ) => {
+      const inputWei = parseEther(ethAmount);
+      const base = estimatedTokens ?? inputWei;
+      const minTokensOut =
+        (base * BigInt(10_000 - slippageBps)) / BigInt(10_000);
+
       writeContract({
+        chainId: WIREFLUID_CHAIN_ID,
         address: CONTRACTS.factory,
         abi: TeamTokenFactoryABI,
         functionName: "buy",
         args: [tokenAddress, minTokensOut],
-        value: parseEther(ethAmount),
+        value: inputWei,
       });
     },
     [writeContract],
@@ -51,14 +82,29 @@ export function useBuyTokens() {
   return { buy, isPending, isSuccess, isError, error, txHash: data };
 }
 
-/** Sell team tokens back to the Factory's bonding curve. */
+/** Sell team tokens back to the Factory's bonding curve.
+ *  @param slippageBps — max acceptable slippage in basis points (default 300 = 3%).
+ *  @param estimatedProceeds — estimated ETH output from useEstimateSellProceeds.
+ *         When provided the min-proceeds is `estimated * (1 - slippage)`;
+ *         otherwise zero is used (caller should always pass an estimate).
+ */
 export function useSellTokens() {
   const { writeContract, isPending, isSuccess, isError, error, data } =
     useWriteContract();
 
   const sell = useCallback(
-    (tokenAddress: Address, tokenAmount: bigint, minProceeds: bigint = BigInt(0)) => {
+    (
+      tokenAddress: Address,
+      tokenAmount: bigint,
+      estimatedProceeds?: bigint,
+      slippageBps: number = 300,
+    ) => {
+      const minProceeds = estimatedProceeds
+        ? (estimatedProceeds * BigInt(10_000 - slippageBps)) / BigInt(10_000)
+        : BigInt(0);
+
       writeContract({
+        chainId: WIREFLUID_CHAIN_ID,
         address: CONTRACTS.factory,
         abi: TeamTokenFactoryABI,
         functionName: "sell",
@@ -79,13 +125,13 @@ export function useTokenPrice(tokenAddress: Address | undefined) {
     functionName: "getBuyPrice",
     args: tokenAddress ? [tokenAddress] : undefined,
     query: {
-      enabled: !!tokenAddress,
+      enabled: !!tokenAddress && isDeployed(CONTRACTS.factory),
     },
   });
 
   return {
-    price: data as bigint | undefined,
-    priceFormatted: data ? formatEther(data as bigint) : undefined,
+    price: typeof data === 'bigint' ? data : undefined,
+    priceFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
     refetch,
@@ -105,13 +151,13 @@ export function useEstimateBuyTokens(
     functionName: "estimateBuyTokens",
     args: tokenAddress ? [tokenAddress, weiAmount] : undefined,
     query: {
-      enabled: !!tokenAddress && weiAmount > BigInt(0),
+      enabled: !!tokenAddress && weiAmount > BigInt(0) && isDeployed(CONTRACTS.factory),
     },
   });
 
   return {
-    estimatedTokens: data as bigint | undefined,
-    estimatedFormatted: data ? formatEther(data as bigint) : undefined,
+    estimatedTokens: typeof data === 'bigint' ? data : undefined,
+    estimatedFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
   };
@@ -129,13 +175,13 @@ export function useEstimateSellProceeds(
     args:
       tokenAddress && tokenAmount ? [tokenAddress, tokenAmount] : undefined,
     query: {
-      enabled: !!tokenAddress && !!tokenAmount && tokenAmount > BigInt(0),
+      enabled: !!tokenAddress && !!tokenAmount && tokenAmount > BigInt(0) && isDeployed(CONTRACTS.factory),
     },
   });
 
   return {
-    estimatedProceeds: data as bigint | undefined,
-    estimatedFormatted: data ? formatEther(data as bigint) : undefined,
+    estimatedProceeds: typeof data === 'bigint' ? data : undefined,
+    estimatedFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
   };
@@ -161,8 +207,8 @@ export function useSellTaxRate(
   });
 
   return {
-    taxBps: data as bigint | undefined,
-    taxPercent: data ? Number(data) / 100 : undefined,
+    taxBps: typeof data === 'bigint' ? data : undefined,
+    taxPercent: typeof data === 'bigint' ? Number(data) / 100 : undefined,
     isLoading,
     error,
   };
@@ -184,8 +230,8 @@ export function useTokenBalance(
   });
 
   return {
-    balance: data as bigint | undefined,
-    balanceFormatted: data ? formatEther(data as bigint) : undefined,
+    balance: typeof data === 'bigint' ? data : undefined,
+    balanceFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
     refetch,
@@ -204,8 +250,8 @@ export function useTokenTotalSupply(teamTokenAddress: Address | undefined) {
   });
 
   return {
-    totalSupply: data as bigint | undefined,
-    totalSupplyFormatted: data ? formatEther(data as bigint) : undefined,
+    totalSupply: typeof data === 'bigint' ? data : undefined,
+    totalSupplyFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
   };
@@ -223,12 +269,12 @@ export function usePerformanceScore(teamTokenAddress: Address | undefined) {
     functionName: "getPerformanceScore",
     args: teamTokenAddress ? [teamTokenAddress] : undefined,
     query: {
-      enabled: !!teamTokenAddress,
+      enabled: !!teamTokenAddress && isDeployed(CONTRACTS.oracle),
     },
   });
 
   return {
-    score: data as bigint | undefined,
+    score: typeof data === 'bigint' ? data : undefined,
     isLoading,
     error,
   };
@@ -242,13 +288,13 @@ export function useOracleSellTaxRate(teamTokenAddress: Address | undefined) {
     functionName: "getSellTaxRate",
     args: teamTokenAddress ? [teamTokenAddress] : undefined,
     query: {
-      enabled: !!teamTokenAddress,
+      enabled: !!teamTokenAddress && isDeployed(CONTRACTS.oracle),
     },
   });
 
   return {
-    taxRate: data as bigint | undefined,
-    taxPercent: data ? Number(data) / 100 : undefined,
+    taxRate: typeof data === 'bigint' ? data : undefined,
+    taxPercent: typeof data === 'bigint' ? Number(data) / 100 : undefined,
     isLoading,
     error,
   };
@@ -260,10 +306,13 @@ export function useTeamRanking() {
     address: CONTRACTS.oracle,
     abi: PerformanceOracleABI,
     functionName: "getTeamRanking",
+    query: {
+      enabled: isDeployed(CONTRACTS.oracle),
+    },
   });
 
   return {
-    ranking: data as Address[] | undefined,
+    ranking: Array.isArray(data) ? (data as Address[]) : undefined,
     isLoading,
     error,
     refetch,
@@ -280,11 +329,14 @@ export function useVaultBalance() {
     address: CONTRACTS.vault,
     abi: UpsetVaultABI,
     functionName: "getVaultBalance",
+    query: {
+      enabled: isDeployed(CONTRACTS.vault),
+    },
   });
 
   return {
-    balance: data as bigint | undefined,
-    balanceFormatted: data ? formatEther(data as bigint) : undefined,
+    balance: typeof data === 'bigint' ? data : undefined,
+    balanceFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
     refetch,
@@ -302,13 +354,13 @@ export function useClaimableUpsetReward(
     functionName: "getClaimableUpsetReward",
     args: epoch !== undefined && userAddress ? [epoch, userAddress] : undefined,
     query: {
-      enabled: epoch !== undefined && !!userAddress,
+      enabled: epoch !== undefined && !!userAddress && isDeployed(CONTRACTS.vault),
     },
   });
 
   return {
-    reward: data as bigint | undefined,
-    rewardFormatted: data ? formatEther(data as bigint) : undefined,
+    reward: typeof data === 'bigint' ? data : undefined,
+    rewardFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
   };
@@ -322,13 +374,13 @@ export function useUpsetEventInfo(epoch: bigint | undefined) {
     functionName: "getUpsetEventInfo",
     args: epoch !== undefined ? [epoch] : undefined,
     query: {
-      enabled: epoch !== undefined,
+      enabled: epoch !== undefined && isDeployed(CONTRACTS.vault),
     },
   });
 
   return {
-    eventInfo: data as
-      | {
+    eventInfo: data != null && typeof data === 'object'
+      ? (data as unknown as {
           winnerTeam: Address;
           loserTeam: Address;
           upsetScore: bigint;
@@ -336,8 +388,8 @@ export function useUpsetEventInfo(epoch: bigint | undefined) {
           multiplier: bigint;
           releasedAmount: bigint;
           timestamp: bigint;
-        }
-      | undefined,
+        })
+      : undefined,
     isLoading,
     error,
   };
@@ -351,6 +403,7 @@ export function useClaimUpsetReward() {
   const claim = useCallback(
     (epoch: bigint) => {
       writeContract({
+        chainId: WIREFLUID_CHAIN_ID,
         address: CONTRACTS.vault,
         abi: UpsetVaultABI,
         functionName: "claimUpsetReward",
@@ -373,10 +426,13 @@ export function useCurrentEpoch() {
     address: CONTRACTS.rewards,
     abi: RewardDistributorABI,
     functionName: "currentEpoch",
+    query: {
+      enabled: isDeployed(CONTRACTS.rewards),
+    },
   });
 
   return {
-    epoch: data as bigint | undefined,
+    epoch: typeof data === 'bigint' ? data : undefined,
     isLoading,
     error,
   };
@@ -397,13 +453,13 @@ export function useClaimableRewards(
         ? [userAddress, teamAddress, epoch]
         : undefined,
     query: {
-      enabled: !!userAddress && !!teamAddress && epoch !== undefined,
+      enabled: !!userAddress && !!teamAddress && epoch !== undefined && isDeployed(CONTRACTS.rewards),
     },
   });
 
   return {
-    reward: data as bigint | undefined,
-    rewardFormatted: data ? formatEther(data as bigint) : undefined,
+    reward: typeof data === 'bigint' ? data : undefined,
+    rewardFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
   };
@@ -417,6 +473,7 @@ export function useClaimRewards() {
   const claim = useCallback(
     (epoch: bigint, teamAddress: Address) => {
       writeContract({
+        chainId: WIREFLUID_CHAIN_ID,
         address: CONTRACTS.rewards,
         abi: RewardDistributorABI,
         functionName: "claimRewards",
@@ -435,11 +492,14 @@ export function useRewardPool() {
     address: CONTRACTS.rewards,
     abi: RewardDistributorABI,
     functionName: "performanceRewardPool",
+    query: {
+      enabled: isDeployed(CONTRACTS.rewards),
+    },
   });
 
   return {
-    pool: data as bigint | undefined,
-    poolFormatted: data ? formatEther(data as bigint) : undefined,
+    pool: typeof data === 'bigint' ? data : undefined,
+    poolFormatted: typeof data === 'bigint' ? formatEther(data) : undefined,
     isLoading,
     error,
   };
@@ -457,12 +517,12 @@ export function useIsTradingPaused(tokenAddress: Address | undefined) {
     functionName: "isPaused",
     args: tokenAddress ? [tokenAddress] : undefined,
     query: {
-      enabled: !!tokenAddress,
+      enabled: !!tokenAddress && isDeployed(CONTRACTS.circuitBreaker),
     },
   });
 
   return {
-    isPaused: data as boolean | undefined,
+    isPaused: typeof data === 'boolean' ? data : undefined,
     isLoading,
     error,
   };
@@ -476,14 +536,14 @@ export function usePauseState(tokenAddress: Address | undefined) {
     functionName: "getPauseState",
     args: tokenAddress ? [tokenAddress] : undefined,
     query: {
-      enabled: !!tokenAddress,
+      enabled: !!tokenAddress && isDeployed(CONTRACTS.circuitBreaker),
     },
   });
 
   return {
-    pauseState: data as
-      | { active: boolean; until: bigint; reason: bigint }
-      | undefined,
+    pauseState: data != null && typeof data === 'object'
+      ? (data as unknown as { active: boolean; until: bigint; reason: bigint })
+      : undefined,
     isLoading,
     error,
   };

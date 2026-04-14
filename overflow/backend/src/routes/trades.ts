@@ -105,14 +105,14 @@ export function createTradesRouter(
             where: { wallet_teamId: { wallet: wallet!, teamId: team.id } },
           });
 
-          if (!existingPosition || existingPosition.amount <= 0) {
+          if (!existingPosition || Number(existingPosition.amount) <= 0) {
             return {
               error: 'No position found for this token. Cannot sell tokens you do not hold.',
               status: 400,
             } as const;
           }
 
-          if (existingPosition.amount < amount) {
+          if (Number(existingPosition.amount) < amount) {
             return {
               error: `Insufficient balance. You hold ${existingPosition.amount} but tried to sell ${amount}.`,
               status: 400,
@@ -121,8 +121,8 @@ export function createTradesRouter(
         }
 
         // Use market price (team.currentPrice) for economic calculations, not user-supplied price
-        const marketPrice = team.currentPrice;
-        const taxRate = type === 'SELL' ? team.sellTaxRate : 0;
+        const marketPrice = Number(team.currentPrice);
+        const taxRate = type === 'SELL' ? Number(team.sellTaxRate) : 0;
         const totalValue = amount * marketPrice;
         const fee = totalValue * (taxRate / 100);
 
@@ -146,9 +146,9 @@ export function createTradesRouter(
           });
 
           if (existing) {
-            const newAmount = existing.amount + amount;
+            const newAmount = Number(existing.amount) + amount;
             const newAvg =
-              (existing.avgBuyPrice * existing.amount + marketPrice * amount) / newAmount;
+              (Number(existing.avgBuyPrice) * Number(existing.amount) + marketPrice * amount) / newAmount;
             await tx.position.update({
               where: { id: existing.id },
               data: { amount: newAmount, avgBuyPrice: newAvg },
@@ -175,7 +175,7 @@ export function createTradesRouter(
             } as const;
           }
 
-          const newAmount = existing.amount - amount;
+          const newAmount = Number(existing.amount) - amount;
           if (newAmount <= 0) {
             await tx.position.delete({ where: { id: existing.id } });
           } else {
@@ -187,7 +187,7 @@ export function createTradesRouter(
         }
 
         return { trade, team, marketPrice, totalValue, fee } as const;
-      });
+      }, { isolationLevel: 'RepeatableRead' });
 
       // Handle error results from the transaction
       if ('error' in result && result.status) {
@@ -202,9 +202,9 @@ export function createTradesRouter(
         await vaultService.addToVault(fee);
       }
 
-      await priceService.updatePriceAfterTrade(team.id, type as 'BUY' | 'SELL', amount, marketPrice);
+      await priceService.updatePriceAfterTrade(team.id, type as 'BUY' | 'SELL', amount, Number(marketPrice));
 
-      io.emit('trade:new', {
+      io.to(`team:${team.symbol}`).emit('trade:new', {
         id: trade.id,
         teamSymbol: team.symbol,
         teamName: team.name,

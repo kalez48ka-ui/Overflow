@@ -13,6 +13,7 @@ import {
   Clock,
   Flame,
   Shield,
+  Target,
   Trophy,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -102,6 +103,7 @@ const primaryLinks = [
   { href: "/portfolio", label: "Portfolio", icon: Briefcase },
   { href: "/vault", label: "Vault", icon: Shield },
   { href: "/fan-wars", label: "Fan Wars", icon: Flame },
+  { href: "/predictions", label: "Predict", icon: Target },
 ];
 
 const moreLinks = [

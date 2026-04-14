@@ -111,13 +111,14 @@ export default function LandingPage() {
   }, [teams, searchQuery, sortBy, sortDir]);
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
 
     (async () => {
       // Fetch teams and vault state in parallel; each has an independent fallback
       const [teamsResult, vaultResult] = await Promise.allSettled([
-        api.teams.getAll(),
-        api.vault.getState(),
+        api.teams.getAll(controller.signal),
+        api.vault.getState(controller.signal),
       ]);
 
       if (cancelled) return;
@@ -161,7 +162,7 @@ export default function LandingPage() {
       setLoading(false);
     })();
 
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, []);
 
   // Vault balance for display

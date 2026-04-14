@@ -6,19 +6,19 @@ async function main() {
   console.log("Deployer:", deployer.address);
   console.log("Balance:", hre.ethers.formatEther(await hre.ethers.provider.getBalance(deployer.address)));
 
-  const factoryAddr = "0x1e4d8f427d7f564A9f7F13A52632D179B02eEAF4";
-  const oracleAddr = "0xb594EB4656B18b1aD32eEF55291ae7a67CB710E5";
-  const rewardsAddr = "0x595Bfd3Dfc1A7b2703CFF9E566473d670Efcaf0F";
+  const factoryAddr = "0x7FB2270dC9aBBaEfE37e12fdC177Af543646b3e6";
+  const oracleAddr = "0xDd3b0e06374ac97EB8043aEB78946DAEe5E165cF";
+  const rewardsAddr = "0x0A1B77B0240AD4456d7B1D9525390D7dE5A88B68";
 
   const factory = await hre.ethers.getContractAt("TeamTokenFactory", factoryAddr);
   const oracle = await hre.ethers.getContractAt("PerformanceOracle", oracleAddr);
   const rewards = await hre.ethers.getContractAt("RewardDistributor", rewardsAddr);
 
   const remainingTeams = [
-    { name: "Peshawar Zalmi", symbol: "PZL" },
-    { name: "Quetta Gladiators", symbol: "QTG" },
-    { name: "Hyderabad Kingsmen", symbol: "HYK" },
-    { name: "Rawalpindiz", symbol: "RWP" },
+    { name: "Peshawar Zalmi", symbol: "PZ" },
+    { name: "Quetta Gladiators", symbol: "QG" },
+    { name: "Hyderabad Kingsmen", symbol: "HK" },
+    { name: "Rawalpindiz", symbol: "RW" },
   ];
 
   for (const team of remainingTeams) {

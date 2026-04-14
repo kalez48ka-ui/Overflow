@@ -5,6 +5,32 @@ import { OracleService } from '../modules/oracle/oracle.service';
 import { VaultService } from '../modules/vault/vault.service';
 
 // ---------------------------------------------------------------------------
+// Startup validation: warn if ADMIN_SECRET is missing or weak
+// ---------------------------------------------------------------------------
+const KNOWN_WEAK_DEFAULTS = ['overflow2026'];
+const MIN_SECRET_LENGTH = 32;
+
+(function validateAdminSecret(): void {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    console.warn(
+      '[Security] ADMIN_SECRET is not set. Admin endpoints will return 500 until configured.',
+    );
+    return;
+  }
+  if (KNOWN_WEAK_DEFAULTS.includes(secret)) {
+    console.warn(
+      '[Security] ADMIN_SECRET is set to a known weak default. Replace it with a strong random value (>= 32 chars).',
+    );
+  }
+  if (secret.length < MIN_SECRET_LENGTH) {
+    console.warn(
+      `[Security] ADMIN_SECRET is only ${secret.length} characters. Use at least ${MIN_SECRET_LENGTH} characters for production.`,
+    );
+  }
+})();
+
+// ---------------------------------------------------------------------------
 // Brute-force protection state
 // ---------------------------------------------------------------------------
 const AUTH_MAX_FAILURES = 5;
@@ -17,10 +43,19 @@ interface AuthAttempt {
 
 const authAttempts = new Map<string, AuthAttempt>();
 
+// Periodic cleanup of expired lockout entries to prevent unbounded Map growth.
+// Runs every 15 minutes and removes IPs whose lockout period has elapsed.
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, attempt] of authAttempts) {
+    if (attempt.lockedUntil > 0 && attempt.lockedUntil < now) {
+      authAttempts.delete(ip);
+    }
+  }
+}, 15 * 60 * 1000).unref(); // unref() so the timer doesn't keep the process alive on shutdown
+
 function getClientIP(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
-  return req.ip || 'unknown';
+  return req.socket.remoteAddress || req.ip || 'unknown';
 }
 
 /** Timing-safe token comparison to prevent timing attacks */
@@ -51,8 +86,15 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
     return;
   }
 
+  const secret = process.env.ADMIN_SECRET;
+
+  if (!secret) {
+    console.error('[Security] Admin request rejected: ADMIN_SECRET environment variable is not set');
+    res.status(500).json({ error: 'Server misconfigured: admin authentication is unavailable' });
+    return;
+  }
+
   const token = req.headers['x-admin-token'];
-  const secret = process.env.ADMIN_SECRET || 'overflow2026';
 
   if (!token || typeof token !== 'string' || !safeTokenCompare(token, secret)) {
     // Track failed attempt
@@ -286,7 +328,7 @@ export function createAdminRouter(
         return;
       }
 
-      const oldPrice = team.currentPrice;
+      const oldPrice = Number(team.currentPrice);
       const change24h = oldPrice > 0 ? ((price - oldPrice) / oldPrice) * 100 : 0;
 
       const updated = await prisma.team.update({

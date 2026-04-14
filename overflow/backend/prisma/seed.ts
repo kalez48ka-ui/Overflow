@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { SELL_TAX_BY_RANK } from '../src/common/constants';
 
 const prisma = new PrismaClient();
 
@@ -17,9 +18,8 @@ const BASE_PRICES: Record<string, number> = {
   IU: 2.50, LQ: 2.20, MS: 1.80, PZ: 1.40, QG: 1.10, KK: 0.80, HK: 0.95, RW: 0.70,
 };
 
-const TAX_RATES: Record<number, number> = {
-  1: 2, 2: 3, 3: 4, 4: 5, 5: 7, 6: 9, 7: 10, 8: 12,
-};
+// Use the shared SELL_TAX_BY_RANK constant from common/constants.ts
+const TAX_RATES = SELL_TAX_BY_RANK;
 
 function randomWalk(start: number, steps: number, volatility: number): number[] {
   const prices: number[] = [start];

@@ -5,11 +5,37 @@ import { config } from '../../config';
 import { VaultService } from '../vault/vault.service';
 import { FanWarsService } from '../fanwars/fanwars.service';
 import { MarginType } from '../../common/types';
+import { SELL_TAX_BY_RANK } from '../../common/constants';
 
+/**
+ * ABI matching the deployed PerformanceOracle.sol contract.
+ *
+ * updateMatchResult: proposes (or confirms) a performance update for a team token.
+ *   Requires 2-of-3 oracle confirmations before the update is finalized on-chain.
+ *   A single backend wallet can only PROPOSE — a second oracle must confirm before
+ *   the composite score actually changes.
+ *
+ * getPerformanceScore: reads the current composite score for a team token address.
+ */
 const PERFORMANCE_ORACLE_ABI = [
-  'function updateScore(string symbol, uint256 score) external',
-  'function getScore(string symbol) external view returns (uint256)',
+  'function updateMatchResult(address teamToken, uint256 pointsTableScore, uint256 nrrScore, uint256 formScore, uint256 availabilityScore) external',
+  'function getPerformanceScore(address teamToken) external view returns (uint256)',
 ];
+
+/**
+ * Deployed team token addresses on WireFluid testnet.
+ * Maps backend 2-letter symbol → on-chain ERC-20 token address.
+ */
+const TEAM_TOKEN_ADDRESSES: Record<string, string> = {
+  IU: '0x1c8a5A026A4F5CBf7BC4fdE2898d78628A199f1e',
+  LQ: '0x66419e794d379E707bc83fd7214cc61F11568e4b',
+  MS: '0x9AF925e33F380eEC57111Da8ED13713afD0953D8',
+  KK: '0x6D36f154e3b3232a63A6aC1800f02bA233004490',
+  PZ: '0x5f9B45874872796c4b2c8C09ECa7883505CB36A8',
+  QG: '0xC9BC62531E5914ba2865FB4B5537B7f84AcE1713',
+  HK: '0x96fC2D2B5b6749cD67158215C3Ad05C81502386A',
+  RW: '0xC137B2221E8411F059a5f4E0158161402693757E',
+};
 
 export class OracleService {
   private prisma: PrismaClient;
@@ -24,10 +50,13 @@ export class OracleService {
     this.vaultService = vaultService;
     this.fanWarsService = fanWarsService;
 
-    if (config.rpcUrl && config.oraclePrivateKey && config.oraclePrivateKey !== '0x...') {
+    // Read private key directly from env to avoid leaking it through the shared config object
+    const oraclePrivateKey = process.env.ORACLE_PRIVATE_KEY || '';
+
+    if (config.rpcUrl && oraclePrivateKey && oraclePrivateKey !== '0x...') {
       try {
         this.provider = new ethers.JsonRpcProvider(config.rpcUrl);
-        this.wallet = new ethers.Wallet(config.oraclePrivateKey, this.provider);
+        this.wallet = new ethers.Wallet(oraclePrivateKey, this.provider);
         console.log('[OracleService] Connected to RPC:', config.rpcUrl);
       } catch (err) {
         console.warn('[OracleService] Failed to connect to RPC, running in offline mode');
@@ -142,19 +171,52 @@ export class OracleService {
     return Math.max(0, Math.floor(rankDiff * 10 + scoreDiff * 0.5));
   }
 
+  /**
+   * Propose a performance update on the PerformanceOracle contract.
+   *
+   * The on-chain contract requires 2-of-3 oracle confirmations. This backend wallet
+   * acts as one oracle and can only PROPOSE the update. A second oracle must call
+   * updateMatchResult with identical scores before the composite score is finalized.
+   *
+   * The aggregate score is decomposed into four sub-scores (pointsTable, nrr, form,
+   * availability) by distributing equally, since the backend tracks a single composite.
+   * The on-chain contract weights them 40/20/20/20 to recompute the composite.
+   */
   private async updateOnChainScore(symbol: string, score: number): Promise<void> {
-    if (!this.wallet || !this.provider || !config.factoryAddress || config.factoryAddress === '0x...') {
+    if (!this.wallet || !this.provider || !config.oracleAddress || config.oracleAddress === '0x...') {
       console.log(`[OracleService] Offline mode: would update ${symbol} score to ${score}`);
       return;
     }
 
+    const teamTokenAddress = TEAM_TOKEN_ADDRESSES[symbol];
+    if (!teamTokenAddress) {
+      console.error(`[OracleService] No token address found for symbol ${symbol}`);
+      return;
+    }
+
     try {
-      const contract = new ethers.Contract(config.factoryAddress, PERFORMANCE_ORACLE_ABI, this.wallet);
-      const tx = await contract.updateScore(symbol, Math.floor(score));
+      const contract = new ethers.Contract(config.oracleAddress, PERFORMANCE_ORACLE_ABI, this.wallet);
+
+      // Decompose single aggregate score into sub-scores.
+      // The on-chain composite formula is: (pts*40 + nrr*20 + form*20 + avail*20) / 100
+      // Setting all four sub-scores equal to the aggregate preserves the composite value:
+      //   (score*40 + score*20 + score*20 + score*20) / 100 = score
+      const clampedScore = Math.max(0, Math.min(100, Math.floor(score)));
+
+      const tx = await contract.updateMatchResult(
+        teamTokenAddress,
+        clampedScore, // pointsTableScore
+        clampedScore, // nrrScore
+        clampedScore, // formScore
+        clampedScore, // availabilityScore
+      );
       await tx.wait();
-      console.log(`[OracleService] Updated on-chain score for ${symbol}: ${score}`);
+      console.log(
+        `[OracleService] Proposed on-chain score update for ${symbol} (${teamTokenAddress}): ${clampedScore}. ` +
+        `Awaiting second oracle confirmation before finalization.`
+      );
     } catch (err) {
-      console.error(`[OracleService] Failed to update on-chain score for ${symbol}:`, err);
+      console.error(`[OracleService] Failed to propose on-chain score for ${symbol}:`, err);
     }
   }
 
@@ -181,10 +243,7 @@ export class OracleService {
   private async updateSellTaxes(): Promise<void> {
     const teams = await this.prisma.team.findMany();
     for (const team of teams) {
-      const taxMap: Record<number, number> = {
-        1: 2, 2: 3, 3: 5, 4: 7, 5: 9, 6: 12, 7: 15, 8: 15,
-      };
-      const newTax = taxMap[team.ranking] ?? 5;
+      const newTax = SELL_TAX_BY_RANK[team.ranking] ?? 5;
       if (team.sellTaxRate !== newTax) {
         await this.prisma.team.update({
           where: { id: team.id },

@@ -30,7 +30,7 @@ platform built on blockchain.
 Your role:
 1. Provide deep, data-driven cricket analysis using historical PSL match data.
 2. Translate cricket insights into actionable trading recommendations for Overflow \
-   team tokens ($IU, $LQ, $MS, $PZ, $KK, $QG).
+   team tokens ($IU, $LQ, $MS, $PZ, $KK, $QG, $HK, $RW).
 3. Assess upset probability and its impact on the Upset Vault payouts.
 4. Consider current team rankings, sell tax differentials, and market positioning.
 
@@ -410,7 +410,7 @@ def _template_generic(question: str, context: str) -> str:
 {context[:800] if context else "No specific historical data retrieved for this query."}
 
 **Analysis:**
-Based on the available PSL historical data, here is a summary of relevant insights. The Pakistan Super League features six competitive franchises, each with distinct strengths in batting, bowling, and fielding departments.
+Based on the available PSL historical data, here is a summary of relevant insights. The Pakistan Super League features eight competitive franchises, each with distinct strengths in batting, bowling, and fielding departments.
 
 **Trading Context:**
 {trading_context.format_for_prompt()}

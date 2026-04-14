@@ -5,6 +5,10 @@ import { AiSignal } from '../common/types';
 
 const AI_ENGINE_URL = process.env.AI_ENGINE_URL || 'http://localhost:5001';
 
+// Concurrent request limiter to prevent event loop exhaustion
+let activeAIRequests = 0;
+const MAX_CONCURRENT_AI = 5;
+
 export function createAiRouter(prisma: PrismaClient): Router {
   const router = Router();
 
@@ -25,11 +29,27 @@ export function createAiRouter(prisma: PrismaClient): Router {
         return;
       }
 
+      // Return cached analysis without consuming a concurrency slot
       if (match.aiAnalysis) {
         res.json({ success: true, data: { matchId, analysis: match.aiAnalysis } });
         return;
       }
 
+      // Concurrency gate: only for upstream AI calls
+      if (activeAIRequests >= MAX_CONCURRENT_AI) {
+        // Fall back to mock analysis instead of rejecting
+        const analysis = generateMockAnalysis(
+          match.homeTeam.name,
+          match.awayTeam.name,
+          match.homeTeam.performanceScore,
+          match.awayTeam.performanceScore,
+          match.venue || 'TBD'
+        );
+        res.json({ success: true, data: { matchId, analysis, fallback: true } });
+        return;
+      }
+
+      activeAIRequests++;
       let analysis: string;
 
       try {
@@ -52,6 +72,8 @@ export function createAiRouter(prisma: PrismaClient): Router {
           match.awayTeam.performanceScore,
           match.venue || 'TBD'
         );
+      } finally {
+        activeAIRequests--;
       }
 
       await prisma.match.update({
@@ -67,6 +89,22 @@ export function createAiRouter(prisma: PrismaClient): Router {
   });
 
   router.get('/signals', async (_req: Request, res: Response) => {
+    // Signals endpoint may fan out to AI engine for each live match.
+    // Check concurrency before starting upstream calls.
+    if (activeAIRequests >= MAX_CONCURRENT_AI) {
+      // Fall back to team-based signals when AI is saturated
+      try {
+        const teams = await prisma.team.findMany({ orderBy: { ranking: 'asc' } });
+        const fallbackSignals: AiSignal[] = teams.map((t) => generateFallbackSignal(t));
+        res.json({ success: true, data: fallbackSignals, fallback: true });
+      } catch (fallbackErr) {
+        console.error('[AI] Fallback signals error:', fallbackErr);
+        res.status(503).json({ success: false, error: 'AI service busy' });
+      }
+      return;
+    }
+
+    activeAIRequests++;
     try {
       const liveMatches = await prisma.match.findMany({
         where: { status: 'LIVE' },
@@ -144,10 +182,21 @@ export function createAiRouter(prisma: PrismaClient): Router {
     } catch (err) {
       console.error('[AI] GET /signals error:', err);
       res.status(500).json({ success: false, error: 'Failed to generate signals' });
+    } finally {
+      activeAIRequests--;
     }
   });
 
   router.post('/query', async (req: Request, res: Response) => {
+    if (activeAIRequests >= MAX_CONCURRENT_AI) {
+      res.status(503).json({
+        success: false,
+        error: 'AI service busy — too many concurrent requests. Please try again shortly.',
+      });
+      return;
+    }
+
+    activeAIRequests++;
     try {
       const { question } = req.body;
 
@@ -166,6 +215,8 @@ export function createAiRouter(prisma: PrismaClient): Router {
     } catch (err) {
       console.error('[AI] POST /query error:', err);
       res.status(500).json({ success: false, error: 'AI query failed' });
+    } finally {
+      activeAIRequests--;
     }
   });
 

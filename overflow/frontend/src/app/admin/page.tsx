@@ -105,12 +105,14 @@ function SectionCard({
 }
 
 function SelectField({
+  id,
   label,
   value,
   onChange,
   options,
   placeholder,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -119,9 +121,10 @@ function SelectField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-[#8B949E]">{label}</label>
+      <label htmlFor={id} className="text-xs font-medium text-[#8B949E]">{label}</label>
       <div className="relative">
         <select
+          id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="w-full appearance-none rounded-lg border border-[#21262D] bg-[#0D1117] px-3 py-2 pr-8 text-sm text-[#E6EDF3] outline-none transition focus:border-[#58A6FF] focus:ring-1 focus:ring-[#58A6FF]/30"
@@ -144,6 +147,7 @@ function SelectField({
 }
 
 function NumberInput({
+  id,
   label,
   value,
   onChange,
@@ -152,6 +156,7 @@ function NumberInput({
   step,
   placeholder,
 }: {
+  id: string;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -162,8 +167,9 @@ function NumberInput({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-[#8B949E]">{label}</label>
+      <label htmlFor={id} className="text-xs font-medium text-[#8B949E]">{label}</label>
       <input
+        id={id}
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -327,11 +333,12 @@ function LoginGate({ onLogin }: { onLogin: (pw: string) => Promise<boolean> }) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-[#8B949E]">
+          <label htmlFor="admin-login-password" className="text-xs font-medium text-[#8B949E]">
             Password
           </label>
           <div className="relative">
             <input
+              id="admin-login-password"
               type={showPw ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -444,6 +451,7 @@ function MatchResultSection({
     <SectionCard title="Submit Match Result" icon={Trophy} iconColor="#FDB913">
       <div className="space-y-3">
         <SelectField
+          id="admin-match-select"
           label="Match"
           value={matchId}
           onChange={(v) => {
@@ -454,6 +462,7 @@ function MatchResultSection({
           placeholder="Select a match..."
         />
         <SelectField
+          id="admin-winner-select"
           label="Winner"
           value={winnerId}
           onChange={setWinnerId}
@@ -550,6 +559,7 @@ function TriggerUpsetSection({
     >
       <div className="space-y-3">
         <SelectField
+          id="admin-upset-match-select"
           label="Match"
           value={matchId}
           onChange={setMatchId}
@@ -558,6 +568,7 @@ function TriggerUpsetSection({
         />
         <div className="grid grid-cols-2 gap-3">
           <SelectField
+            id="admin-upset-winner-select"
             label="Winner"
             value={winnerSymbol}
             onChange={setWinnerSymbol}
@@ -565,6 +576,7 @@ function TriggerUpsetSection({
             placeholder="Winner..."
           />
           <SelectField
+            id="admin-upset-loser-select"
             label="Loser"
             value={loserSymbol}
             onChange={setLoserSymbol}
@@ -573,6 +585,7 @@ function TriggerUpsetSection({
           />
         </div>
         <NumberInput
+          id="admin-upset-score-input"
           label="Upset Score"
           value={upsetScore}
           onChange={setUpsetScore}
@@ -725,6 +738,7 @@ function PriceUpdateSection({ teams }: { teams: TeamData[] }) {
     >
       <div className="space-y-3">
         <SelectField
+          id="admin-price-team-select"
           label="Team"
           value={teamSymbol}
           onChange={setTeamSymbol}
@@ -732,6 +746,7 @@ function PriceUpdateSection({ teams }: { teams: TeamData[] }) {
           placeholder="Select a team..."
         />
         <NumberInput
+          id="admin-price-input"
           label="New Price (WIRE)"
           value={newPrice}
           onChange={setNewPrice}

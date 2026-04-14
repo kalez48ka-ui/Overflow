@@ -8,7 +8,7 @@ export const config = {
     key: process.env.CRICKET_API_KEY || '',
     url: process.env.CRICKET_API_URL || 'https://api.cricapi.com/v1',
   },
-  rpcUrl: process.env.RPC_URL || 'https://testnet-rpc.wirefluid.com',
-  oraclePrivateKey: process.env.ORACLE_PRIVATE_KEY || '',
-  factoryAddress: process.env.FACTORY_ADDRESS || '',
+  rpcUrl: process.env.RPC_URL || 'https://evm.wirefluid.com',
+  factoryAddress: process.env.FACTORY_ADDRESS || '0x7FB2270dC9aBBaEfE37e12fdC177Af543646b3e6',
+  oracleAddress: process.env.ORACLE_ADDRESS || '0xDd3b0e06374ac97EB8043aEB78946DAEe5E165cF',
 };

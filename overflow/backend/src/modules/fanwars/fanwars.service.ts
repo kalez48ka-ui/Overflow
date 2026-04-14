@@ -68,6 +68,8 @@ export class FanWarsService {
     teamId: string,
     amount: number
   ): Promise<FanWarLockInfo> {
+    wallet = wallet.toLowerCase();
+
     if (amount <= 0) {
       throw new Error('Lock amount must be positive');
     }
@@ -85,8 +87,14 @@ export class FanWarsService {
         throw new Error(`Fan war is ${fanWar.status}, not accepting locks`);
       }
 
-      if (new Date() >= fanWar.lockDeadline) {
-        throw new Error('Lock deadline has passed');
+      const now = new Date();
+      if (now >= fanWar.lockDeadline) {
+        // Auto-transition to LOCKED when someone tries to lock after deadline
+        await tx.fanWar.update({
+          where: { id: fanWar.id },
+          data: { status: 'LOCKED' },
+        });
+        throw new Error('Lock window has closed — fan war is now locked');
       }
 
       if (teamId !== fanWar.homeTeamId && teamId !== fanWar.awayTeamId) {
@@ -101,6 +109,21 @@ export class FanWarsService {
       if (existingLock) {
         throw new Error('You have already locked tokens for this fan war');
       }
+
+      // Verify wallet holds enough tokens to lock
+      const position = await tx.position.findUnique({
+        where: { wallet_teamId: { wallet, teamId } },
+      });
+
+      if (!position || Number(position.amount) < amount) {
+        throw new Error('Insufficient token balance to lock');
+      }
+
+      // Deduct locked tokens from position
+      await tx.position.update({
+        where: { id: position.id },
+        data: { amount: { decrement: amount } },
+      });
 
       // Create the lock
       const lock = await tx.fanWarLock.create({
@@ -128,8 +151,8 @@ export class FanWarsService {
 
     // Emit socket event outside the transaction
     if (this.io) {
-      this.io.emit(`fanwar:${matchId}`, {
-        type: 'lock',
+      this.io.emit('fanwar:lock', {
+        matchId,
         wallet: wallet.slice(0, 6) + '...' + wallet.slice(-4),
         teamId,
         amount,
@@ -141,8 +164,8 @@ export class FanWarsService {
       id: result.id,
       wallet: result.wallet,
       teamId: result.teamId,
-      amount: result.amount,
-      boostReward: result.boostReward,
+      amount: Number(result.amount),
+      boostReward: result.boostReward != null ? Number(result.boostReward) : null,
       claimed: result.claimed,
       createdAt: result.createdAt,
     };
@@ -176,17 +199,26 @@ export class FanWarsService {
       return;
     }
 
+    // Transition through LOCKED state before settling (if still OPEN)
+    if (fanWar.status === 'OPEN') {
+      await this.prisma.fanWar.update({
+        where: { id: fanWar.id },
+        data: { status: 'LOCKED' },
+      });
+      console.log(`[FanWars] Transitioned fan war for match ${matchId} from OPEN to LOCKED`);
+    }
+
     // Determine boost split percentages
     const splits = this.getBoostSplits(marginType);
     const boostPool = fanWar.boostPool;
 
-    const winnerShare = boostPool * splits.winner;
-    const loserShare = boostPool * splits.loser;
+    const winnerShare = Number(boostPool) * splits.winner;
+    const loserShare = Number(boostPool) * splits.loser;
     // rollover = boostPool * splits.rollover (stays in platform)
 
     const isHomeWinner = winnerTeamId === fanWar.homeTeamId;
-    const totalWinnerLocked = isHomeWinner ? fanWar.totalHomeLocked : fanWar.totalAwayLocked;
-    const totalLoserLocked = isHomeWinner ? fanWar.totalAwayLocked : fanWar.totalHomeLocked;
+    const totalWinnerLocked = Number(isHomeWinner ? fanWar.totalHomeLocked : fanWar.totalAwayLocked);
+    const totalLoserLocked = Number(isHomeWinner ? fanWar.totalAwayLocked : fanWar.totalHomeLocked);
 
     // Calculate per-user boost rewards
     const lockUpdates: Array<{ id: string; boostReward: number }> = [];
@@ -196,9 +228,9 @@ export class FanWarsService {
       const isWinnerSide = lock.teamId === winnerTeamId;
 
       if (isWinnerSide && totalWinnerLocked > 0) {
-        reward = (lock.amount / totalWinnerLocked) * winnerShare;
+        reward = (Number(lock.amount) / totalWinnerLocked) * winnerShare;
       } else if (!isWinnerSide && totalLoserLocked > 0) {
-        reward = (lock.amount / totalLoserLocked) * loserShare;
+        reward = (Number(lock.amount) / totalLoserLocked) * loserShare;
       }
 
       lockUpdates.push({ id: lock.id, boostReward: reward });
@@ -232,7 +264,7 @@ export class FanWarsService {
     );
 
     if (this.io) {
-      this.io.emit('fanwar:settled', {
+      this.io.emit('fanwar:settle', {
         matchId,
         winnerTeamId,
         marginType,
@@ -249,6 +281,8 @@ export class FanWarsService {
    * Returns locked tokens + boost reward.
    */
   async claimBoost(matchId: string, wallet: string): Promise<FanWarClaimResult> {
+    wallet = wallet.toLowerCase();
+
     const fanWar = await this.prisma.fanWar.findUnique({
       where: { matchId },
     });
@@ -273,20 +307,46 @@ export class FanWarsService {
       throw new Error('Boost already claimed');
     }
 
-    await this.prisma.fanWarLock.update({
-      where: { id: lock.id },
-      data: {
-        claimed: true,
-        claimedAt: new Date(),
-      },
-    });
-
     const boostReward = lock.boostReward ?? 0;
     const tokensReturned = lock.amount;
 
+    // Return locked tokens to the user's position and mark as claimed
+    await this.prisma.$transaction(async (tx) => {
+      await tx.fanWarLock.update({
+        where: { id: lock.id },
+        data: {
+          claimed: true,
+          claimedAt: new Date(),
+        },
+      });
+
+      // Return locked tokens back to the user's position
+      const position = await tx.position.findUnique({
+        where: { wallet_teamId: { wallet, teamId: lock.teamId } },
+      });
+
+      if (position) {
+        await tx.position.update({
+          where: { id: position.id },
+          data: { amount: { increment: tokensReturned } },
+        });
+      } else {
+        // Position was deleted (e.g. sold everything before locking was enforced)
+        // Recreate it with the returned tokens
+        await tx.position.create({
+          data: {
+            wallet,
+            teamId: lock.teamId,
+            amount: tokensReturned,
+            avgBuyPrice: 0,
+          },
+        });
+      }
+    });
+
     if (this.io) {
-      this.io.emit(`fanwar:${matchId}`, {
-        type: 'claim',
+      this.io.emit('fanwar:claim', {
+        matchId,
         wallet: wallet.slice(0, 6) + '...' + wallet.slice(-4),
         boostReward,
         tokensReturned,
@@ -299,7 +359,7 @@ export class FanWarsService {
       `boost=${boostReward.toFixed(2)}, returned=${tokensReturned}`
     );
 
-    return { boostReward, tokensReturned };
+    return { boostReward: Number(boostReward), tokensReturned: Number(tokensReturned) };
   }
 
   /**
@@ -320,9 +380,9 @@ export class FanWarsService {
       matchId: fanWar.matchId,
       homeTeamId: fanWar.homeTeamId,
       awayTeamId: fanWar.awayTeamId,
-      totalHomeLocked: fanWar.totalHomeLocked,
-      totalAwayLocked: fanWar.totalAwayLocked,
-      boostPool: fanWar.boostPool,
+      totalHomeLocked: Number(fanWar.totalHomeLocked),
+      totalAwayLocked: Number(fanWar.totalAwayLocked),
+      boostPool: Number(fanWar.boostPool),
       status: fanWar.status,
       winnerTeamId: fanWar.winnerTeamId,
       marginType: fanWar.marginType,
@@ -332,10 +392,10 @@ export class FanWarsService {
       settledAt: fanWar.settledAt,
       locks: fanWar.locks.map((l) => ({
         id: l.id,
-        wallet: l.wallet,
+        wallet: l.wallet.slice(0, 6) + '...' + l.wallet.slice(-4),
         teamId: l.teamId,
-        amount: l.amount,
-        boostReward: l.boostReward,
+        amount: Number(l.amount),
+        boostReward: l.boostReward != null ? Number(l.boostReward) : null,
         claimed: l.claimed,
         createdAt: l.createdAt,
       })),
@@ -346,6 +406,8 @@ export class FanWarsService {
    * Get all locks for a specific wallet across all fan wars.
    */
   async getUserLocks(wallet: string): Promise<FanWarLockInfo[]> {
+    wallet = wallet.toLowerCase();
+
     const locks = await this.prisma.fanWarLock.findMany({
       where: { wallet },
       orderBy: { createdAt: 'desc' },
@@ -355,8 +417,8 @@ export class FanWarsService {
       id: l.id,
       wallet: l.wallet,
       teamId: l.teamId,
-      amount: l.amount,
-      boostReward: l.boostReward,
+      amount: Number(l.amount),
+      boostReward: l.boostReward != null ? Number(l.boostReward) : null,
       claimed: l.claimed,
       createdAt: l.createdAt,
     }));
@@ -385,17 +447,19 @@ export class FanWarsService {
 
     return aggregated.map((entry) => ({
       wallet: entry.wallet,
-      totalLocked: entry._sum.amount ?? 0,
-      totalBoost: entry._sum.boostReward ?? 0,
+      totalLocked: Number(entry._sum.amount ?? 0),
+      totalBoost: Number(entry._sum.boostReward ?? 0),
       warCount: entry._count.id,
     }));
   }
 
   /**
    * Get all active (OPEN or LOCKED) fan wars with match details.
+   * Auto-transitions OPEN wars past their lockDeadline to LOCKED status.
+   * Returns wars grouped: OPEN ones are lockable, LOCKED ones are awaiting settlement.
    */
   async getActiveFanWars() {
-    return this.prisma.fanWar.findMany({
+    const wars = await this.prisma.fanWar.findMany({
       where: {
         status: { in: ['OPEN', 'LOCKED'] },
       },
@@ -409,6 +473,21 @@ export class FanWarsService {
       },
       orderBy: { lockDeadline: 'asc' },
     });
+
+    // Auto-transition any OPEN wars whose lock deadline has passed
+    const now = new Date();
+    for (const war of wars) {
+      if (war.status === 'OPEN' && now >= war.lockDeadline) {
+        await this.prisma.fanWar.update({
+          where: { id: war.id },
+          data: { status: 'LOCKED' },
+        });
+        (war as { status: string }).status = 'LOCKED';
+        console.log(`[FanWars] Auto-locked fan war ${war.id} (deadline passed)`);
+      }
+    }
+
+    return wars;
   }
 
   // ---------------------------------------------------------------------------

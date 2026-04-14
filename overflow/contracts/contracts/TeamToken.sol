@@ -47,8 +47,10 @@ contract TeamToken is ERC20, Ownable {
     mapping(address => uint256) public lastBuyTimestamp;  // per-wallet buy time
     mapping(address => uint256) public lastSellTimestamp; // per-wallet cooldown tracker
 
-    // Addresses exempt from tax / limits (factory, reward distributor, etc.)
-    mapping(address => bool) public isExempt;
+    // Addresses exempt from checks when sending (skip tax, cooldown, max-tx)
+    mapping(address => bool) public isExemptFrom;
+    // Addresses exempt from tax when receiving (skip tax only, still enforce cooldown + max-tx on sender)
+    mapping(address => bool) public isExemptTo;
 
     // -----------------------------------------------------------------------
     // Events
@@ -92,8 +94,10 @@ contract TeamToken is ERC20, Ownable {
         taxRecipient = _taxRecipient;
         maxSupply = _maxSupply;
         baseSellTaxBps = 500; // default 5%
-        isExempt[_factory] = true;
-        isExempt[_taxRecipient] = true;
+        isExemptFrom[_factory] = true;
+        isExemptTo[_factory] = true;
+        isExemptFrom[_taxRecipient] = true;
+        isExemptTo[_taxRecipient] = true;
     }
 
     // -----------------------------------------------------------------------
@@ -126,12 +130,23 @@ contract TeamToken is ERC20, Ownable {
     function setTaxRecipient(address newRecipient) external onlyFactory {
         address old = taxRecipient;
         taxRecipient = newRecipient;
-        isExempt[newRecipient] = true;
+        isExemptFrom[newRecipient] = true;
+        isExemptTo[newRecipient] = true;
         emit TaxRecipientUpdated(old, newRecipient);
     }
 
+    function setExemptFrom(address account, bool exempt) external onlyFactory {
+        isExemptFrom[account] = exempt;
+    }
+
+    function setExemptTo(address account, bool exempt) external onlyFactory {
+        isExemptTo[account] = exempt;
+    }
+
+    /// @notice Convenience setter: set both from and to exemption at once
     function setExempt(address account, bool exempt) external onlyFactory {
-        isExempt[account] = exempt;
+        isExemptFrom[account] = exempt;
+        isExemptTo[account] = exempt;
     }
 
     // -----------------------------------------------------------------------
@@ -177,20 +192,29 @@ contract TeamToken is ERC20, Ownable {
             return;
         }
 
-        // Exempt addresses bypass checks
-        if (isExempt[from] || isExempt[to]) {
+        // Exempt sender: skip ALL checks (tax, cooldown, max-tx).
+        // Protocol contracts (factory, rewardDistributor) need to send freely.
+        if (isExemptFrom[from]) {
             super._update(from, to, amount);
+            // Update buy timestamp for receiver even on exempt-from transfers
+            lastBuyTimestamp[to] = block.timestamp;
             return;
         }
 
-        // --- Max tx check ---
+        // --- Max tx check (always enforced on non-exempt senders) ---
         if (amount > maxTxAmount()) revert ExceedsMaxTx();
 
-        // --- Cooldown check ---
+        // --- Cooldown check (always enforced on non-exempt senders) ---
         if (block.timestamp < lastSellTimestamp[from] + COOLDOWN_PERIOD) {
             revert SellCooldownActive();
         }
         lastSellTimestamp[from] = block.timestamp;
+
+        // Exempt receiver: skip tax only. Cooldown and max-tx already enforced above.
+        if (isExemptTo[to]) {
+            super._update(from, to, amount);
+            return;
+        }
 
         // --- Progressive sell tax ---
         uint256 taxBps = getSellTaxBps(from);

@@ -68,6 +68,7 @@ contract FanWars is Ownable, ReentrancyGuard {
     mapping(uint256 => MatchWar) public matchWars;
     mapping(uint256 => mapping(address => UserLock)) public userLocks;
     uint256 public boostPoolBalance;
+    uint256 public totalLockedAllWars;
 
     mapping(address => bool) public isKeeper;
 
@@ -195,6 +196,7 @@ contract FanWars is Ownable, ReentrancyGuard {
         } else {
             war.totalAwayLocked += amount;
         }
+        totalLockedAllWars += amount;
 
         emit TokensLocked(matchId, msg.sender, teamToken, amount);
     }
@@ -260,16 +262,17 @@ contract FanWars is Ownable, ReentrancyGuard {
             loserBps = 2500;
         }
 
-        // Calculate boost amounts from the global pool
+        // Calculate boost amounts from the global pool proportional to this match's participation
         uint256 totalLocked = war.totalHomeLocked + war.totalAwayLocked;
         uint256 matchBoost;
-        if (totalLocked > 0 && boostPoolBalance > 0) {
-            // Allocate from boost pool proportional to participation
-            // Use the full pool for this match (keeper controls frequency)
-            matchBoost = boostPoolBalance;
+        if (totalLocked > 0 && boostPoolBalance > 0 && totalLockedAllWars > 0) {
+            matchBoost = (boostPoolBalance * totalLocked) / totalLockedAllWars;
         }
 
         if (matchBoost > boostPoolBalance) revert InsufficientBoostPool();
+
+        // Decrement global locked tracker for this settled match
+        totalLockedAllWars -= totalLocked;
 
         uint256 winnerShare = (matchBoost * winnerBps) / BASIS_POINTS;
         uint256 loserShare = (matchBoost * loserBps) / BASIS_POINTS;
@@ -358,6 +361,13 @@ contract FanWars is Ownable, ReentrancyGuard {
         if (war.settled) revert WarAlreadySettled();
         if (war.cancelled) revert WarAlreadySettled();
 
+        uint256 totalLocked = war.totalHomeLocked + war.totalAwayLocked;
+        if (totalLocked <= totalLockedAllWars) {
+            totalLockedAllWars -= totalLocked;
+        } else {
+            totalLockedAllWars = 0;
+        }
+
         war.cancelled = true;
         emit MatchCancelled(matchId);
     }
@@ -383,6 +393,18 @@ contract FanWars is Ownable, ReentrancyGuard {
 
         lock.claimed = true;
         uint256 amount = lock.amount;
+
+        // Decrement war-level and global locked totals
+        if (lock.teamToken == war.homeTeamToken) {
+            war.totalHomeLocked -= amount;
+        } else {
+            war.totalAwayLocked -= amount;
+        }
+        if (amount <= totalLockedAllWars) {
+            totalLockedAllWars -= amount;
+        } else {
+            totalLockedAllWars = 0;
+        }
 
         IERC20(lock.teamToken).safeTransfer(msg.sender, amount);
         emit BoostClaimed(matchId, msg.sender, 0, amount);
@@ -481,7 +503,10 @@ contract FanWars is Ownable, ReentrancyGuard {
             loserBps = 2500;
         }
 
-        uint256 matchBoost = boostPoolBalance;
+        uint256 totalLocked = war.totalHomeLocked + war.totalAwayLocked;
+        uint256 matchBoost = (totalLockedAllWars > 0 && totalLocked > 0)
+            ? (boostPoolBalance * totalLocked) / totalLockedAllWars
+            : boostPoolBalance;
         bool homeWins = (winnerToken == war.homeTeamToken);
         uint256 homeBoost = homeWins ? (matchBoost * winnerBps) / BASIS_POINTS : (matchBoost * loserBps) / BASIS_POINTS;
         uint256 awayBoost = homeWins ? (matchBoost * loserBps) / BASIS_POINTS : (matchBoost * winnerBps) / BASIS_POINTS;

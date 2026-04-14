@@ -63,9 +63,10 @@ export function StatsBar({
   upsetVaultBalance = GLOBAL_STATS.upsetVaultBalance,
   nextMatchTime = GLOBAL_STATS.nextMatchTime,
 }: StatsBarProps) {
-  const [countdown, setCountdown] = useState(nextMatchTime - Date.now());
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
+    setCountdown(nextMatchTime - Date.now());
     const interval = setInterval(() => {
       setCountdown(nextMatchTime - Date.now());
     }, 1000);

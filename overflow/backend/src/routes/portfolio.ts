@@ -28,8 +28,8 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
       });
 
       const portfolio = positions.map((p) => {
-        const value = p.amount * p.team.currentPrice;
-        const costBasis = p.amount * p.avgBuyPrice;
+        const value = Number(p.amount) * Number(p.team.currentPrice);
+        const costBasis = Number(p.amount) * Number(p.avgBuyPrice);
         const pnl = value - costBasis;
         const pnlPercent = costBasis > 0 ? (pnl / costBasis) * 100 : 0;
 
@@ -48,7 +48,7 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
       const totalValue = portfolio.reduce((sum, p) => sum + p.value, 0);
       const totalPnl = portfolio.reduce((sum, p) => sum + p.pnl, 0);
       const totalCostBasis = portfolio.reduce(
-        (sum, p) => sum + p.amount * p.avgBuyPrice,
+        (sum, p) => sum + Number(p.amount) * Number(p.avgBuyPrice),
         0
       );
       const totalPnlPercent = totalCostBasis > 0 ? (totalPnl / totalCostBasis) * 100 : 0;
@@ -75,8 +75,9 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
       }
       const days = Math.min(parseInt(String(req.query.days || '30')) || 30, 365);
 
-      // Return portfolio value history as { date, value } array
-      // For now, derive from trade history
+      // Return portfolio value history as mark-to-market snapshots at each trade.
+      // For each trade, we reconstruct what positions the user held, then value
+      // all positions at the trade-time price to get a mark-to-market portfolio value.
       const since = new Date();
       since.setDate(since.getDate() - days);
 
@@ -88,29 +89,78 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
         orderBy: { createdAt: 'asc' },
         include: {
           team: {
-            select: { symbol: true, name: true, currentPrice: true },
+            select: { id: true, symbol: true, name: true, currentPrice: true },
           },
         },
       });
 
-      // Group trades by date and compute a simple cumulative value
-      const dateMap = new Map<string, number>();
-      let runningValue = 0;
+      // Running position map: teamId -> { amount, avgCost }
+      const positions = new Map<string, { amount: number; avgCost: number }>();
+      // Track the price of each team at the time of its most recent trade
+      const latestTeamPrice = new Map<string, number>();
+      // Running cost basis (total money invested minus money withdrawn)
+      let totalCostBasis = 0;
+
+      const history: Array<{ date: string; portfolioValue: number; costBasis: number }> = [];
+      // Use a map to keep only the last snapshot per date
+      const dateMap = new Map<string, { portfolioValue: number; costBasis: number }>();
 
       for (const trade of trades) {
-        const dateStr = trade.createdAt.toISOString().split('T')[0]!;
+        const teamId = trade.team.id;
+        const pos = positions.get(teamId) || { amount: 0, avgCost: 0 };
+
         if (trade.type === 'BUY') {
-          runningValue += trade.totalValue;
+          // Update weighted average cost
+          const totalExisting = pos.amount * pos.avgCost;
+          const newTotal = totalExisting + Number(trade.totalValue);
+          pos.amount += Number(trade.amount);
+          pos.avgCost = pos.amount > 0 ? newTotal / pos.amount : 0;
+          totalCostBasis += Number(trade.totalValue);
         } else {
-          runningValue -= trade.totalValue;
+          // SELL — reduce position, reduce cost basis proportionally
+          const sellCostBasis = pos.avgCost * Number(trade.amount);
+          pos.amount = Math.max(0, pos.amount - Number(trade.amount));
+          totalCostBasis = Math.max(0, totalCostBasis - sellCostBasis);
+          // avgCost stays the same on sells
         }
-        dateMap.set(dateStr, Math.max(0, runningValue));
+
+        positions.set(teamId, pos);
+        // Record the trade-time price for this team (trade.pricePerToken or derive from totalValue/amount)
+        const tradePrice = Number(trade.amount) > 0 ? Number(trade.totalValue) / Number(trade.amount) : 0;
+        latestTeamPrice.set(teamId, tradePrice);
+
+        // Compute mark-to-market: sum all positions * their last known trade price
+        let portfolioValue = 0;
+        for (const [tid, p] of positions.entries()) {
+          if (p.amount <= 0) continue;
+          const price = latestTeamPrice.get(tid) || 0;
+          portfolioValue += p.amount * price;
+        }
+
+        const dateStr = trade.createdAt.toISOString().split('T')[0]!;
+        dateMap.set(dateStr, { portfolioValue, costBasis: totalCostBasis });
       }
 
-      const history = Array.from(dateMap.entries()).map(([date, value]) => ({
-        date,
-        value,
-      }));
+      // Add current-day snapshot using live prices for all held positions
+      if (positions.size > 0) {
+        let currentValue = 0;
+        for (const [teamId, pos] of positions.entries()) {
+          if (pos.amount <= 0) continue;
+          // Find the current price from the trade includes
+          const teamTrade = trades.find((t) => t.team.id === teamId);
+          const livePrice = Number(teamTrade?.team.currentPrice ?? 0) || latestTeamPrice.get(teamId) || 0;
+          currentValue += pos.amount * livePrice;
+        }
+        const todayStr = new Date().toISOString().split('T')[0]!;
+        dateMap.set(todayStr, { portfolioValue: currentValue, costBasis: totalCostBasis });
+      }
+
+      for (const [date, snapshot] of dateMap.entries()) {
+        history.push({ date, ...snapshot });
+      }
+
+      // Sort by date ascending
+      history.sort((a, b) => a.date.localeCompare(b.date));
 
       res.json(history);
     } catch (err) {

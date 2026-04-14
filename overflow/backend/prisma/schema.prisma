@@ -8,36 +8,33 @@ datasource db {
 }
 
 model Team {
-  id               String   @id @default(uuid())
-  name             String   @unique
-  symbol           String   @unique
+  id               String       @id @default(uuid())
+  name             String       @unique
+  symbol           String       @unique
   tokenAddress     String?
   color            String
-  currentPrice     Float    @default(0)
-  priceChange24h   Float    @default(0)
-  sellTaxRate      Float    @default(5)
-  performanceScore Float    @default(50)
-  ranking          Int      @default(0)
-  wins             Int      @default(0)
-  losses           Int      @default(0)
-  nrr              Float    @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  trades       Trade[]
-  matchesHome  Match[]      @relation("HomeTeam")
-  matchesAway  Match[]      @relation("AwayTeam")
-  positions    Position[]
-  priceHistory PricePoint[]
+  currentPrice     Decimal      @default(0) @db.Decimal(18, 8)
+  priceChange24h   Float        @default(0)
+  sellTaxRate      Float        @default(5)
+  performanceScore Float        @default(50)
+  ranking          Int          @default(0)
+  wins             Int          @default(0)
+  losses           Int          @default(0)
+  nrr              Float        @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  matchesAway      Match[]      @relation("AwayTeam")
+  matchesHome      Match[]      @relation("HomeTeam")
+  positions        Position[]
+  priceHistory     PricePoint[]
+  trades           Trade[]
 }
 
 model Match {
-  id          String    @id @default(uuid())
+  id          String      @id @default(uuid())
   homeTeamId  String
   awayTeamId  String
-  homeTeam    Team      @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeam    Team      @relation("AwayTeam", fields: [awayTeamId], references: [id])
-  status      String    @default("UPCOMING")
+  status      String      @default("UPCOMING")
   homeScore   String?
   awayScore   String?
   toss        String?
@@ -46,21 +43,22 @@ model Match {
   endTime     DateTime?
   winnerId    String?
   upsetScore  Int?
-  isUpset     Boolean   @default(false)
-  aiAnalysis  String?   @db.Text
-  cricApiId   String?   @unique
-  cricApiName String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  balls BallEvent[]
-  fanWar FanWar?
+  isUpset     Boolean     @default(false)
+  aiAnalysis  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  cricApiId   String?     @unique
+  cricApiName     String?
+  balls           BallEvent[]
+  fanWar          FanWar?
+  predictionPool  PredictionPool?
+  awayTeam        Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam        Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
 }
 
 model BallEvent {
   id         String   @id @default(uuid())
   matchId    String
-  match      Match    @relation(fields: [matchId], references: [id])
   innings    Int
   over       Int
   ball       Int
@@ -72,6 +70,7 @@ model BallEvent {
   wicketType String?
   commentary String?
   timestamp  DateTime @default(now())
+  match      Match    @relation(fields: [matchId], references: [id])
 
   @@index([matchId, timestamp])
 }
@@ -79,16 +78,16 @@ model BallEvent {
 model Trade {
   id         String   @id @default(uuid())
   teamId     String
-  team       Team     @relation(fields: [teamId], references: [id])
   wallet     String
   type       String
-  amount     Float
-  price      Float
-  totalValue Float
-  fee        Float
+  amount     Decimal  @db.Decimal(18, 8)
+  price      Decimal  @db.Decimal(18, 8)
+  totalValue Decimal  @db.Decimal(18, 2)
+  fee        Decimal  @db.Decimal(18, 2)
   taxRate    Float
   txHash     String?
   createdAt  DateTime @default(now())
+  team       Team     @relation(fields: [teamId], references: [id])
 
   @@index([wallet, createdAt])
   @@index([teamId, createdAt])
@@ -98,11 +97,11 @@ model Position {
   id          String   @id @default(uuid())
   wallet      String
   teamId      String
-  team        Team     @relation(fields: [teamId], references: [id])
-  amount      Float
-  avgBuyPrice Float
+  amount      Decimal  @db.Decimal(18, 8)
+  avgBuyPrice Decimal  @db.Decimal(18, 8)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  team        Team     @relation(fields: [teamId], references: [id])
 
   @@unique([wallet, teamId])
 }
@@ -110,14 +109,14 @@ model Position {
 model PricePoint {
   id        String   @id @default(uuid())
   teamId    String
-  team      Team     @relation(fields: [teamId], references: [id])
-  price     Float
-  volume    Float    @default(0)
-  open      Float
-  high      Float
-  low       Float
-  close     Float
+  price     Decimal  @db.Decimal(18, 8)
+  volume    Decimal  @default(0) @db.Decimal(18, 2)
+  open      Decimal  @db.Decimal(18, 8)
+  high      Decimal  @db.Decimal(18, 8)
+  low       Decimal  @db.Decimal(18, 8)
+  close     Decimal  @db.Decimal(18, 8)
   timestamp DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id])
 
   @@index([teamId, timestamp])
 }
@@ -129,30 +128,29 @@ model UpsetEvent {
   loserSymbol     String
   upsetScore      Int
   multiplier      Int
-  vaultRelease    Float
-  totalPayout     Float
+  vaultRelease    Decimal  @db.Decimal(18, 2)
+  totalPayout     Decimal  @db.Decimal(18, 2)
   holdersCount    Int
-  perHolderPayout Float
+  perHolderPayout Decimal  @db.Decimal(18, 8)
   createdAt       DateTime @default(now())
 }
 
 model VaultState {
   id        String   @id @default("vault")
-  balance   Float    @default(0)
-  totalIn   Float    @default(0)
-  totalOut  Float    @default(0)
+  balance   Decimal  @default(0) @db.Decimal(18, 2)
+  totalIn   Decimal  @default(0) @db.Decimal(18, 2)
+  totalOut  Decimal  @default(0) @db.Decimal(18, 2)
   updatedAt DateTime @updatedAt
 }
 
 model FanWar {
   id              String       @id @default(uuid())
   matchId         String       @unique
-  match           Match        @relation(fields: [matchId], references: [id])
   homeTeamId      String
   awayTeamId      String
-  totalHomeLocked Float        @default(0)
-  totalAwayLocked Float        @default(0)
-  boostPool       Float        @default(0)
+  totalHomeLocked Decimal      @default(0) @db.Decimal(18, 2)
+  totalAwayLocked Decimal      @default(0) @db.Decimal(18, 2)
+  boostPool       Decimal      @default(0) @db.Decimal(18, 2)
   status          String       @default("OPEN")
   winnerTeamId    String?
   marginType      String?
@@ -162,21 +160,92 @@ model FanWar {
   lockDeadline    DateTime
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+  match           Match        @relation(fields: [matchId], references: [id])
   locks           FanWarLock[]
 }
 
 model FanWarLock {
   id          String    @id @default(uuid())
   fanWarId    String
-  fanWar      FanWar    @relation(fields: [fanWarId], references: [id])
   wallet      String
   teamId      String
-  amount      Float
-  boostReward Float?
+  amount      Decimal   @db.Decimal(18, 2)
+  boostReward Decimal?  @db.Decimal(18, 2)
   claimed     Boolean   @default(false)
   claimedAt   DateTime?
   createdAt   DateTime  @default(now())
+  fanWar      FanWar    @relation(fields: [fanWarId], references: [id])
 
   @@unique([fanWarId, wallet])
   @@index([wallet])
+}
+
+model PredictionPool {
+  id               String    @id @default(uuid())
+  matchId          String    @unique
+  match            Match     @relation(fields: [matchId], references: [id])
+  entryFee         Decimal   @db.Decimal(18, 8)
+  totalPool        Decimal   @default(0) @db.Decimal(18, 2)
+  participantCount Int       @default(0)
+  status           String    @default("OPEN")
+  platformShare    Decimal?  @db.Decimal(18, 2)
+  safetyFloorPool  Decimal?  @db.Decimal(18, 2)
+  accuracyPool     Decimal?  @db.Decimal(18, 2)
+  totalScoreSum    Decimal?  @db.Decimal(18, 2)
+  highestScore     Decimal?  @db.Decimal(18, 2)
+  deadline         DateTime
+  settledAt        DateTime?
+  claimDeadline    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  questions        PredictionQuestion[]
+  entries          PredictionEntry[]
+}
+
+model PredictionQuestion {
+  id            String   @id @default(uuid())
+  poolId        String
+  pool          PredictionPool @relation(fields: [poolId], references: [id])
+  questionIndex Int
+  questionText  String
+  options       String[]
+  correctOption Int?
+  points        Int
+  isLive        Boolean  @default(false)
+  deadline      DateTime
+  resolved      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  answers       PredictionAnswer[]
+
+  @@unique([poolId, questionIndex])
+}
+
+model PredictionEntry {
+  id          String    @id @default(uuid())
+  poolId      String
+  pool        PredictionPool @relation(fields: [poolId], references: [id])
+  wallet      String
+  totalScore  Decimal?  @db.Decimal(18, 2)
+  payout      Decimal?  @db.Decimal(18, 2)
+  claimed     Boolean   @default(false)
+  claimedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  answers     PredictionAnswer[]
+
+  @@unique([poolId, wallet])
+  @@index([wallet])
+}
+
+model PredictionAnswer {
+  id            String   @id @default(uuid())
+  entryId       String
+  entry         PredictionEntry @relation(fields: [entryId], references: [id])
+  questionId    String
+  question      PredictionQuestion @relation(fields: [questionId], references: [id])
+  chosenOption  Int
+  isCorrect     Boolean?
+  pointsEarned  Decimal? @db.Decimal(18, 2)
+  createdAt     DateTime @default(now())
+
+  @@unique([entryId, questionId])
 }

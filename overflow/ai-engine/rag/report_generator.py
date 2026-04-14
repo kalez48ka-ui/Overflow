@@ -168,6 +168,8 @@ class ReportGenerator:
             "MS": "Multan Cricket Stadium, Multan",
             "PZ": "Arbab Niaz Stadium, Peshawar",
             "QG": "National Stadium, Karachi",
+            "HK": "Niaz Stadium, Hyderabad",
+            "RW": "Rawalpindi Cricket Stadium, Rawalpindi",
         }
         return venue_map.get(home_symbol, "National Stadium, Karachi")
 
