@@ -36,9 +36,9 @@ export function createPortfolioRouter(prisma: PrismaClient): Router {
         return {
           teamSymbol: p.team.symbol,
           teamName: p.team.name,
-          amount: p.amount,
-          avgBuyPrice: p.avgBuyPrice,
-          currentPrice: p.team.currentPrice,
+          amount: Number(p.amount),
+          avgBuyPrice: Number(p.avgBuyPrice),
+          currentPrice: Number(p.team.currentPrice),
           value,
           pnl,
           pnlPercent,

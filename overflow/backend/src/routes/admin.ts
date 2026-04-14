@@ -220,9 +220,9 @@ export function createAdminRouter(
           ranking: t.ranking,
           wins: t.wins,
           losses: t.losses,
-          performanceScore: t.performanceScore,
-          currentPrice: t.currentPrice,
-          sellTaxRate: t.sellTaxRate,
+          performanceScore: Number(t.performanceScore),
+          currentPrice: Number(t.currentPrice),
+          sellTaxRate: Number(t.sellTaxRate),
         })),
       });
     } catch (err) {
@@ -315,9 +315,9 @@ export function createAdminRouter(
           ranking: t.ranking,
           wins: t.wins,
           losses: t.losses,
-          performanceScore: t.performanceScore,
-          currentPrice: t.currentPrice,
-          sellTaxRate: t.sellTaxRate,
+          performanceScore: Number(t.performanceScore),
+          currentPrice: Number(t.currentPrice),
+          sellTaxRate: Number(t.sellTaxRate),
         })),
       });
     } catch (err) {
@@ -376,8 +376,8 @@ export function createAdminRouter(
           name: updated.name,
           symbol: updated.symbol,
           oldPrice,
-          newPrice: updated.currentPrice,
-          change24h: updated.priceChange24h,
+          newPrice: Number(updated.currentPrice),
+          change24h: Number(updated.priceChange24h),
         },
       });
     } catch (err) {

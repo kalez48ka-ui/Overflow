@@ -56,7 +56,7 @@ export class VaultService {
 
     if (this.io) {
       this.io.to('vault:subscribers').emit('vault:update', {
-        balance: updated.balance,
+        balance: Number(updated.balance),
         change: amount,
         type: 'deposit',
       });
@@ -210,10 +210,22 @@ export class VaultService {
   }
 
   async getUpsetEvents(limit = 50, offset = 0) {
-    return this.prisma.upsetEvent.findMany({
+    const events = await this.prisma.upsetEvent.findMany({
       orderBy: { createdAt: 'desc' },
       take: limit,
       skip: offset,
     });
+    return events.map((e) => ({
+      id: e.id,
+      matchId: e.matchId,
+      winnerTeam: e.winnerSymbol,
+      loserTeam: e.loserSymbol,
+      upsetScore: e.upsetScore,
+      releasedAmount: Number(e.totalPayout),
+      vaultRelease: Number(e.vaultRelease),
+      holdersCount: e.holdersCount,
+      avgHolderPayout: Number(e.perHolderPayout),
+      timestamp: e.createdAt.toISOString(),
+    }));
   }
 }

@@ -133,10 +133,11 @@ export interface FanWarLockInfo {
 }
 
 export interface LeaderboardEntry {
+  rank: number;
   wallet: string;
   totalLocked: number;
   totalBoost: number;
-  warCount: number;
+  warsWon: number;
 }
 
 export interface FanWarClaimResult {

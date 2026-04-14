@@ -487,11 +487,12 @@ export class FanWarsService {
       take: limit,
     });
 
-    return aggregated.map((entry) => ({
+    return aggregated.map((entry, i) => ({
+      rank: i + 1,
       wallet: entry.wallet.slice(0, 6) + '...' + entry.wallet.slice(-4),
       totalLocked: Number(entry._sum.amount ?? 0),
       totalBoost: Number(entry._sum.boostReward ?? 0),
-      warCount: entry._count.id,
+      warsWon: entry._count.id,
     }));
   }
 

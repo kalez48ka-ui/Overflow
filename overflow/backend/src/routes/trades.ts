@@ -21,11 +21,12 @@ function mapTradeToFrontend(trade: TradeWithTeam) {
     wallet: trade.wallet,
     teamSymbol,
     side: (trade.type as string).toLowerCase() as 'buy' | 'sell',
-    amount: trade.amount,
-    price: trade.price,
-    total: trade.totalValue,
+    amount: Number(trade.amount),
+    price: Number(trade.price),
+    total: Number(trade.totalValue),
+    fee: Number(trade.fee),
     txHash: trade.txHash ?? '',
-    timestamp: trade.createdAt?.toISOString?.() ?? trade.createdAt,
+    timestamp: trade.createdAt.toISOString(),
   };
 }
 
