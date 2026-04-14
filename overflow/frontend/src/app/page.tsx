@@ -51,6 +51,18 @@ const Meteors = dynamic(
   () => import("@/components/ui/meteors").then((m) => ({ default: m.Meteors })),
   { ssr: false },
 );
+const FlipWords = dynamic(
+  () => import("@/components/ui/flip-words").then((m) => ({ default: m.FlipWords })),
+  { ssr: false },
+);
+const LampContainer = dynamic(
+  () => import("@/components/ui/lamp-effect").then((m) => ({ default: m.LampContainer })),
+  { ssr: false },
+);
+const Sparkles = dynamic(
+  () => import("@/components/ui/sparkles").then((m) => ({ default: m.Sparkles })),
+  { ssr: false },
+);
 
 function FeaturePill({
   icon: Icon,
@@ -225,11 +237,10 @@ export default function LandingPage() {
             transition={prefersReduced ? instantTransition : { delay: 0.1 }}
             className="text-center"
           >
-            <h1>
-              <RevealText
-                lines={["From Betting", "to Building Wealth."]}
-                className="mx-auto max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl"
-              />
+            <h1 className="mx-auto max-w-4xl text-4xl font-black leading-[1.05] tracking-tight text-[#E6EDF3] sm:text-5xl lg:text-7xl text-center">
+              From <FlipWords words={["Betting", "Guessing", "Losing", "Gambling"]} duration={2500} className="text-[#E4002B]" />
+              <br />
+              <span className="text-[#E6EDF3]">to Building Wealth.</span>
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-base text-[#9CA3AF] sm:text-lg">
               <TextGenerateEffect
@@ -314,6 +325,28 @@ export default function LandingPage() {
             <FeaturePill icon={Zap} label="AI Signals" />
             <FeaturePill icon={Flame} label="Upset Vault" />
           </motion.div>
+
+          {/* Hero Stats */}
+          <motion.div
+            initial={prefersReduced ? noMotionInitial : { opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={prefersReduced ? instantTransition : { delay: 0.35 }}
+            className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto"
+          >
+            {[
+              { label: "Team Tokens", value: "8", suffix: "" },
+              { label: "On-Chain Txs", value: "867", suffix: "+" },
+              { label: "Vault Balance", value: formatCurrency(vaultBalance), suffix: "" },
+              { label: "Contracts", value: "6", suffix: "" },
+            ].map(({ label, value, suffix }) => (
+              <div key={label} className="text-center">
+                <p className="text-2xl sm:text-3xl font-black tabular-nums text-[#E6EDF3]">
+                  {value}{suffix}
+                </p>
+                <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF] mt-1">{label}</p>
+              </div>
+            ))}
+          </motion.div>
         </motion.div>
       </section>
 
@@ -373,6 +406,7 @@ export default function LandingPage() {
               return (
                 <button
                   key={key}
+                  aria-pressed={isActive}
                   onClick={() => {
                     if (isActive) {
                       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -429,22 +463,22 @@ export default function LandingPage() {
       {/* How it works */}
       <section className="relative overflow-hidden">
         <div className="gradient-divider" />
-        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-          <motion.div
-            className="mb-16 text-center"
-            initial={prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+        <LampContainer className="pt-12">
+          <motion.h2
+            initial={prefersReduced ? { opacity: 1, y: 0 } : { opacity: 0.5, y: 100 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={prefersReduced ? instantTransition : { duration: 0.6 }}
+            transition={prefersReduced ? instantTransition : { delay: 0.3, duration: 0.8, ease: "easeInOut" }}
+            className="text-2xl font-black text-[#E6EDF3] sm:text-3xl text-center"
           >
-            <h2 className="text-2xl font-black text-[#E6EDF3] sm:text-3xl">
-              How It Works
-            </h2>
-            <p className="mt-3 text-sm text-[#9CA3AF]">
-              From wallet to payout in under a minute
-            </p>
-          </motion.div>
+            How It Works
+          </motion.h2>
+          <p className="mt-3 text-sm text-[#9CA3AF] text-center">
+            From wallet to payout in under a minute
+          </p>
+        </LampContainer>
 
+        <div className="mx-auto max-w-7xl px-4 pb-24 sm:px-6">
           {/* Steps — vertical timeline on mobile, horizontal on desktop */}
           <div className="relative">
             {/* Horizontal connector — desktop */}
@@ -546,11 +580,13 @@ export default function LandingPage() {
               Upset Vault
             </div>
             <div className="vault-glow mt-2">
-              <GlitchPrice
-                value={formatCurrency(vaultBalance)}
-                className="vault-glow text-5xl font-black sm:text-6xl md:text-7xl tabular-nums tracking-tight"
-                autoScrambleInterval={8000}
-              />
+              <Sparkles count={20} color="#FDB913" minSize={1} maxSize={2.5} className="inline-block">
+                <GlitchPrice
+                  value={formatCurrency(vaultBalance)}
+                  className="vault-glow text-5xl font-black sm:text-6xl md:text-7xl tabular-nums tracking-tight text-[#E6EDF3]"
+                  autoScrambleInterval={8000}
+                />
+              </Sparkles>
             </div>
             <p className="mt-3 text-sm text-[#9CA3AF]">
               2% of every trade fee. Underdogs win, you split the pot.
@@ -625,6 +661,176 @@ export default function LandingPage() {
                   </div>
                 ))}
               </StaggerReveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Overflow */}
+      <section className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6">
+        <div className="gradient-divider mb-16" />
+        <motion.div
+          className="mb-12 text-center"
+          initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={prefersReduced ? instantTransition : { duration: 0.6 }}
+        >
+          <h2 className="text-2xl font-black text-[#E6EDF3] sm:text-3xl">
+            Why <span className="text-[#E4002B]">Overflow</span>?
+          </h2>
+          <p className="mt-3 text-sm text-[#9CA3AF] max-w-md mx-auto">
+            Not a prediction app. Not a fantasy league. A real DeFi protocol powered by cricket.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {([
+            {
+              icon: Activity,
+              title: "Real-Time Pricing",
+              desc: "Token prices shift with every wicket, six, and collapse. Bonding curves, not bookmakers.",
+              accent: "#3FB950",
+            },
+            {
+              icon: Zap,
+              title: "AI Match Signals",
+              desc: "RAG-powered cricket analytics. Momentum detection, upset probability, and trade signals.",
+              accent: "#58A6FF",
+            },
+            {
+              icon: Flame,
+              title: "Upset Vault",
+              desc: "2% of every trade fee goes to the vault. When underdogs win, holders split the pot up to 5x.",
+              accent: "#E4002B",
+            },
+            {
+              icon: Trophy,
+              title: "Season Rewards",
+              desc: "Hold top-performing team tokens. Season-end ranking distributes the reward pool: 30% to #1.",
+              accent: "#FDB913",
+            },
+            {
+              title: "Fan Wars",
+              desc: "Lock tokens before matches. Winning team's lockers get boosted returns from the losing side.",
+              accent: "#6A0DAD",
+              iconText: "⚔️",
+            },
+            {
+              title: "Predict & Earn",
+              desc: "Answer match questions live. Score accuracy points. Top predictors split the prize pool 10/30/60.",
+              accent: "#58A6FF",
+              iconText: "🎯",
+            },
+          ] as { icon?: React.ElementType; title: string; desc: string; accent: string; iconText?: string }[]).map(({ icon: FeatureIcon, title, desc, accent, iconText }, idx) => (
+            <motion.div
+              key={title}
+              initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={prefersReduced ? instantTransition : { duration: 0.4, delay: idx * 0.08 }}
+              className="group relative rounded-xl border border-[#21262D] bg-[#161B22] p-6 transition-all duration-300 hover:border-[#21262D]/80 hover:bg-[#161B22]/80"
+              style={{
+                boxShadow: 'none',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 40px ${accent}10, 0 0 80px ${accent}05`;
+                (e.currentTarget as HTMLElement).style.borderColor = `${accent}30`;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                (e.currentTarget as HTMLElement).style.borderColor = '#21262D';
+              }}
+            >
+              <div
+                className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg text-lg"
+                style={{ backgroundColor: `${accent}15`, color: accent }}
+              >
+                {FeatureIcon ? <FeatureIcon className="h-5 w-5" /> : <span>{iconText}</span>}
+              </div>
+              <h3 className="text-sm font-bold text-[#E6EDF3] mb-1.5">{title}</h3>
+              <p className="text-xs leading-relaxed text-[#9CA3AF]">{desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* Built on WireFluid */}
+      <section className="border-t border-b border-[#21262D] bg-[#161B22]/30">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <motion.div
+            className="text-center mb-10"
+            initial={prefersReduced ? { opacity: 1 } : { opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={prefersReduced ? instantTransition : { duration: 0.6 }}
+          >
+            <h2 className="text-xl font-black text-[#E6EDF3]">
+              Built Different
+            </h2>
+            <p className="mt-2 text-xs text-[#9CA3AF]">
+              Fully on-chain. Fully transparent. Fully yours.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {[
+              { label: "Blockchain", value: "WireFluid", sub: "Chain ID 92533" },
+              { label: "Smart Contracts", value: "6 Deployed", sub: "Solidity 0.8.24" },
+              { label: "Oracle", value: "CricAPI", sub: "Live PSL Data" },
+              { label: "AI Engine", value: "LangChain", sub: "RAG Pipeline" },
+            ].map(({ label, value, sub }, idx) => (
+              <motion.div
+                key={label}
+                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={prefersReduced ? instantTransition : { duration: 0.4, delay: idx * 0.1 }}
+                className="text-center"
+              >
+                <p className="text-xs uppercase tracking-wider text-[#9CA3AF] mb-1">{label}</p>
+                <p className="text-lg font-black text-[#E6EDF3]">{value}</p>
+                <p className="text-[10px] text-[#6E7681] mt-0.5">{sub}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="relative overflow-hidden">
+        <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+          <div className="relative overflow-hidden rounded-2xl border border-[#21262D] bg-[#161B22] px-6 py-16 sm:px-12 sm:py-20 text-center">
+            <BackgroundBeams className="z-0 opacity-40" beamCount={6} />
+            <div className="relative z-10">
+              <motion.div
+                initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={prefersReduced ? instantTransition : { duration: 0.6 }}
+              >
+                <h2 className="text-3xl font-black text-[#E6EDF3] sm:text-4xl lg:text-5xl">
+                  Cricket Knowledge is
+                  <br />
+                  <span className="text-[#E4002B]">Financial Power.</span>
+                </h2>
+                <p className="mx-auto mt-4 max-w-lg text-sm text-[#9CA3AF]">
+                  8 PSL teams. 44 matches. One season to prove your edge.
+                  Connect your wallet and start building.
+                </p>
+                <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                  <div className="rounded-xl border border-[#E4002B]/40 bg-[#E4002B]/10 px-6 py-3 text-sm font-bold text-[#E6EDF3] transition-all duration-200 ease-out hover:bg-[#E4002B]/20 hover:border-[#E4002B]/60">
+                    <SafeConnectButton label="Connect Wallet" showBalance={false} />
+                  </div>
+                  <Link
+                    href="/how-it-works"
+                    className="flex items-center gap-2 rounded-xl border border-[#21262D] bg-[#0D1117] px-6 py-3 text-sm font-medium text-[#9CA3AF] hover:text-[#E6EDF3] hover:border-[#9CA3AF]/30 transition-all duration-200"
+                  >
+                    Learn More
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
