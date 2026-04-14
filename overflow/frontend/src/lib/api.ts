@@ -307,7 +307,7 @@ export const api = {
       signal?: AbortSignal,
     ): Promise<TradeRecord[]> =>
       fetchWithRetry(
-        `${API_URL}/api/trades/${encodeURIComponent(teamSymbol)}/recent?limit=${limit}`,
+        `${API_URL}/api/trades/${encodeURIComponent(teamSymbol.replace(/^\$/, ''))}/recent?limit=${limit}`,
         { signal },
       ),
 
