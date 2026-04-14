@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
   Brain,
   Users,
@@ -10,19 +11,24 @@ import {
   Coins,
 } from "lucide-react";
 import { useAccount } from "wagmi";
-import { io } from "socket.io-client";
+import { getSocket } from "@/lib/socket";
 import { PredictionPoolCard } from "@/components/PredictionPoolCard";
-import { LivePredictionBanner } from "@/components/LivePredictionBanner";
-import { CountUp } from "@/components/motion";
+import { CountUp } from "@/components/motion/CountUp";
 import { predictionsApi } from "@/lib/api";
 import type { PredictionPoolStatus, PredictionLeaderboardEntry } from "@/lib/api";
 // Mock data available at @/lib/mockData if API is down
 import { formatNumber, shortenAddress } from "@/lib/utils";
-import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { NumberTicker } from "@/components/ui/number-ticker";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const AnimatedGradientBorder = dynamic(
+  () => import("@/components/ui/animated-gradient-border").then((m) => ({ default: m.AnimatedGradientBorder })),
+  { ssr: false },
+);
+const LivePredictionBanner = dynamic(
+  () => import("@/components/LivePredictionBanner").then((m) => ({ default: m.LivePredictionBanner })),
+  { ssr: false },
+);
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -50,6 +56,9 @@ export default function PredictionsPage() {
     (q) => q.isLive && !q.resolved && new Date(q.deadline).getTime() > Date.now(),
   );
 
+  // Stable ref for fetchData so socket effect doesn't re-subscribe
+  const fetchDataRef = useRef<(signal?: AbortSignal) => Promise<void>>(null!);
+
   // Fetch data
   const fetchData = useCallback(
     async (signal?: AbortSignal) => {
@@ -75,63 +84,61 @@ export default function PredictionsPage() {
     [address, isConnected],
   );
 
+  fetchDataRef.current = fetchData;
+
   useEffect(() => {
     const controller = new AbortController();
     fetchData(controller.signal);
     return () => controller.abort();
   }, [fetchData]);
 
-  // Real-time updates via Socket.io
+  // Real-time updates via Socket.io (shared singleton) — stable [] dependency
   useEffect(() => {
-    const socket = io(API_URL, {
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionDelay: 2000,
-    });
+    const socket = getSocket();
 
-    socket.on(
-      "prediction:entry",
-      (data: { matchId: string; participantCount: number; totalPool: number }) => {
-        setPools((prev) =>
-          prev.map((p) => {
-            if (p.matchId !== data.matchId) return p;
-            return {
-              ...p,
-              participantCount: data.participantCount,
-              totalPool: data.totalPool,
-            };
-          }),
-        );
-      },
-    );
+    const handleEntry = (data: { matchId: string; participantCount: number; totalPool: number }) => {
+      setPools((prev) =>
+        prev.map((p) => {
+          if (p.matchId !== data.matchId) return p;
+          return {
+            ...p,
+            participantCount: data.participantCount,
+            totalPool: data.totalPool,
+          };
+        }),
+      );
+    };
 
-    socket.on(
-      "prediction:live-question",
-      (data: { matchId: string; question: PredictionPoolStatus["questions"][0] }) => {
-        setPools((prev) =>
-          prev.map((p) => {
-            if (p.matchId !== data.matchId) return p;
-            return {
-              ...p,
-              questions: (p.questions ?? []).map((q) =>
-                q.questionIndex === data.question.questionIndex
-                  ? data.question
-                  : q,
-              ),
-            };
-          }),
-        );
-      },
-    );
+    const handleLiveQuestion = (data: { matchId: string; question: PredictionPoolStatus["questions"][0] }) => {
+      setPools((prev) =>
+        prev.map((p) => {
+          if (p.matchId !== data.matchId) return p;
+          return {
+            ...p,
+            questions: (p.questions ?? []).map((q) =>
+              q.questionIndex === data.question.questionIndex
+                ? data.question
+                : q,
+            ),
+          };
+        }),
+      );
+    };
 
-    socket.on("prediction:settled", () => {
-      fetchData();
-    });
+    const handleSettled = () => {
+      fetchDataRef.current();
+    };
+
+    socket.on("prediction:entry", handleEntry);
+    socket.on("prediction:live-question", handleLiveQuestion);
+    socket.on("prediction:settled", handleSettled);
 
     return () => {
-      socket.disconnect();
+      socket.off("prediction:entry", handleEntry);
+      socket.off("prediction:live-question", handleLiveQuestion);
+      socket.off("prediction:settled", handleSettled);
     };
-  }, [fetchData]);
+  }, []);
 
   return (
     <motion.div

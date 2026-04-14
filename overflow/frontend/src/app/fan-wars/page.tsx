@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
   Lock,
   Users,
   Trophy,
 } from "lucide-react";
 import { useAccount } from "wagmi";
-import { io } from "socket.io-client";
+import { getSocket } from "@/lib/socket";
 import { FanWarCard } from "@/components/FanWarCard";
-import { CountUp } from "@/components/motion";
+import { CountUp } from "@/components/motion/CountUp";
 import { fanWarsApi } from "@/lib/api";
 import type { FanWarStatus, FanWarLock } from "@/lib/api";
 import {
@@ -18,10 +19,12 @@ import {
   MOCK_FAN_WAR_LEADERBOARD,
 } from "@/lib/mockData";
 import { formatNumber, shortenAddress } from "@/lib/utils";
-import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
 import { NumberTicker } from "@/components/ui/number-ticker";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const AnimatedGradientBorder = dynamic(
+  () => import("@/components/ui/animated-gradient-border").then((m) => ({ default: m.AnimatedGradientBorder })),
+  { ssr: false },
+);
 
 // ---------------------------------------------------------------------------
 // Main Page
@@ -41,6 +44,9 @@ export default function FanWarsPage() {
   );
   const settledWars = fanWars.filter((w) => w.status === "SETTLED");
   const totalBoostPool = fanWars.reduce((sum, w) => sum + w.boostPool, 0);
+
+  // Stable ref for fetchData so socket effect doesn't re-subscribe
+  const fetchDataRef = useRef<() => Promise<void>>(null!);
 
   // Fetch data
   const fetchData = useCallback(async () => {
@@ -62,19 +68,17 @@ export default function FanWarsPage() {
     setLoading(false);
   }, [address, isConnected]);
 
+  fetchDataRef.current = fetchData;
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Real-time updates via Socket.io
+  // Real-time updates via Socket.io (shared singleton) — stable [] dependency
   useEffect(() => {
-    const socket = io(API_URL, {
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionDelay: 2000,
-    });
+    const socket = getSocket();
 
-    socket.on("fanwar:lock", (data: { matchId: string; teamId: string; amount: number }) => {
+    const handleLock = (data: { matchId: string; teamId: string; amount: number }) => {
       setFanWars((prev) =>
         prev.map((w) => {
           if (w.matchId !== data.matchId) return w;
@@ -90,16 +94,20 @@ export default function FanWarsPage() {
           };
         }),
       );
-    });
+    };
 
-    socket.on("fanwar:settled", () => {
-      fetchData();
-    });
+    const handleSettled = () => {
+      fetchDataRef.current();
+    };
+
+    socket.on("fanwar:lock", handleLock);
+    socket.on("fanwar:settled", handleSettled);
 
     return () => {
-      socket.disconnect();
+      socket.off("fanwar:lock", handleLock);
+      socket.off("fanwar:settled", handleSettled);
     };
-  }, [fetchData]);
+  }, []);
 
   return (
     <motion.div

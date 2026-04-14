@@ -8,7 +8,7 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import { CountUp } from "@/components/motion";
+import { CountUp } from "@/components/motion/CountUp";
 import { PSL_TEAMS } from "@/lib/mockData";
 import { api, type MatchInfo } from "@/lib/api";
 import { cn, formatPrice } from "@/lib/utils";

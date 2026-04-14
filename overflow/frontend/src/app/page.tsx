@@ -16,23 +16,32 @@ import {
 // Note: Footer is rendered by the layout — no per-page footer needed.
 import { TeamCard } from "@/components/TeamCard";
 import { StatsBar } from "@/components/StatsBar";
-import {
-  MouseTrackCard,
-  CountUp,
-  StaggerReveal,
-  LayoutGrid,
-} from "@/components/motion";
+import { MouseTrackCard } from "@/components/motion/MouseTrackCard";
+import { CountUp } from "@/components/motion/CountUp";
+import { StaggerReveal } from "@/components/motion/StaggerReveal";
+import { LayoutGrid } from "@/components/motion/LayoutGrid";
 import { PSL_TEAMS, GLOBAL_STATS } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import type { PSLTeam } from "@/types";
 import type { VaultState } from "@/lib/api";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import Link from "next/link";
-import { Spotlight } from "@/components/ui/spotlight";
-import { BackgroundBeams } from "@/components/ui/background-beams";
-import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import dynamic from "next/dynamic";
+
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
+  { ssr: false },
+);
+const BackgroundBeams = dynamic(
+  () => import("@/components/ui/background-beams").then((m) => ({ default: m.BackgroundBeams })),
+  { ssr: false },
+);
+const TextGenerateEffect = dynamic(
+  () => import("@/components/ui/text-generate-effect").then((m) => ({ default: m.TextGenerateEffect })),
+  { ssr: false },
+);
 import { ShimmerButton } from "@/components/ui/shimmer-button";
-import { RevealText } from "@/components/effects";
+import { RevealText } from "@/components/effects/RevealText";
 
 function FeaturePill({
   icon: Icon,
@@ -120,10 +129,11 @@ export default function LandingPage() {
     let cancelled = false;
 
     (async () => {
-      // Fetch teams and vault state in parallel; each has an independent fallback
-      const [teamsResult, vaultResult] = await Promise.allSettled([
+      // Fetch teams, vault state, and live matches in parallel
+      const [teamsResult, vaultResult, liveResult] = await Promise.allSettled([
         api.teams.getAll(controller.signal),
         api.vault.getState(controller.signal),
+        api.matches.getLive(controller.signal),
       ]);
 
       if (cancelled) return;
@@ -164,16 +174,11 @@ export default function LandingPage() {
       }
       // API failed for vault — StatsBar will use GLOBAL_STATS defaults
 
-      // Check for live matches to show in the hero ticker
-      try {
-        const liveMatches = await api.matches.getLive(controller.signal);
-        if (!cancelled && liveMatches && liveMatches.length > 0) {
-          setHasLiveMatch(true);
-          const m = liveMatches[0];
-          setLiveMatchLabel(`${m.team1Name} vs ${m.team2Name}`);
-        }
-      } catch {
-        // Non-critical — ticker will hide the live match label
+      // Live match ticker — now fetched in parallel instead of sequentially
+      if (liveResult.status === "fulfilled" && liveResult.value && liveResult.value.length > 0) {
+        setHasLiveMatch(true);
+        const m = liveResult.value[0];
+        setLiveMatchLabel(`${m.team1Name} vs ${m.team2Name}`);
       }
 
       setLoading(false);
@@ -402,7 +407,7 @@ export default function LandingPage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="min-h-[400px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: PSL_TEAMS.length }).map((_, i) => (
               <div
                 key={i}
@@ -417,7 +422,7 @@ export default function LandingPage() {
             </p>
           </div>
         ) : (
-          <LayoutGrid className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <LayoutGrid className="min-h-[400px] grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {displayTeams.map((team) => (
               <MouseTrackCard key={team.id}>
                 <TeamCard team={team} />

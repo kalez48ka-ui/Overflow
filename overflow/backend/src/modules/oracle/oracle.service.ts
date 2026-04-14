@@ -87,21 +87,22 @@ export class OracleService {
     const winnerNewScore = Math.min(100, winner.performanceScore + 8);
     const loserNewScore = Math.max(0, loser.performanceScore - 5);
 
-    await this.prisma.team.update({
-      where: { id: winner.id },
-      data: {
-        performanceScore: winnerNewScore,
-        wins: winner.wins + 1,
-      },
-    });
-
-    await this.prisma.team.update({
-      where: { id: loser.id },
-      data: {
-        performanceScore: loserNewScore,
-        losses: loser.losses + 1,
-      },
-    });
+    await Promise.all([
+      this.prisma.team.update({
+        where: { id: winner.id },
+        data: {
+          performanceScore: winnerNewScore,
+          wins: winner.wins + 1,
+        },
+      }),
+      this.prisma.team.update({
+        where: { id: loser.id },
+        data: {
+          performanceScore: loserNewScore,
+          losses: loser.losses + 1,
+        },
+      }),
+    ]);
 
     await this.updateOnChainScore(winner.symbol, winnerNewScore);
     await this.updateOnChainScore(loser.symbol, loserNewScore);
@@ -229,27 +230,33 @@ export class OracleService {
       ],
     });
 
-    for (let i = 0; i < teams.length; i++) {
-      const team = teams[i];
-      if (team) {
-        await this.prisma.team.update({
+    // All ranking updates target independent rows — parallelize them
+    await Promise.all(
+      teams.map((team, i) =>
+        this.prisma.team.update({
           where: { id: team.id },
           data: { ranking: i + 1 },
-        });
-      }
-    }
+        })
+      )
+    );
   }
 
   private async updateSellTaxes(): Promise<void> {
     const teams = await this.prisma.team.findMany();
-    for (const team of teams) {
-      const newTax = SELL_TAX_BY_RANK[team.ranking] ?? 5;
-      if (team.sellTaxRate !== newTax) {
-        await this.prisma.team.update({
+    const updates = teams
+      .filter((team) => {
+        const newTax = SELL_TAX_BY_RANK[team.ranking] ?? 5;
+        return team.sellTaxRate !== newTax;
+      })
+      .map((team) =>
+        this.prisma.team.update({
           where: { id: team.id },
-          data: { sellTaxRate: newTax },
-        });
-      }
+          data: { sellTaxRate: SELL_TAX_BY_RANK[team.ranking] ?? 5 },
+        })
+      );
+
+    if (updates.length > 0) {
+      await Promise.all(updates);
     }
   }
 }

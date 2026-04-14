@@ -2,16 +2,30 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
 } from "lucide-react";
-import { io, Socket } from "socket.io-client";
+import { getSocket } from "@/lib/socket";
 import { LiveScorecard } from "@/components/LiveScorecard";
-import { BallByBall } from "@/components/BallByBall";
-import { TradingChart } from "@/components/TradingChart";
 import { UpsetVaultDisplay } from "@/components/UpsetVaultDisplay";
-import { AIAnalysis } from "@/components/AIAnalysis";
-import { CountUp } from "@/components/motion";
+
+const TradingChart = dynamic(
+  () => import("@/components/TradingChart").then((m) => ({ default: m.TradingChart })),
+  {
+    ssr: false,
+    loading: () => <div className="flex h-[280px] items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" /></div>,
+  },
+);
+const BallByBall = dynamic(
+  () => import("@/components/BallByBall").then((m) => ({ default: m.BallByBall })),
+  { ssr: false },
+);
+const AIAnalysis = dynamic(
+  () => import("@/components/AIAnalysis").then((m) => ({ default: m.AIAnalysis })),
+  { ssr: false },
+);
+import { CountUp } from "@/components/motion/CountUp";
 import { LIVE_MATCH, BALL_BY_BALL, CANDLESTICK_DATA, PSL_TEAMS, VAULT_DATA, MOCK_FAN_WARS } from "@/lib/mockData";
 import { fanWarsApi } from "@/lib/api";
 import type { FanWarStatus } from "@/lib/api";
@@ -24,8 +38,8 @@ import { NumberTicker } from "@/components/ui/number-ticker";
 import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
 import Link from "next/link";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-const POLL_INTERVAL_MS = 10_000; // 10s — matches backend fast polling for live matches
+const LIVE_POLL_MS = 10_000;   // 10s when live match active
+const IDLE_POLL_MS = 300_000;  // 5min when no live match
 
 
 
@@ -333,7 +347,7 @@ export default function MatchPage() {
   const [lastCompleted, setLastCompleted] = useState<MatchInfo | null>(null);
   const [hasLiveMatch, setHasLiveMatch] = useState(false);
   const [loading, setLoading] = useState(true);
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<ReturnType<typeof getSocket> | null>(null);
 
   // Derive dynamic team IDs from current match data
   const team1Id = matchData.team1.teamId;
@@ -396,10 +410,41 @@ export default function MatchPage() {
     }
   }, []);
 
-  // Initial fetch + polling interval + WebSocket
+  // Adaptive poll interval — ref so the visibility handler always uses the latest value
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hasLiveMatchRef = useRef(hasLiveMatch);
+  hasLiveMatchRef.current = hasLiveMatch;
+
+  // Initial fetch + polling interval + WebSocket + visibility-aware polling
   useEffect(() => {
     let cancelled = false;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const getPollMs = () => (hasLiveMatchRef.current ? LIVE_POLL_MS : IDLE_POLL_MS);
+
+    const startPolling = () => {
+      if (pollIntervalRef.current) return; // already running
+      pollIntervalRef.current = setInterval(() => {
+        if (!cancelled) fetchLiveData();
+      }, getPollMs());
+    };
+
+    const stopPolling = () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+
+    // Pause polling when tab is hidden, resume when visible
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        // Fetch immediately on tab return, then resume interval
+        if (!cancelled) fetchLiveData();
+        startPolling();
+      }
+    };
 
     // 1) Initial fetch
     (async () => {
@@ -407,18 +452,14 @@ export default function MatchPage() {
       if (!cancelled) setLoading(false);
     })();
 
-    // 2) Poll every 10s as fallback (in case WebSocket drops)
-    pollTimer = setInterval(() => {
-      if (!cancelled) fetchLiveData();
-    }, POLL_INTERVAL_MS);
+    // 2) Start adaptive polling
+    startPolling();
 
-    // 3) Connect WebSocket for real-time score pushes
-    const socket = io(API_URL, {
-      transports: ["websocket", "polling"],
-      reconnection: true,
-      reconnectionDelay: 2000,
-      reconnectionAttempts: 10,
-    });
+    // 3) Listen for visibility changes to pause/resume polling
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // 4) Connect WebSocket for real-time score pushes (shared singleton)
+    const socket = getSocket();
     socketRef.current = socket;
 
     socket.on("connect", () => {
@@ -482,11 +523,31 @@ export default function MatchPage() {
 
     return () => {
       cancelled = true;
-      if (pollTimer) clearInterval(pollTimer);
-      socket.disconnect();
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      socket.off("connect");
+      socket.off("match:liveScore");
+      socket.off("match:ball");
+      socket.off("match:status");
       socketRef.current = null;
     };
   }, [fetchLiveData]);
+
+  // When hasLiveMatch changes, restart polling with the appropriate interval
+  useEffect(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    const interval = hasLiveMatch ? LIVE_POLL_MS : IDLE_POLL_MS;
+    pollIntervalRef.current = setInterval(() => fetchLiveData(), interval);
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [hasLiveMatch, fetchLiveData]);
 
   // Build the two-team array for chart switcher and trading buttons
   const matchTeams = [

@@ -24,9 +24,10 @@ interface TeamLogoProps {
   size?: number;
   className?: string;
   glow?: boolean;
+  priority?: boolean;
 }
 
-export function TeamLogo({ teamId, color, size = 40, className = "", glow = false }: TeamLogoProps) {
+export function TeamLogo({ teamId, color, size = 40, className = "", glow = false, priority = false }: TeamLogoProps) {
   const cleanId = teamId.replace("$", "").toUpperCase();
 
   if (isValidTeamId(cleanId)) {
@@ -44,8 +45,9 @@ export function TeamLogo({ teamId, color, size = 40, className = "", glow = fals
           alt={`${TEAM_NAMES[cleanId] || cleanId} logo`}
           width={size}
           height={size}
+          sizes="(max-width: 768px) 40px, 48px"
           className="h-full w-full object-contain"
-          unoptimized
+          priority={priority}
         />
       </div>
     );

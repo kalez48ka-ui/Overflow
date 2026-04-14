@@ -236,14 +236,16 @@ export class FanWarsService {
       lockUpdates.push({ id: lock.id, boostReward: reward });
     }
 
-    // Batch update in a transaction
+    // Batch update in a transaction — parallelize lock updates
     await this.prisma.$transaction(async (tx) => {
-      for (const update of lockUpdates) {
-        await tx.fanWarLock.update({
-          where: { id: update.id },
-          data: { boostReward: update.boostReward },
-        });
-      }
+      await Promise.all(
+        lockUpdates.map((update) =>
+          tx.fanWarLock.update({
+            where: { id: update.id },
+            data: { boostReward: update.boostReward },
+          })
+        )
+      );
 
       await tx.fanWar.update({
         where: { id: fanWar.id },

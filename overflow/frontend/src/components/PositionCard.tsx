@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ interface PositionCardProps {
   onTrade?: (teamId: string) => void;
 }
 
-export function PositionCard({ position, index = 0, onTrade }: PositionCardProps) {
+export const PositionCard = React.memo(function PositionCard({ position, index = 0, onTrade }: PositionCardProps) {
   const isProfit = position.pnlPercent >= 0;
 
   const handleShare = async () => {
@@ -121,4 +122,4 @@ export function PositionCard({ position, index = 0, onTrade }: PositionCardProps
       </div>
     </motion.div>
   );
-}
+});

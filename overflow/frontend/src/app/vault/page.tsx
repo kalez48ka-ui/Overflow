@@ -5,13 +5,18 @@ import { motion } from "framer-motion";
 import {
   ArrowRight,
 } from "lucide-react";
-import { CountUp } from "@/components/motion";
+import { CountUp } from "@/components/motion/CountUp";
 import { VAULT_DATA } from "@/lib/mockData";
 import { api } from "@/lib/api";
 import type { VaultData, UpsetEvent } from "@/types";
 import { formatCurrency, formatTimestamp } from "@/lib/utils";
 import Link from "next/link";
-import { BackgroundBeams } from "@/components/ui/background-beams";
+import dynamic from "next/dynamic";
+
+const BackgroundBeams = dynamic(
+  () => import("@/components/ui/background-beams").then((m) => ({ default: m.BackgroundBeams })),
+  { ssr: false },
+);
 import { NumberTicker } from "@/components/ui/number-ticker";
 import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
 

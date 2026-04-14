@@ -17,10 +17,10 @@ import {
   Trophy,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 /* ── Logo SVG — Diamond shield with rising candlestick ─────── */
-function OverflowLogo({ className }: { className?: string }) {
+const OverflowLogo = React.memo(function OverflowLogo({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 40 40"
@@ -93,7 +93,7 @@ function OverflowLogo({ className }: { className?: string }) {
       />
     </svg>
   );
-}
+});
 
 /* ── Navigation config ───────────────────────────────────────── */
 const primaryLinks = [
@@ -120,8 +120,9 @@ export function Navbar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
-  // Close "More" dropdown on outside click
+  // Close "More" dropdown on outside click — only listen when open
   useEffect(() => {
+    if (!moreOpen) return;
     function handleClick(e: MouseEvent) {
       if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
         setMoreOpen(false);
@@ -129,7 +130,7 @@ export function Navbar() {
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [moreOpen]);
 
   // Close menus on Escape key
   useEffect(() => {

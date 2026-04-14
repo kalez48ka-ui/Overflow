@@ -19,7 +19,7 @@ import { useAccount } from "wagmi";
 import { PositionCard } from "@/components/PositionCard";
 import { RewardsPanel } from "@/components/RewardsPanel";
 import { SafeConnectButton } from "@/components/WalletProvider";
-import { CountUp } from "@/components/motion";
+import { CountUp } from "@/components/motion/CountUp";
 import {
   USER_POSITIONS,
   USER_REWARDS,
@@ -38,8 +38,13 @@ import {
   shortenAddress,
 } from "@/lib/utils";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { NumberTicker } from "@/components/ui/number-ticker";
-import { CardSpotlight } from "@/components/ui/card-spotlight";
+
+const CardSpotlight = dynamic(
+  () => import("@/components/ui/card-spotlight").then((m) => ({ default: m.CardSpotlight })),
+  { ssr: false },
+);
 
 /** Map an API TradeRecord to the local Transaction shape used by the UI. */
 function tradeRecordToTransaction(tr: TradeRecord): Transaction {
@@ -100,7 +105,7 @@ function TransactionRow({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
+      transition={{ delay: index < 20 ? index * 0.04 : 0 }}
       className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
     >
       {/* Type icon */}
@@ -281,7 +286,7 @@ export default function PortfolioPage() {
       <div className="border-b border-[#21262D] bg-[#161B22]">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <p className="text-[10px] text-[#484F58] uppercase tracking-wider mb-1">Total Value</p>
-          <div className="flex items-baseline gap-4">
+          <div className="min-h-[80px] flex items-baseline gap-4">
             <p className="text-4xl sm:text-5xl font-black font-mono tabular-nums text-[#E6EDF3]">
               $<NumberTicker value={totalValue} decimals={2} duration={800} showArrow={false} />
             </p>

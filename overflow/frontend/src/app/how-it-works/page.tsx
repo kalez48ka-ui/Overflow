@@ -2,6 +2,7 @@
 
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import { useRef, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   Shield,
@@ -22,13 +23,30 @@ import {
   Timer,
 } from "lucide-react";
 import Link from "next/link";
-import { RevealText } from "@/components/effects";
-import { CountUp, StaggerReveal } from "@/components/motion";
-import { BackgroundBeams } from "@/components/ui/background-beams";
-import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
-import { Spotlight } from "@/components/ui/spotlight";
-import { CardSpotlight } from "@/components/ui/card-spotlight";
-import { AnimatedGradientBorder } from "@/components/ui/animated-gradient-border";
+import { RevealText } from "@/components/effects/RevealText";
+import { CountUp } from "@/components/motion/CountUp";
+import { StaggerReveal } from "@/components/motion/StaggerReveal";
+
+const BackgroundBeams = dynamic(
+  () => import("@/components/ui/background-beams").then((m) => ({ default: m.BackgroundBeams })),
+  { ssr: false },
+);
+const TextGenerateEffect = dynamic(
+  () => import("@/components/ui/text-generate-effect").then((m) => ({ default: m.TextGenerateEffect })),
+  { ssr: false },
+);
+const Spotlight = dynamic(
+  () => import("@/components/ui/spotlight").then((m) => ({ default: m.Spotlight })),
+  { ssr: false },
+);
+const CardSpotlight = dynamic(
+  () => import("@/components/ui/card-spotlight").then((m) => ({ default: m.CardSpotlight })),
+  { ssr: false },
+);
+const AnimatedGradientBorder = dynamic(
+  () => import("@/components/ui/animated-gradient-border").then((m) => ({ default: m.AnimatedGradientBorder })),
+  { ssr: false },
+);
 
 /* ------------------------------------------------------------------ */
 /*  Shared animation presets                                           */

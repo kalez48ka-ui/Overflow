@@ -1,19 +1,19 @@
 "use client";
 
+import React, { useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { PSLTeam } from "@/types";
 import { cn, formatPrice, formatPercent, formatCurrency, hexToRgba } from "@/lib/utils";
 import { TeamLogo } from "@/components/TeamLogo";
-import { useRef } from "react";
 
 interface TeamCardProps {
   team: PSLTeam;
   index?: number;
 }
 
-function Sparkline({
+const Sparkline = React.memo(function Sparkline({
   data,
   color,
   isPositive,
@@ -62,15 +62,16 @@ function Sparkline({
           <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {/* Area fill under the line — fades in after path draws */}
+      {/* Area fill under the line — fades in once visible */}
       <motion.polygon
         points={areaPoints}
         fill={`url(#${gradId})`}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
         transition={{ delay: 1.0, duration: 0.5 }}
       />
-      {/* Main line — draws on from left to right */}
+      {/* Main line — draws on from left to right when in view */}
       <motion.path
         d={pathD}
         fill="none"
@@ -79,7 +80,8 @@ function Sparkline({
         strokeLinejoin="round"
         strokeLinecap="round"
         initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
+        whileInView={{ pathLength: 1 }}
+        viewport={{ once: true }}
         transition={{ duration: 1.0, ease: "easeOut" }}
       />
       {/* Dot on last data point — appears after path finishes drawing */}
@@ -89,9 +91,11 @@ function Sparkline({
         r="2.5"
         fill={lineColor}
         initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true }}
         transition={{ delay: 1.0, duration: 0.3, ease: "easeOut" }}
       >
+        {/* Lightweight CSS-driven pulse — stays infinite */}
         <animate
           attributeName="r"
           values="2.5;3.5;2.5"
@@ -107,9 +111,9 @@ function Sparkline({
       </motion.circle>
     </svg>
   );
-}
+});
 
-export function TeamCard({ team, index = 0 }: TeamCardProps) {
+export const TeamCard = React.memo(function TeamCard({ team, index = 0 }: TeamCardProps) {
   const isPositive = team.change24h >= 0;
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -233,4 +237,4 @@ export function TeamCard({ team, index = 0 }: TeamCardProps) {
       </Link>
     </div>
   );
-}
+});

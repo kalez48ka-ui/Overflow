@@ -40,6 +40,25 @@ const io = new SocketServer(server, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  maxHttpBufferSize: 1e6,      // 1 MB max message size
+  pingTimeout: 20000,
+  pingInterval: 25000,
+});
+
+// Connection limiter — reject new sockets beyond threshold
+const MAX_SOCKET_CONNECTIONS = 500;
+let activeSocketCount = 0;
+
+io.use((socket, next) => {
+  if (activeSocketCount >= MAX_SOCKET_CONNECTIONS) {
+    console.warn(`[Socket] Connection rejected — limit reached (${MAX_SOCKET_CONNECTIONS})`);
+    return next(new Error('Server at capacity, please retry later'));
+  }
+  activeSocketCount++;
+  socket.on('disconnect', () => {
+    activeSocketCount--;
+  });
+  next();
 });
 
 // Rate limiters
@@ -79,6 +98,16 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(globalLimiter);
+
+// Request timeout — prevent slow upstream calls from tying up connections
+app.use((req, res, next) => {
+  req.setTimeout(30000, () => {
+    if (!res.headersSent) {
+      res.status(408).json({ error: 'Request timeout' });
+    }
+  });
+  next();
+});
 
 // Enforce JSON content type on state-mutating requests (CSRF mitigation)
 app.use((req, res, next) => {
@@ -206,22 +235,30 @@ async function bootstrap(): Promise<void> {
   }
 }
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('\n[Server] Shutting down...');
+// Graceful shutdown — drain connections before exit
+function gracefulShutdown(signal: string): void {
+  console.log(`\n[Server] ${signal} received — shutting down gracefully...`);
   cricketService.stopPolling();
-  await prisma.$disconnect();
-  server.close();
-  process.exit(0);
-});
 
-process.on('SIGTERM', async () => {
-  console.log('\n[Server] Shutting down...');
-  cricketService.stopPolling();
-  await prisma.$disconnect();
-  server.close();
-  process.exit(0);
-});
+  // Close Socket.io connections first
+  io.close();
+
+  // Stop accepting new HTTP connections and drain existing ones
+  server.close(async () => {
+    console.log('[Server] All connections drained');
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+
+  // Force exit after 10s if draining takes too long
+  setTimeout(() => {
+    console.error('[Server] Graceful shutdown timed out — forcing exit');
+    process.exit(1);
+  }, 10000);
+}
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[Server] Unhandled Rejection at:', promise, 'reason:', reason);

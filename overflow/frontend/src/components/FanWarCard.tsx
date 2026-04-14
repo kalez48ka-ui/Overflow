@@ -13,8 +13,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
-import { CountUp, MouseTrackCard } from "@/components/motion";
-import { MagneticButton } from "@/components/effects";
+import { CountUp } from "@/components/motion/CountUp";
+import { MouseTrackCard } from "@/components/motion/MouseTrackCard";
+import { MagneticButton } from "@/components/effects/MagneticButton";
 import { TeamLogo } from "@/components/TeamLogo";
 import { formatCountdown } from "@/lib/utils";
 import { fanWarsApi } from "@/lib/api";

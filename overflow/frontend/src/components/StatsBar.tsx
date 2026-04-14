@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Activity, BarChart2, Shield, Users } from "lucide-react";
 import { GLOBAL_STATS } from "@/lib/mockData";
 import { formatCurrency, formatNumber, formatCountdown } from "@/lib/utils";
-import { CountUp } from "@/components/motion";
+import { CountUp } from "@/components/motion/CountUp";
 
 interface StatsBarProps {
   totalVolume?: number;

@@ -44,7 +44,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  poweredByHeader: false,
   allowedDevOrigins: ["149.102.129.143"],
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
+  experimental: {
+    optimizePackageImports: ["lucide-react", "framer-motion"],
+  },
   async headers() {
     return [
       {

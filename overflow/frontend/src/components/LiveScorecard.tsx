@@ -1,7 +1,7 @@
 "use client";
 
 import type { MatchData } from "@/types";
-import { TextScramble } from "@/components/effects";
+import { TextScramble } from "@/components/effects/TextScramble";
 import { TeamLogo } from "@/components/TeamLogo";
 
 interface LiveScorecardProps {

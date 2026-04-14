@@ -1,17 +1,28 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef, useMemo } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   Info,
 } from "lucide-react";
-import { TradingChart } from "@/components/TradingChart";
 import { BuySellPanel } from "@/components/BuySellPanel";
-import { AIAnalysis } from "@/components/AIAnalysis";
-import { CountUp } from "@/components/motion";
+
+const TradingChart = dynamic(
+  () => import("@/components/TradingChart").then((m) => ({ default: m.TradingChart })),
+  {
+    ssr: false,
+    loading: () => <div className="flex h-[380px] items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#21262D] border-t-[#8B949E]" /></div>,
+  },
+);
+const AIAnalysis = dynamic(
+  () => import("@/components/AIAnalysis").then((m) => ({ default: m.AIAnalysis })),
+  { ssr: false },
+);
+import { CountUp } from "@/components/motion/CountUp";
 import {
   PSL_TEAMS,
   CANDLESTICK_DATA,
@@ -264,7 +275,7 @@ export default function TradePage({ params }: PageProps) {
     })();
 
     return () => { cancelled = true; controller.abort(); };
-  }, [teamId, timeframe, loading]);
+  }, [teamId, timeframe]);
 
   if (!team) notFound();
 
@@ -272,8 +283,13 @@ export default function TradePage({ params }: PageProps) {
   const isPositive = team.change24h >= 0;
 
   // Compute real 24h high/low from chart data instead of fake multipliers
-  const high24h = chartData.length > 0 ? Math.max(...chartData.map(c => c.high)) : null;
-  const low24h = chartData.length > 0 ? Math.min(...chartData.map(c => c.low)) : null;
+  const { high24h, low24h } = useMemo(() => {
+    if (chartData.length === 0) return { high24h: null, low24h: null };
+    return {
+      high24h: Math.max(...chartData.map((c) => c.high)),
+      low24h: Math.min(...chartData.map((c) => c.low)),
+    };
+  }, [chartData]);
 
   return (
     <motion.div

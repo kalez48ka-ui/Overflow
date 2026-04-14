@@ -41,13 +41,27 @@ export class PriceService {
     const newPrice = Math.max(0.01, Number(team.currentPrice) + impact);
 
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const oldPricePoint = await this.prisma.pricePoint.findFirst({
-      where: {
-        teamId,
-        timestamp: { lte: twentyFourHoursAgo },
-      },
-      orderBy: { timestamp: 'desc' },
-    });
+    const now = new Date();
+    const candleStart = new Date(now);
+    candleStart.setMinutes(0, 0, 0);
+
+    // Parallelize independent lookups: 24h old price point + current candle
+    const [oldPricePoint, existingCandle] = await Promise.all([
+      this.prisma.pricePoint.findFirst({
+        where: {
+          teamId,
+          timestamp: { lte: twentyFourHoursAgo },
+        },
+        orderBy: { timestamp: 'desc' },
+      }),
+      this.prisma.pricePoint.findFirst({
+        where: {
+          teamId,
+          timestamp: { gte: candleStart },
+        },
+        orderBy: { timestamp: 'desc' },
+      }),
+    ]);
 
     const oldPrice = Number(oldPricePoint?.close ?? team.currentPrice);
     const priceChange24h = oldPrice > 0 ? ((newPrice - oldPrice) / oldPrice) * 100 : 0;
@@ -58,18 +72,6 @@ export class PriceService {
         currentPrice: newPrice,
         priceChange24h,
       },
-    });
-
-    const now = new Date();
-    const candleStart = new Date(now);
-    candleStart.setMinutes(0, 0, 0);
-
-    const existingCandle = await this.prisma.pricePoint.findFirst({
-      where: {
-        teamId,
-        timestamp: { gte: candleStart },
-      },
-      orderBy: { timestamp: 'desc' },
     });
 
     if (existingCandle) {
@@ -105,7 +107,7 @@ export class PriceService {
         change24h: priceChange24h,
         timestamp: Date.now(),
       };
-      this.io.emit('price:update', update);
+      this.io.to(`team:${team.symbol}`).emit('price:update', update);
     }
   }
 
@@ -145,18 +147,37 @@ export class PriceService {
     }));
   }
 
+  private lastEmittedPrices: Map<string, number> = new Map();
+
   async emitAllPrices(): Promise<void> {
     if (!this.io) return;
 
-    const teams = await this.prisma.team.findMany();
+    const teams = await this.prisma.team.findMany({
+      select: { symbol: true, currentPrice: true, priceChange24h: true },
+    });
+
+    const now = Date.now();
+    const allUpdates: PriceUpdate[] = [];
+
     for (const team of teams) {
+      const price = Number(team.currentPrice);
       const update: PriceUpdate = {
         symbol: team.symbol,
-        price: Number(team.currentPrice),
-        change24h: Number(team.priceChange24h),
-        timestamp: Date.now(),
+        price,
+        change24h: Number(team.priceChange24h ?? 0),
+        timestamp: now,
       };
-      this.io.emit('price:update', update);
+      allUpdates.push(update);
+
+      // Room-targeted emission only if price changed since last emit
+      const lastPrice = this.lastEmittedPrices.get(team.symbol);
+      if (lastPrice !== price) {
+        this.io.to(`team:${team.symbol}`).emit('price:update', update);
+        this.lastEmittedPrices.set(team.symbol, price);
+      }
     }
+
+    // Batch emission for landing page clients that need all prices at once
+    this.io.emit('prices:all', allUpdates);
   }
 }

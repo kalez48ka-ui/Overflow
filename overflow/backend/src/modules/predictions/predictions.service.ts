@@ -559,9 +559,9 @@ export class PredictionsService {
       entryPayouts.push({ entryId: entry.entryId, score: entry.score, payout: totalPayout });
     }
 
-    // Persist everything in a transaction
+    // Persist everything in a transaction — batched to minimize query count
     await this.prisma.$transaction(async (tx) => {
-      // Update questions with correct answers
+      // Update questions with correct answers (small N, 5-10 questions max — keep individual)
       for (const [qIndex, correctOption] of correctMap.entries()) {
         const question = questionByIndex.get(qIndex);
         if (question) {
@@ -572,23 +572,44 @@ export class PredictionsService {
         }
       }
 
-      // Update all answers with correctness and points
-      for (const entry of entryScores) {
-        for (const au of entry.answerUpdates) {
-          await tx.predictionAnswer.update({
-            where: { id: au.answerId },
-            data: { isCorrect: au.isCorrect, pointsEarned: au.pointsEarned },
-          });
-        }
-      }
+      // Batch update answers by correctness using updateMany (replaces N*M individual updates)
+      const allAnswerUpdates = entryScores.flatMap((e) => e.answerUpdates);
+      const correctAnswerIds = allAnswerUpdates.filter((a) => a.isCorrect).map((a) => a.answerId);
+      const incorrectAnswerIds = allAnswerUpdates.filter((a) => !a.isCorrect).map((a) => a.answerId);
 
-      // Update all entries with scores and payouts
-      for (const ep of entryPayouts) {
-        await tx.predictionEntry.update({
-          where: { id: ep.entryId },
-          data: { totalScore: ep.score, payout: ep.payout },
+      if (correctAnswerIds.length > 0) {
+        await tx.predictionAnswer.updateMany({
+          where: { id: { in: correctAnswerIds } },
+          data: { isCorrect: true },
         });
       }
+
+      if (incorrectAnswerIds.length > 0) {
+        await tx.predictionAnswer.updateMany({
+          where: { id: { in: incorrectAnswerIds } },
+          data: { isCorrect: false },
+        });
+      }
+
+      // Points need individual updates since each answer has a different value — parallelize
+      await Promise.all(
+        allAnswerUpdates.map((au) =>
+          tx.predictionAnswer.update({
+            where: { id: au.answerId },
+            data: { pointsEarned: au.pointsEarned },
+          })
+        )
+      );
+
+      // Update all entries with scores and payouts — parallelize
+      await Promise.all(
+        entryPayouts.map((ep) =>
+          tx.predictionEntry.update({
+            where: { id: ep.entryId },
+            data: { totalScore: ep.score, payout: ep.payout },
+          })
+        )
+      );
 
       // Update pool status
       const claimDeadline = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours

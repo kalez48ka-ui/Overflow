@@ -54,6 +54,10 @@ model Match {
   predictionPool  PredictionPool?
   awayTeam        Team        @relation("AwayTeam", fields: [awayTeamId], references: [id])
   homeTeam        Team        @relation("HomeTeam", fields: [homeTeamId], references: [id])
+
+  @@index([status, startTime])
+  @@index([homeTeamId])
+  @@index([awayTeamId])
 }
 
 model BallEvent {
@@ -133,6 +137,8 @@ model UpsetEvent {
   holdersCount    Int
   perHolderPayout Decimal  @db.Decimal(18, 8)
   createdAt       DateTime @default(now())
+
+  @@index([matchId])
 }
 
 model VaultState {

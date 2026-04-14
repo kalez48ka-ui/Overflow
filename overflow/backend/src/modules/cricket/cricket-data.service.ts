@@ -294,8 +294,10 @@ export class CricketDataService {
     const awaySymbol = resolveTeamSymbol(teamNames[1]!);
     if (!homeSymbol || !awaySymbol) return;
 
-    const homeTeam = await this.prisma.team.findUnique({ where: { symbol: homeSymbol } });
-    const awayTeam = await this.prisma.team.findUnique({ where: { symbol: awaySymbol } });
+    const [homeTeam, awayTeam] = await Promise.all([
+      this.prisma.team.findUnique({ where: { symbol: homeSymbol } }),
+      this.prisma.team.findUnique({ where: { symbol: awaySymbol } }),
+    ]);
     if (!homeTeam || !awayTeam) return;
 
     const status = this.resolveMatchStatus(apiMatch);
@@ -306,7 +308,7 @@ export class CricketDataService {
     const { homeScore, awayScore } = this.parseScores(apiMatch);
 
     // Check if we already have this match by cricApiId
-    const existing = await this.prisma.match.findFirst({
+    const existing = await this.prisma.match.findUnique({
       where: { cricApiId: apiMatch.id },
     });
 
@@ -487,15 +489,20 @@ export class CricketDataService {
 
     await this.prisma.ballEvent.create({ data: ballEvent });
 
-    // Recompute score for the current innings
-    const allBalls = await this.prisma.ballEvent.findMany({
-      where: { matchId, innings },
-    });
+    // Recompute score for the current innings using aggregates (avoids fetching all rows)
+    const [agg, wicketCount] = await Promise.all([
+      this.prisma.ballEvent.aggregate({
+        where: { matchId, innings },
+        _sum: { runs: true, extras: true },
+      }),
+      this.prisma.ballEvent.count({
+        where: { matchId, innings, isWicket: true },
+      }),
+    ]);
 
-    const totalRuns = allBalls.reduce((sum, b) => sum + b.runs + b.extras, 0);
-    const totalWickets = allBalls.filter((b) => b.isWicket).length;
-    const lastBallInInnings = allBalls[allBalls.length - 1];
-    const currentOver = lastBallInInnings ? `${lastBallInInnings.over}.${lastBallInInnings.ball}` : '0.0';
+    const totalRuns = (agg._sum.runs ?? 0) + (agg._sum.extras ?? 0);
+    const totalWickets = wicketCount;
+    const currentOver = `${over}.${ball}`;
     const scoreStr = `${totalRuns}/${totalWickets} (${currentOver})`;
 
     if (innings === 1) {

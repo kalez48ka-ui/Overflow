@@ -116,8 +116,9 @@ export function createAiRouter(prisma: PrismaClient): Router {
 
       const signals: AiSignal[] = [];
 
-      for (const match of liveMatches) {
-        try {
+      // Fetch signals for all live matches in parallel
+      const signalResults = await Promise.allSettled(
+        liveMatches.map(async (match) => {
           const matchState = {
             batting_team: match.homeTeam.symbol,
             bowling_team: match.awayTeam.symbol,
@@ -134,7 +135,16 @@ export function createAiRouter(prisma: PrismaClient): Router {
             { timeout: 10000 }
           );
 
-          const data = response.data;
+          return { match, data: response.data };
+        })
+      );
+
+      for (let i = 0; i < signalResults.length; i++) {
+        const result = signalResults[i]!;
+        const match = liveMatches[i]!;
+
+        if (result.status === 'fulfilled') {
+          const { data } = result.value;
 
           if (data && data.signal) {
             signals.push({
@@ -157,8 +167,8 @@ export function createAiRouter(prisma: PrismaClient): Router {
               });
             }
           }
-        } catch (aiErr) {
-          console.warn(`[AI] AI engine signal failed for match ${match.id}, using fallback:`, (aiErr as Error).message);
+        } else {
+          console.warn(`[AI] AI engine signal failed for match ${match.id}, using fallback:`, result.reason?.message ?? 'Unknown error');
           // Fallback: generate basic signals from team stats
           signals.push(
             generateFallbackSignal(match.homeTeam),
