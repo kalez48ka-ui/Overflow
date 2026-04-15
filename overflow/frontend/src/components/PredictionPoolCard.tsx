@@ -286,13 +286,13 @@ export function PredictionPoolCard({ pool, onEntrySuccess }: PredictionPoolCardP
           <div className="flex items-center gap-3">
             <div className="flex -space-x-2">
               <TeamLogo
-                teamId={pool.homeTeamSymbol.replace("$", "")}
+                teamId={(pool.homeTeamSymbol || "").replace("$", "")}
                 color={pool.homeTeamColor}
                 size={36}
                 glow
               />
               <TeamLogo
-                teamId={pool.awayTeamSymbol.replace("$", "")}
+                teamId={(pool.awayTeamSymbol || "").replace("$", "")}
                 color={pool.awayTeamColor}
                 size={36}
                 glow

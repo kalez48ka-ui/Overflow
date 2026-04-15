@@ -28,7 +28,7 @@ interface TeamLogoProps {
 }
 
 export function TeamLogo({ teamId, color, size = 40, className = "", glow = false, priority = false }: TeamLogoProps) {
-  const cleanId = teamId.replace("$", "").toUpperCase();
+  const cleanId = (teamId || "").replace("$", "").toUpperCase();
 
   if (isValidTeamId(cleanId)) {
     return (

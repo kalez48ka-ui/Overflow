@@ -54,7 +54,7 @@ const Sparkline = React.memo(function Sparkline({
     `${points[0].x},${height}`,
   ].join(" ");
 
-  const gradId = `sparkGrad-${color.replace("#", "")}-${isPositive ? "up" : "dn"}`;
+  const gradId = `sparkGrad-${(color || "").replace("#", "")}-${isPositive ? "up" : "dn"}`;
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="w-28 h-12" preserveAspectRatio="none" role="img" aria-label={`Price trend: ${isPositive ? "up" : "down"}`}>
