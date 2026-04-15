@@ -148,6 +148,13 @@ export interface FanWarClaimResult {
 export interface PredictionPoolStatus {
   id: string;
   matchId: string;
+  homeTeamName: string;
+  homeTeamSymbol: string;
+  homeTeamColor: string;
+  awayTeamName: string;
+  awayTeamSymbol: string;
+  awayTeamColor: string;
+  matchVenue: string;
   entryFee: number;
   totalPool: number;
   participantCount: number;

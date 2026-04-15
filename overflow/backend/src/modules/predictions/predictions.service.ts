@@ -700,29 +700,61 @@ export class PredictionsService {
   /**
    * Get full pool status for a match, optionally including the user's entry.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private mapPoolToStatus(pool: any, userEntry?: PredictionEntryInfo | null): PredictionPoolStatus {
+    const homeTeam = pool.match?.homeTeam;
+    const awayTeam = pool.match?.awayTeam;
+    return {
+      id: pool.id,
+      matchId: pool.matchId,
+      homeTeamName: homeTeam?.name ?? '',
+      homeTeamSymbol: homeTeam?.symbol ? `$${homeTeam.symbol}` : '',
+      homeTeamColor: homeTeam?.color ?? '#58A6FF',
+      awayTeamName: awayTeam?.name ?? '',
+      awayTeamSymbol: awayTeam?.symbol ? `$${awayTeam.symbol}` : '',
+      awayTeamColor: awayTeam?.color ?? '#E4002B',
+      matchVenue: pool.match?.venue ?? '',
+      entryFee: Number(pool.entryFee),
+      totalPool: Number(pool.totalPool),
+      participantCount: pool._count?.entries ?? pool.participantCount ?? 0,
+      status: pool.status,
+      deadline: pool.deadline,
+      settledAt: pool.settledAt,
+      claimDeadline: pool.claimDeadline,
+      highestScore: pool.highestScore !== null ? Number(pool.highestScore) : null,
+      questions: (pool.questions ?? []).map((q: any) => ({
+        id: q.id,
+        questionIndex: q.questionIndex,
+        questionText: q.questionText,
+        options: q.options,
+        correctOption: q.correctOption,
+        points: q.points,
+        isLive: q.isLive,
+        deadline: q.deadline,
+        resolved: q.resolved,
+      })),
+      userEntry: userEntry !== undefined ? userEntry : (pool.userEntry ?? null),
+    };
+  }
+
   async getPoolStatus(matchId: string, wallet?: string): Promise<PredictionPoolStatus> {
     const pool = await this.prisma.predictionPool.findUnique({
       where: { matchId },
       include: {
+        match: {
+          include: {
+            homeTeam: { select: { id: true, name: true, symbol: true, color: true } },
+            awayTeam: { select: { id: true, name: true, symbol: true, color: true } },
+          },
+        },
         questions: { orderBy: { questionIndex: 'asc' } },
+        _count: { select: { entries: true } },
       },
     });
 
     if (!pool) {
       throw new Error(`No prediction pool found for match ${matchId}`);
     }
-
-    const questions: PredictionQuestionInfo[] = pool.questions.map((q) => ({
-      id: q.id,
-      questionIndex: q.questionIndex,
-      questionText: q.questionText,
-      options: q.options,
-      correctOption: q.correctOption,
-      points: q.points,
-      isLive: q.isLive,
-      deadline: q.deadline,
-      resolved: q.resolved,
-    }));
 
     let userEntry: PredictionEntryInfo | null = null;
 
@@ -750,26 +782,13 @@ export class PredictionsService {
       }
     }
 
-    return {
-      id: pool.id,
-      matchId: pool.matchId,
-      entryFee: Number(pool.entryFee),
-      totalPool: Number(pool.totalPool),
-      participantCount: pool.participantCount,
-      status: pool.status,
-      deadline: pool.deadline,
-      settledAt: pool.settledAt,
-      claimDeadline: pool.claimDeadline,
-      highestScore: pool.highestScore !== null ? Number(pool.highestScore) : null,
-      questions,
-      userEntry,
-    };
+    return this.mapPoolToStatus(pool, userEntry);
   }
 
   /**
    * Get all active (OPEN or LIVE) prediction pools with match details.
    */
-  async getActivePools(): Promise<unknown[]> {
+  async getActivePools(): Promise<PredictionPoolStatus[]> {
     const pools = await this.prisma.predictionPool.findMany({
       where: {
         status: { in: ['OPEN', 'LIVE'] },
@@ -782,6 +801,7 @@ export class PredictionsService {
           },
         },
         questions: { orderBy: { questionIndex: 'asc' } },
+        _count: { select: { entries: true } },
       },
       orderBy: { deadline: 'asc' },
     });
@@ -799,13 +819,13 @@ export class PredictionsService {
       }
     }
 
-    return pools;
+    return pools.map((pool) => this.mapPoolToStatus(pool));
   }
 
   /**
    * Get all prediction entries for a wallet across all pools.
    */
-  async getUserPredictions(wallet: string, limit = 50, offset = 0): Promise<unknown[]> {
+  async getUserPredictions(wallet: string, limit = 50, offset = 0): Promise<PredictionPoolStatus[]> {
     wallet = wallet.toLowerCase();
 
     const entries = await this.prisma.predictionEntry.findMany({
@@ -821,6 +841,8 @@ export class PredictionsService {
                 awayTeam: { select: { id: true, name: true, symbol: true, color: true } },
               },
             },
+            questions: { orderBy: { questionIndex: 'asc' } },
+            _count: { select: { entries: true } },
           },
         },
         answers: {
@@ -831,29 +853,22 @@ export class PredictionsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    return entries.map((entry) => ({
-      id: entry.id,
-      matchId: entry.pool.matchId,
-      match: entry.pool.match,
-      poolStatus: entry.pool.status,
-      entryFee: Number(entry.pool.entryFee),
-      totalPool: Number(entry.pool.totalPool),
-      participantCount: entry.pool.participantCount,
-      totalScore: entry.totalScore !== null ? Number(entry.totalScore) : null,
-      payout: entry.payout !== null ? Number(entry.payout) : null,
-      claimed: entry.claimed,
-      createdAt: entry.createdAt,
-      answers: entry.answers.map((a) => ({
-        questionIndex: a.question.questionIndex,
-        questionText: a.question.questionText,
-        options: a.question.options,
-        chosenOption: a.chosenOption,
-        correctOption: a.question.correctOption,
-        isCorrect: a.isCorrect,
-        pointsEarned: a.pointsEarned !== null ? Number(a.pointsEarned) : null,
-        points: a.question.points,
-      })),
-    }));
+    return entries.map((entry) => {
+      const userEntry: PredictionEntryInfo = {
+        id: entry.id,
+        wallet: entry.wallet,
+        totalScore: entry.totalScore !== null ? Number(entry.totalScore) : null,
+        payout: entry.payout !== null ? Number(entry.payout) : null,
+        claimed: entry.claimed,
+        answers: entry.answers.map((a) => ({
+          questionIndex: a.question.questionIndex,
+          chosenOption: a.chosenOption,
+          isCorrect: a.isCorrect,
+          pointsEarned: a.pointsEarned !== null ? Number(a.pointsEarned) : null,
+        })),
+      };
+      return this.mapPoolToStatus(entry.pool, userEntry);
+    });
   }
 
   /**
