@@ -64,6 +64,10 @@ const Sparkles = dynamic(
   () => import("@/components/ui/sparkles").then((m) => ({ default: m.Sparkles })),
   { ssr: false },
 );
+const DotWave = dynamic(
+  () => import("@/components/ui/dot-wave").then((m) => ({ default: m.DotWave })),
+  { ssr: false },
+);
 
 function FeaturePill({
   icon: Icon,
@@ -196,11 +200,16 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#0D1117]">
       {/* Hero */}
       <section ref={heroRef} className="relative overflow-hidden">
+        {/* DotWave 3D background */}
+        <div className="absolute inset-0 z-0 opacity-55 pointer-events-none">
+          <DotWave />
+        </div>
+
         {/* Animated cycling gradient background */}
-        <div className="pointer-events-none absolute inset-0 hero-gradient-bg" />
+        <div className="pointer-events-none absolute inset-0 z-[1] hero-gradient-bg" />
 
         {/* Subtle background */}
-        <div className="pointer-events-none absolute inset-0">
+        <div className="pointer-events-none absolute inset-0 z-[1]">
           {/* Grid overlay */}
           <div className="absolute inset-0 hero-grid" />
 
@@ -208,11 +217,11 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_40%,#0D1117)]" />
         </div>
 
-        <BackgroundBeams className="z-0" beamCount={8} />
-        <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="white" />
+        <BackgroundBeams className="z-[2]" beamCount={8} />
+        <Spotlight className="-top-40 left-0 md:left-60 md:-top-20 z-[2]" fill="white" />
 
         <motion.div
-          className="relative mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pt-24"
+          className="relative z-10 mx-auto max-w-7xl px-4 pb-14 pt-16 sm:px-6 sm:pt-24"
           style={prefersReduced ? undefined : { y: heroParallaxY }}
         >
           {/* Badge */}
