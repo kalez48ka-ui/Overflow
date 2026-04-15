@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+data/chromadb/
+data/raw/
+models/artifacts/
+venv/
+*.egg-info/
+dist/
+build/
+.mypy_cache/

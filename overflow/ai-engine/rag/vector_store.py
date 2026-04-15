@@ -15,9 +15,6 @@ from typing import Any
 import chromadb
 from chromadb.config import Settings
 
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from config import CHROMADB_DIR, EMBEDDING_MODEL
 
 logger = logging.getLogger(__name__)

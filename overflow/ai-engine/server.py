@@ -9,17 +9,15 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
+import threading
 import traceback
-from pathlib import Path
-
-# Ensure project root is on the path
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
-from config import FLASK_DEBUG, FLASK_PORT, LOG_LEVEL, trading_context
+from config import FLASK_DEBUG, FLASK_PORT, LOG_LEVEL, TEAM_SYMBOLS, trading_context
 from data.ingest import generate_demo_data, ingest_all
 from models.win_probability import WinProbabilityModel
 from rag.pipeline import OverflowRAG
@@ -39,11 +37,37 @@ logger = logging.getLogger("overflow.server")
 # ── Flask app ──────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
-CORS(app, origins=[
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1 MB
+
+_allowed_origins = {
+    "http://localhost:3000",
     "http://localhost:3001",
+    "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
-    os.getenv("BACKEND_URL", "http://localhost:3001"),
-])
+}
+for _env_key in ("BACKEND_URL", "FRONTEND_URL"):
+    _url = os.getenv(_env_key, "")
+    if _url and _url != "*" and _url.startswith("http"):
+        _allowed_origins.add(_url)
+_allowed_origins = list(_allowed_origins)
+
+CORS(app, origins=_allowed_origins, methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "x-api-key"], supports_credentials=False)
+
+limiter = Limiter(get_remote_address, app=app, default_limits=["60 per minute"])
+
+# ── authentication ────────────────────────────────────────────────────────
+
+AI_API_KEY = os.getenv("AI_API_KEY", "")
+
+
+def _require_api_key():
+    """Check x-api-key header matches AI_API_KEY."""
+    if not AI_API_KEY:
+        return None  # No key configured = skip auth (dev mode)
+    key = request.headers.get("x-api-key", "")
+    if key != AI_API_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+    return None
 
 # ── lazy globals ───────────────────────────────────────────────────────────
 
@@ -53,6 +77,7 @@ _report_gen: ReportGenerator | None = None
 _signal_gen: SignalGenerator | None = None
 _win_prob: WinProbabilityModel | None = None
 _initialised = False
+_init_lock = threading.Lock()
 
 
 def _init() -> None:
@@ -62,47 +87,53 @@ def _init() -> None:
     if _initialised:
         return
 
-    logger.info("Initialising Overflow AI Engine...")
+    with _init_lock:
+        if _initialised:
+            return
 
-    # 1. Vector store
-    _vector_store = VectorStore()
+        logger.info("Initialising Overflow AI Engine...")
 
-    # 2. Ensure data is loaded
-    if not _vector_store.is_populated():
-        logger.info("Vector store is empty — loading data...")
-        try:
-            data = ingest_all(download=True)
-            logger.info("Loaded Cricsheet data successfully.")
-        except Exception as exc:
-            logger.warning("Cricsheet download failed (%s) — using demo data.", exc)
-            data = generate_demo_data()
-        _vector_store.ingest_all(data)
-    else:
-        logger.info("Vector store already populated: %s", _vector_store.stats())
+        # 1. Vector store
+        _vector_store = VectorStore()
 
-    # 3. RAG pipeline
-    _rag = OverflowRAG(vector_store=_vector_store)
-    logger.info("RAG pipeline ready (LLM available: %s).", _rag.has_llm)
+        # 2. Ensure data is loaded
+        if not _vector_store.is_populated():
+            logger.info("Vector store is empty — loading data...")
+            try:
+                data = ingest_all(download=True)
+                logger.info("Loaded Cricsheet data successfully.")
+            except Exception as exc:
+                logger.warning("Cricsheet download failed (%s) — using demo data.", exc)
+                data = generate_demo_data()
+            _vector_store.ingest_all(data)
+        else:
+            logger.info("Vector store already populated: %s", _vector_store.stats())
 
-    # 4. Report generator
-    _report_gen = ReportGenerator(rag=_rag)
+        # 3. RAG pipeline
+        _rag = OverflowRAG(vector_store=_vector_store)
+        logger.info("RAG pipeline ready (LLM available: %s).", _rag.has_llm)
 
-    # 5. Signal generator
-    _signal_gen = SignalGenerator(rag=_rag)
+        # 4. Report generator
+        _report_gen = ReportGenerator(rag=_rag)
 
-    # 6. Win probability model
-    _win_prob = WinProbabilityModel()
-    if not _win_prob.load():
-        logger.info("Training win probability model from scratch...")
-        _win_prob.train_and_save()
+        # 5. Signal generator
+        _signal_gen = SignalGenerator(rag=_rag)
 
-    _initialised = True
-    logger.info("Overflow AI Engine initialisation complete.")
+        # 6. Win probability model
+        _win_prob = WinProbabilityModel()
+        if not _win_prob.load():
+            logger.info("Training win probability model from scratch...")
+            _win_prob.train_and_save()
+
+        _initialised = True
+        logger.info("Overflow AI Engine initialisation complete.")
 
 
 @app.before_request
 def ensure_initialised() -> None:
     """Ensure the engine is initialised before handling any request."""
+    if request.path in ("/health", "/api/ai/health"):
+        return
     _init()
 
 
@@ -125,6 +156,7 @@ def health() -> tuple:
 
 
 @app.route("/api/ai/analyze", methods=["POST"])
+@limiter.limit("10 per minute")
 def analyze() -> tuple:
     """Generate a pre-match analysis report.
 
@@ -151,10 +183,11 @@ def analyze() -> tuple:
         return jsonify(result), 200
     except Exception as exc:
         logger.error("Analysis failed: %s\n%s", exc, traceback.format_exc())
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": "Internal processing error"}), 500
 
 
 @app.route("/api/ai/signal", methods=["POST"])
+@limiter.limit("10 per minute")
 def signal() -> tuple:
     """Generate a live trading signal from current match state.
 
@@ -205,10 +238,11 @@ def signal() -> tuple:
         return jsonify(result), 200
     except Exception as exc:
         logger.error("Signal generation failed: %s\n%s", exc, traceback.format_exc())
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": "Internal processing error"}), 500
 
 
 @app.route("/api/ai/query", methods=["POST"])
+@limiter.limit("10 per minute")
 def query() -> tuple:
     """Free-form RAG query.
 
@@ -228,10 +262,11 @@ def query() -> tuple:
         return jsonify(result), 200
     except Exception as exc:
         logger.error("Query failed: %s\n%s", exc, traceback.format_exc())
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": "Internal processing error"}), 500
 
 
 @app.route("/api/ai/win-probability", methods=["POST"])
+@limiter.limit("30 per minute")
 def win_probability() -> tuple:
     """Get win probability for a match state.
 
@@ -256,7 +291,25 @@ def win_probability() -> tuple:
         overs = float(data["overs"])
         target = int(data["target"]) if data.get("target") is not None else None
         innings = int(data.get("innings", 1))
+    except (ValueError, TypeError) as exc:
+        return jsonify({"error": f"Invalid numeric value: {exc}"}), 400
 
+    # Validate ranges
+    if not (0 <= overs <= 20):
+        return jsonify({"error": "overs must be between 0 and 20"}), 400
+    partial_balls = round((overs % 1) * 10)
+    if partial_balls > 5:
+        return jsonify({"error": "invalid overs: ball component must be 0-5 (e.g. 14.3, not 14.7)"}), 400
+    if not (0 <= wickets <= 10):
+        return jsonify({"error": "wickets must be between 0 and 10"}), 400
+    if score < 0:
+        return jsonify({"error": "score must be non-negative"}), 400
+    if innings not in (1, 2):
+        return jsonify({"error": "innings must be 1 or 2"}), 400
+    if target is not None and target <= 0:
+        return jsonify({"error": "target must be a positive number"}), 400
+
+    try:
         prob = _win_prob.predict(score, wickets, overs, target, innings)
 
         # Optional: trajectory
@@ -275,7 +328,7 @@ def win_probability() -> tuple:
         }), 200
     except Exception as exc:
         logger.error("Win probability failed: %s\n%s", exc, traceback.format_exc())
-        return jsonify({"error": str(exc)}), 500
+        return jsonify({"error": "Internal processing error"}), 500
 
 
 @app.route("/api/ai/context", methods=["GET"])
@@ -295,6 +348,9 @@ def get_context() -> tuple:
     }), 200
 
 
+VALID_SYMBOLS = set(TEAM_SYMBOLS.values())
+
+
 @app.route("/api/ai/context", methods=["POST"])
 def update_context() -> tuple:
     """Update trading context (called by the backend).
@@ -307,22 +363,59 @@ def update_context() -> tuple:
             ]
         }
     """
+    auth_response = _require_api_key()
+    if auth_response is not None:
+        return auth_response
+
     data = request.get_json(silent=True) or {}
 
     if "upset_vault_wire" in data:
-        trading_context.upset_vault_wire = float(data["upset_vault_wire"])
+        try:
+            vault_wire = float(data["upset_vault_wire"])
+        except (ValueError, TypeError):
+            return jsonify({"error": "upset_vault_wire must be a number"}), 400
+        if vault_wire < 0:
+            return jsonify({"error": "upset_vault_wire must be non-negative"}), 400
+        trading_context.upset_vault_wire = vault_wire
 
     if "rankings" in data:
+        if not isinstance(data["rankings"], list):
+            return jsonify({"error": "rankings must be a list"}), 400
+
         from config import TeamRanking
-        trading_context.rankings = [
-            TeamRanking(
-                symbol=r["symbol"],
-                rank=r["rank"],
-                sell_tax_pct=r["sell_tax_pct"],
-                recent_form=r.get("recent_form", "N/A"),
+
+        validated_rankings = []
+        for i, r in enumerate(data["rankings"]):
+            if not isinstance(r, dict):
+                return jsonify({"error": f"rankings[{i}] must be an object"}), 400
+
+            symbol = r.get("symbol")
+            if symbol not in VALID_SYMBOLS:
+                return jsonify({"error": f"rankings[{i}].symbol must be one of {sorted(VALID_SYMBOLS)}"}), 400
+
+            try:
+                rank = int(r.get("rank", 0))
+            except (ValueError, TypeError):
+                return jsonify({"error": f"rankings[{i}].rank must be an integer"}), 400
+            if not (1 <= rank <= 8):
+                return jsonify({"error": f"rankings[{i}].rank must be between 1 and 8"}), 400
+
+            try:
+                sell_tax_pct = float(r.get("sell_tax_pct", 0))
+            except (ValueError, TypeError):
+                return jsonify({"error": f"rankings[{i}].sell_tax_pct must be a number"}), 400
+            if not (0 <= sell_tax_pct <= 100):
+                return jsonify({"error": f"rankings[{i}].sell_tax_pct must be between 0 and 100"}), 400
+
+            validated_rankings.append(
+                TeamRanking(
+                    symbol=symbol,
+                    rank=rank,
+                    sell_tax_pct=sell_tax_pct,
+                    recent_form=str(r.get("recent_form", "N/A")),
+                )
             )
-            for r in data["rankings"]
-        ]
+        trading_context.rankings = validated_rankings
 
     return jsonify({"status": "updated", "context": trading_context.format_for_prompt()}), 200
 
@@ -338,6 +431,11 @@ def stats() -> tuple:
 
 
 # ── error handlers ─────────────────────────────────────────────────────────
+
+@app.errorhandler(413)
+def request_too_large(e: Exception) -> tuple:
+    return jsonify({"error": "Request too large"}), 413
+
 
 @app.errorhandler(404)
 def not_found(e: Exception) -> tuple:

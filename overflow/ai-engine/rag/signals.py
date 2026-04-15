@@ -10,15 +10,10 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Literal
-
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import resolve_team_name, resolve_team_symbol, trading_context
 from rag.pipeline import OverflowRAG
-from rag.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +22,9 @@ SignalType = Literal["BUY", "SELL", "HOLD"]
 
 def _clamp(val: float, lo: float = 0.0, hi: float = 100.0) -> float:
     return max(lo, min(hi, val))
+
+
+_MODEL_UNAVAILABLE = object()
 
 
 class SignalGenerator:
@@ -56,8 +54,16 @@ class SignalGenerator:
         Returns a JSON-serializable signal dict.
         """
         # Normalise inputs
-        bat_team = resolve_team_symbol(str(match_state.get("batting_team", "")))
-        bowl_team = resolve_team_symbol(str(match_state.get("bowling_team", "")))
+        try:
+            bat_team = resolve_team_symbol(str(match_state.get("batting_team", "")))
+        except ValueError:
+            logger.warning("Unrecognized batting team: %s", match_state.get("batting_team"))
+            return {"error": f"Unrecognized batting team: {match_state.get('batting_team')}"}
+        try:
+            bowl_team = resolve_team_symbol(str(match_state.get("bowling_team", "")))
+        except ValueError:
+            logger.warning("Unrecognized bowling team: %s", match_state.get("bowling_team"))
+            return {"error": f"Unrecognized bowling team: {match_state.get('bowling_team')}"}
         score = int(match_state.get("score", 0))
         wickets = int(match_state.get("wickets", 0))
         overs = float(match_state.get("overs", 0.0))
@@ -198,9 +204,9 @@ class SignalGenerator:
                 self._win_prob_model = WinProbabilityModel()
                 self._win_prob_model.load()
             except Exception:
-                self._win_prob_model = "unavailable"
+                self._win_prob_model = _MODEL_UNAVAILABLE
 
-        if self._win_prob_model not in (None, "unavailable"):
+        if self._win_prob_model is not None and self._win_prob_model is not _MODEL_UNAVAILABLE:
             try:
                 prob = self._win_prob_model.predict(
                     score=score,
@@ -228,16 +234,23 @@ class SignalGenerator:
         innings: int,
     ) -> dict[str, float]:
         """Rule-based win probability estimation."""
-        balls_bowled = int(overs) * 6 + round((overs % 1) * 10)
+        partial_balls = round((overs % 1) * 10)
+        if partial_balls > 5:
+            partial_balls = 5
+        balls_bowled = int(overs) * 6 + partial_balls
         balls_remaining = max(0, 120 - balls_bowled)
         overs_remaining = balls_remaining / 6
 
         if innings == 1:
             # 1st innings: estimate par score and compare
-            if balls_bowled == 0:
-                bat_prob = 50.0
+            if balls_bowled < 6:
+                # Too early for meaningful projection — return 50% baseline
+                return {
+                    "batting_team": 50.0,
+                    "bowling_team": 50.0,
+                }
             else:
-                current_rr = score / (balls_bowled / 6) if balls_bowled > 0 else 0.0
+                current_rr = score / (balls_bowled / 6)
                 projected_total = score + current_rr * overs_remaining
                 # PSL average total is ~160-170
                 par_score = 165

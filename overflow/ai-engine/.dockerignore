@@ -1,0 +1,12 @@
+.env
+.env.*
+venv/
+__pycache__/
+*.pyc
+data/chromadb/
+data/raw/
+models/artifacts/
+.git/
+.gitignore
+.dockerignore
+*.md

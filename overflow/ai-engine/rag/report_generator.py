@@ -9,11 +9,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any
-
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import (
     SYMBOL_TO_TEAM,
@@ -22,7 +18,6 @@ from config import (
     trading_context,
 )
 from rag.pipeline import OverflowRAG
-from rag.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +46,14 @@ class ReportGenerator:
         Returns:
             Dict with ``report`` (Markdown string), ``metadata``, and ``trading``.
         """
-        home_symbol = resolve_team_symbol(home_symbol)
-        away_symbol = resolve_team_symbol(away_symbol)
+        try:
+            home_symbol = resolve_team_symbol(home_symbol)
+        except ValueError as exc:
+            return {"error": str(exc), "report": "", "metadata": {}, "trading": {}}
+        try:
+            away_symbol = resolve_team_symbol(away_symbol)
+        except ValueError as exc:
+            return {"error": str(exc), "report": "", "metadata": {}, "trading": {}}
         home_name = resolve_team_name(home_symbol)
         away_name = resolve_team_name(away_symbol)
 

@@ -8,16 +8,16 @@ overs bowled, required run rate (2nd innings), and venue factors.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
+import os
 import pickle
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import MODEL_DIR
 
@@ -25,6 +25,22 @@ logger = logging.getLogger(__name__)
 
 MODEL_PATH = MODEL_DIR / "win_prob_model.pkl"
 SCALER_PATH = MODEL_DIR / "win_prob_scaler.pkl"
+
+_PICKLE_HMAC_DEFAULT = "overflow-ai-model-v1"
+_PICKLE_SECRET = os.getenv("PICKLE_HMAC_SECRET", _PICKLE_HMAC_DEFAULT).encode()
+if os.getenv("PICKLE_HMAC_SECRET") is None:
+    logging.getLogger(__name__).warning(
+        "PICKLE_HMAC_SECRET not set — using default. Set this env var in production."
+    )
+
+
+def _compute_file_hmac(path: Path) -> str:
+    """Compute HMAC-SHA256 of a file."""
+    h = hmac.new(_PICKLE_SECRET, digestmod=hashlib.sha256)
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 class WinProbabilityModel:
@@ -71,6 +87,8 @@ class WinProbabilityModel:
         # Convert overs to proper ball count: 12.3 -> 12 overs + 3 balls = 75 balls
         full_overs = int(overs)
         partial_balls = round((overs - full_overs) * 10)
+        if partial_balls > 5:
+            partial_balls = 5  # Clamp invalid partial overs
         balls_bowled = full_overs * 6 + partial_balls
         balls_remaining = max(0, 120 - balls_bowled)
         overs_decimal = balls_bowled / 6 if balls_bowled > 0 else 0.1
@@ -107,13 +125,24 @@ class WinProbabilityModel:
         """
         from sklearn.linear_model import LogisticRegression
         from sklearn.model_selection import cross_val_score
+        from sklearn.pipeline import Pipeline
         from sklearn.preprocessing import StandardScaler
 
         X, y = self._prepare_training_data(match_data)
 
+        # Cross-validate using a pipeline (scaler fits only on training folds)
+        pipeline = Pipeline([
+            ("scaler", StandardScaler()),
+            ("model", LogisticRegression(
+                C=1.0, max_iter=1000, class_weight="balanced", random_state=42,
+            )),
+        ])
+        scores = cross_val_score(pipeline, X, y, cv=5, scoring="accuracy")
+        roc_scores = cross_val_score(pipeline, X, y, cv=5, scoring="roc_auc")
+
+        # Now fit the actual model on all data for production use
         self._scaler = StandardScaler()
         X_scaled = self._scaler.fit_transform(X)
-
         self._model = LogisticRegression(
             C=1.0,
             max_iter=1000,
@@ -122,10 +151,6 @@ class WinProbabilityModel:
         )
         self._model.fit(X_scaled, y)
         self._fitted = True
-
-        # Cross-validation
-        scores = cross_val_score(self._model, X_scaled, y, cv=5, scoring="accuracy")
-        roc_scores = cross_val_score(self._model, X_scaled, y, cv=5, scoring="roc_auc")
 
         metrics = {
             "accuracy_mean": round(float(scores.mean()), 4),
@@ -227,8 +252,11 @@ class WinProbabilityModel:
 
         for _ in range(n_samples):
             innings = rng.choice([1, 2])
-            overs = round(rng.uniform(1.0, 20.0), 1)
-            overs = min(overs, 20.0)
+            # Generate valid cricket overs (balls 6-120, then convert)
+            total_balls = rng.randint(6, 121)
+            full_overs = total_balls // 6
+            partial = total_balls % 6
+            overs = float(f"{full_overs}.{partial}")
 
             # Realistic score generation
             base_rr = rng.normal(8.0, 1.5)
@@ -246,13 +274,15 @@ class WinProbabilityModel:
             features = self._make_features(score, wickets, overs, target, innings)
 
             # Generate outcome based on realistic probabilities
+            # Use actual ball count for arithmetic (overs is cricket-format, not decimal)
+            decimal_overs = total_balls / 6
             if innings == 1:
-                projected = score / overs * 20 if overs > 0 else 160
+                projected = score / decimal_overs * 20 if decimal_overs > 0 else 160
                 projected -= wickets * 4
                 win_prob = 1 / (1 + np.exp(-(projected - 165) / 15))
             else:
                 runs_needed = (target or 165) - score
-                balls_left = max(1, 120 - int(overs * 6))
+                balls_left = max(1, 120 - total_balls)
                 rrr = runs_needed / (balls_left / 6)
                 resource_factor = (10 - wickets) / 10
                 win_prob = 1 / (1 + np.exp((rrr - 8.0) / 2)) * resource_factor
@@ -315,7 +345,11 @@ class WinProbabilityModel:
 
         trajectory: list[dict[str, float]] = []
         for i in range(steps + 1):
-            future_overs = min(max_overs, overs + i * step_size)
+            # Snap to valid cricket overs
+            future_balls = min(int(max_overs * 6), int(overs * 6) + int(i * step_size * 6))
+            future_full = future_balls // 6
+            future_partial = future_balls % 6
+            future_overs = float(f"{future_full}.{future_partial}")
             extra_overs = future_overs - overs
             proj_score = int(score + current_rr * extra_overs)
             proj_wickets = min(10, int(wickets + wicket_rate * extra_overs))
@@ -339,8 +373,11 @@ class WinProbabilityModel:
 
         with open(MODEL_PATH, "wb") as f:
             pickle.dump(self._model, f)
+        Path(f"{MODEL_PATH}.sig").write_text(_compute_file_hmac(MODEL_PATH))
+
         with open(SCALER_PATH, "wb") as f:
             pickle.dump(self._scaler, f)
+        Path(f"{SCALER_PATH}.sig").write_text(_compute_file_hmac(SCALER_PATH))
 
         logger.info("Model saved to %s", MODEL_DIR)
 
@@ -351,6 +388,18 @@ class WinProbabilityModel:
             return False
 
         try:
+            # Verify HMAC signatures before loading pickle files
+            for pkl_path in (MODEL_PATH, SCALER_PATH):
+                sig_path = Path(f"{pkl_path}.sig")
+                if not sig_path.exists():
+                    logger.warning("Missing signature file %s — refusing to load untrusted pickle.", sig_path)
+                    return False
+                expected_hmac = sig_path.read_text().strip()
+                actual_hmac = _compute_file_hmac(pkl_path)
+                if not hmac.compare_digest(expected_hmac, actual_hmac):
+                    logger.warning("HMAC mismatch for %s — file may be tampered. Retrain required.", pkl_path)
+                    return False
+
             with open(MODEL_PATH, "rb") as f:
                 self._model = pickle.load(f)
             with open(SCALER_PATH, "rb") as f:

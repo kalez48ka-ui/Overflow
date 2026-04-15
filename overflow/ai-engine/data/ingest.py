@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-import subprocess
+import sys
 import tempfile
 import zipfile
 from collections import defaultdict
@@ -24,8 +24,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import requests as http_requests
 
 from config import DATA_DIR, RAW_DATA_DIR, TEAM_SYMBOLS
 
@@ -69,6 +68,18 @@ def _phase(over: int) -> str:
 # ── download ───────────────────────────────────────────────────────────────
 
 
+def _download_file(url: str, dest: Path, timeout: int = 120) -> None:
+    """Download a file using the requests library (no subprocess needed)."""
+    logger.info("Downloading %s ...", url)
+    resp = http_requests.get(url, stream=True, timeout=timeout)
+    resp.raise_for_status()
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with open(dest, "wb") as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+    logger.info("Downloaded %s (%d bytes)", dest.name, dest.stat().st_size)
+
+
 def download_cricsheet_data(force: bool = False) -> Path:
     """Download the PSL JSON zip from Cricsheet and extract it.
 
@@ -79,27 +90,22 @@ def download_cricsheet_data(force: bool = False) -> Path:
     if ZIP_PATH.exists() and not force:
         logger.info("ZIP already present at %s — skipping download.", ZIP_PATH)
     else:
-        logger.info("Downloading PSL data from %s ...", CRICSHEET_PSL_URL)
-        try:
-            subprocess.run(
-                ["wget", "-q", "-O", str(ZIP_PATH), CRICSHEET_PSL_URL],
-                check=True,
-                timeout=120,
-            )
-            logger.info("Download complete.")
-        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
-            logger.warning("wget failed (%s), trying curl ...", exc)
-            subprocess.run(
-                ["curl", "-sL", "-o", str(ZIP_PATH), CRICSHEET_PSL_URL],
-                check=True,
-                timeout=120,
-            )
+        _download_file(CRICSHEET_PSL_URL, ZIP_PATH)
 
-    # Extract
+    # Extract (with Zip Slip protection)
     if not any(RAW_DATA_DIR.glob("*.json")):
         logger.info("Extracting ZIP to %s ...", RAW_DATA_DIR)
         with zipfile.ZipFile(ZIP_PATH, "r") as zf:
-            zf.extractall(RAW_DATA_DIR)
+            if sys.version_info >= (3, 12):
+                zf.extractall(RAW_DATA_DIR, filter="data")
+            else:
+                # Manual Zip Slip check for Python < 3.12
+                raw_resolved = Path(RAW_DATA_DIR).resolve()
+                for member in zf.namelist():
+                    member_path = (raw_resolved / member).resolve()
+                    if not member_path.is_relative_to(raw_resolved):
+                        raise ValueError(f"Unsafe zip entry: {member}")
+                zf.extractall(RAW_DATA_DIR)
         logger.info("Extracted %d files.", len(list(RAW_DATA_DIR.rglob("*.json"))))
     else:
         logger.info("JSON files already extracted in %s.", RAW_DATA_DIR)
@@ -130,7 +136,7 @@ def _parse_innings(innings_data: dict) -> dict[str, Any]:
         over_num = over_block.get("over", 0)
         p = _phase(over_num)
         deliveries = over_block.get("deliveries", [])
-        for delivery in deliveries:
+        for delivery_idx, delivery in enumerate(deliveries):
             runs_info = delivery.get("runs", {})
             batter_runs = runs_info.get("batter", 0)
             total_delivery_runs = runs_info.get("total", 0)
@@ -146,7 +152,10 @@ def _parse_innings(innings_data: dict) -> dict[str, Any]:
             if batter_runs == 6:
                 batters[batter_name]["sixes"] += 1
 
-            bowlers[bowler_name]["runs"] += total_delivery_runs
+            # Runs charged to bowler = batter runs + wides + no-balls (NOT byes/leg byes)
+            delivery_extras = delivery.get("extras", {})
+            bowler_runs = batter_runs + delivery_extras.get("wides", 0) + delivery_extras.get("noballs", 0)
+            bowlers[bowler_name]["runs"] += bowler_runs
             bowlers[bowler_name]["balls"] += 1
 
             total_runs += total_delivery_runs
@@ -155,6 +164,11 @@ def _parse_innings(innings_data: dict) -> dict[str, Any]:
 
             phase_runs[p] += total_delivery_runs
             phase_balls[p] += 1
+
+            # Track legal ball number in current over (wides/no-balls don't count)
+            is_wide = "wides" in delivery_extras
+            is_noball = "noballs" in delivery_extras
+            is_legal = not is_wide and not is_noball
 
             # Wickets
             if "wickets" in delivery:
@@ -166,11 +180,16 @@ def _parse_innings(innings_data: dict) -> dict[str, Any]:
                     kind = w.get("kind", "")
                     batters[dismissed]["out"] = True
                     batters[dismissed]["dismissal"] = kind
+                    # Legal balls bowled so far in this over for display
+                    legal_balls_in_over = sum(
+                        1 for d in deliveries[:delivery_idx + 1]
+                        if "wides" not in d.get("extras", {}) and "noballs" not in d.get("extras", {})
+                    )
                     fall_of_wickets.append({
                         "player": dismissed,
                         "runs": total_runs,
                         "wickets": total_wickets,
-                        "over": f"{over_num}.{total_balls % 6 if total_balls % 6 != 0 else 6}",
+                        "over": f"{over_num}.{legal_balls_in_over}",
                     })
 
             # Extras detail
@@ -445,8 +464,11 @@ def _player_docs(all_matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for m in all_matches:
         match_players_bat: set[str] = set()
         match_players_bowl: set[str] = set()
+        match_teams = m.get("teams", [])
         for inn in m["innings"]:
-            team = inn["team"]
+            team = inn["team"]  # batting team
+            # Bowling team is the opponent (the other team in the match)
+            bowling_team = next((t for t in match_teams if t != team), team)
             for name, stats in inn["all_batters"].items():
                 batting[name]["runs"] += stats["runs"]
                 batting[name]["balls"] += stats["balls"]
@@ -465,7 +487,7 @@ def _player_docs(all_matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 bowling[name]["runs"] += stats["runs"]
                 bowling[name]["balls"] += stats["balls"]
                 bowling[name]["wickets"] += stats["wickets"]
-                bowling[name]["teams"].add(team)
+                bowling[name]["teams"].add(bowling_team)
                 bowling[name]["innings"] += 1
                 if stats["wickets"] > bowling[name]["best_wkt"] or (
                     stats["wickets"] == bowling[name]["best_wkt"]
@@ -974,8 +996,6 @@ def generate_demo_data() -> dict[str, list[dict[str, Any]]]:
 
 
 if __name__ == "__main__":
-    import sys
-
     logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 
     use_demo = "--demo" in sys.argv

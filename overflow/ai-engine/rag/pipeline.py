@@ -9,11 +9,7 @@ questions.  Falls back to template-based responses when no API key is set.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
-
-import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import ANTHROPIC_API_KEY, CLAUDE_MODEL, trading_context, resolve_team_name
 from rag.vector_store import VectorStore
@@ -323,6 +319,18 @@ class OverflowRAG:
 # ── template responses ─────────────────────────────────────────────────────
 
 
+def _compute_upset_pct(
+    rank_a: "TeamRanking | None",
+    rank_b: "TeamRanking | None",
+) -> int:
+    """Compute basic upset probability from rank differential."""
+    if rank_a and rank_b:
+        rank_diff = abs(rank_a.rank - rank_b.rank)
+        # Higher rank difference = lower upset probability
+        return max(15, 50 - rank_diff * 5)
+    return 35
+
+
 def _template_matchup(sym_a: str, sym_b: str, context: str) -> str:
     """Generate a template matchup analysis."""
     team_a = resolve_team_name(sym_a)
@@ -368,7 +376,7 @@ Based on available historical data, both teams have competitive records against 
 - **Favorite:** ${fav} ({fav_name}) — lower sell tax makes this a safer hold
 - **Underdog:** ${dog} ({dog_name}) — higher sell tax but Upset Vault payout potential
 - **Risk Assessment:** MEDIUM
-- **Upset Probability:** ~35%
+- **Upset Probability:** ~{_compute_upset_pct(rank_a, rank_b)}%
 - **Strategy:** Consider a small position in ${dog} for Upset Vault exposure while maintaining core ${fav} holdings
 
 > *Note: This analysis was generated without LLM access. Set ANTHROPIC_API_KEY for detailed AI-powered analysis.*
@@ -402,9 +410,11 @@ Without real-time match data integration, signals default to HOLD with moderate 
 
 def _template_generic(question: str, context: str) -> str:
     """Generate a generic template response."""
+    import html
+    safe_question = html.escape(question)[:500]
     return f"""## Overflow AI Analysis
 
-**Your Question:** {question}
+**Your Question:** {safe_question}
 
 **Available Context:**
 {context[:800] if context else "No specific historical data retrieved for this query."}

@@ -90,4 +90,4 @@ HEALTHCHECK --interval=20s --timeout=10s --retries=5 --start-period=60s \
 # Entry point: server.py must expose a Flask application on FLASK_PORT (5001).
 # Using `python server.py` (not `flask run`) gives the application full control
 # over startup (gevent patching, warm-up, etc.).
-CMD ["python", "server.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "4", "--timeout", "120", "--access-logfile", "-", "server:app"]

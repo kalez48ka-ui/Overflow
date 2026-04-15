@@ -165,7 +165,7 @@ def resolve_team_symbol(name_or_symbol: str) -> str:
     for full_name, sym in TEAM_SYMBOLS.items():
         if full_name.lower().startswith(name_or_symbol.lower()):
             return sym
-    return name_or_symbol.upper()[:2]
+    raise ValueError(f"Unrecognized team: {name_or_symbol}")
 
 
 def resolve_team_name(symbol: str) -> str:
