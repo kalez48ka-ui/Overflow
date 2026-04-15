@@ -43,6 +43,7 @@ const TextGenerateEffect = dynamic(
   () => import("@/components/ui/text-generate-effect").then((m) => ({ default: m.TextGenerateEffect })),
   { ssr: false },
 );
+import { CardSpotlight } from "@/components/ui/card-spotlight";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
 import { RevealText } from "@/components/effects/RevealText";
 import { GlitchPrice } from "@/components/effects/GlitchPrice";
@@ -337,7 +338,7 @@ export default function LandingPage() {
               { label: "Team Tokens", value: "8", suffix: "" },
               { label: "On-Chain Txs", value: "867", suffix: "+" },
               { label: "Vault Balance", value: formatCurrency(vaultBalance), suffix: "" },
-              { label: "Contracts", value: "6", suffix: "" },
+              { label: "Contracts", value: "7", suffix: "" },
             ].map(({ label, value, suffix }) => (
               <div key={label} className="text-center">
                 <p className="text-2xl sm:text-3xl font-black tabular-nums text-[#E6EDF3]">
@@ -685,75 +686,205 @@ export default function LandingPage() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: { staggerChildren: prefersReduced ? 0 : 0.1 },
+            },
+          }}
+        >
           {([
             {
-              icon: Activity,
               title: "Real-Time Pricing",
               desc: "Token prices shift with every wicket, six, and collapse. Bonding curves, not bookmakers.",
               accent: "#3FB950",
+              accentRgb: "63, 185, 80",
+              svg: (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Candlestick chart with pulse */}
+                  <rect x="4" y="14" width="3" height="8" rx="0.5" fill="#3FB950" opacity="0.5" />
+                  <line x1="5.5" y1="10" x2="5.5" y2="26" stroke="#3FB950" strokeWidth="1" opacity="0.3" />
+                  <rect x="10" y="8" width="3" height="12" rx="0.5" fill="#3FB950" opacity="0.7" />
+                  <line x1="11.5" y1="5" x2="11.5" y2="24" stroke="#3FB950" strokeWidth="1" opacity="0.3" />
+                  <rect x="16" y="12" width="3" height="6" rx="0.5" fill="#3FB950" opacity="0.6" />
+                  <line x1="17.5" y1="9" x2="17.5" y2="22" stroke="#3FB950" strokeWidth="1" opacity="0.3" />
+                  <rect x="22" y="6" width="3" height="10" rx="0.5" fill="#3FB950" />
+                  <line x1="23.5" y1="3" x2="23.5" y2="20" stroke="#3FB950" strokeWidth="1" opacity="0.3" />
+                  {/* Pulse dot */}
+                  <circle cx="27" cy="6" r="2" fill="#3FB950">
+                    <animate attributeName="r" values="1.5;3;1.5" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+              ),
             },
             {
-              icon: Zap,
               title: "AI Match Signals",
               desc: "RAG-powered cricket analytics. Momentum detection, upset probability, and trade signals.",
               accent: "#58A6FF",
+              accentRgb: "88, 166, 255",
+              svg: (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Neural network nodes */}
+                  <circle cx="6" cy="10" r="2.5" stroke="#58A6FF" strokeWidth="1.2" fill="#58A6FF" fillOpacity="0.15" />
+                  <circle cx="6" cy="22" r="2.5" stroke="#58A6FF" strokeWidth="1.2" fill="#58A6FF" fillOpacity="0.15" />
+                  <circle cx="16" cy="7" r="2.5" stroke="#58A6FF" strokeWidth="1.2" fill="#58A6FF" fillOpacity="0.25" />
+                  <circle cx="16" cy="16" r="3" stroke="#58A6FF" strokeWidth="1.5" fill="#58A6FF" fillOpacity="0.3" />
+                  <circle cx="16" cy="25" r="2.5" stroke="#58A6FF" strokeWidth="1.2" fill="#58A6FF" fillOpacity="0.25" />
+                  <circle cx="26" cy="16" r="3" stroke="#58A6FF" strokeWidth="1.5" fill="#58A6FF" fillOpacity="0.4" />
+                  {/* Connections */}
+                  <line x1="8.5" y1="10" x2="13.5" y2="7" stroke="#58A6FF" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="8.5" y1="10" x2="13" y2="16" stroke="#58A6FF" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="8.5" y1="22" x2="13" y2="16" stroke="#58A6FF" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="8.5" y1="22" x2="13.5" y2="25" stroke="#58A6FF" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="18.5" y1="7" x2="23" y2="16" stroke="#58A6FF" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="19" y1="16" x2="23" y2="16" stroke="#58A6FF" strokeWidth="1" opacity="0.6" />
+                  <line x1="18.5" y1="25" x2="23" y2="16" stroke="#58A6FF" strokeWidth="0.8" opacity="0.4" />
+                  {/* Pulse on output node */}
+                  <circle cx="26" cy="16" r="3" stroke="#58A6FF" strokeWidth="0.8" fill="none">
+                    <animate attributeName="r" values="3;5;3" dur="2.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.6;0;0.6" dur="2.5s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+              ),
             },
             {
-              icon: Flame,
               title: "Upset Vault",
               desc: "2% of every trade fee goes to the vault. When underdogs win, holders split the pot up to 5x.",
               accent: "#E4002B",
+              accentRgb: "228, 0, 43",
+              svg: (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Vault body */}
+                  <rect x="5" y="10" width="22" height="18" rx="2" stroke="#E4002B" strokeWidth="1.5" fill="#E4002B" fillOpacity="0.1" />
+                  {/* Vault door circle */}
+                  <circle cx="16" cy="19" r="5" stroke="#E4002B" strokeWidth="1.2" fill="#E4002B" fillOpacity="0.15" />
+                  {/* Handle cross */}
+                  <line x1="13" y1="19" x2="19" y2="19" stroke="#E4002B" strokeWidth="1.2" />
+                  <line x1="16" y1="16" x2="16" y2="22" stroke="#E4002B" strokeWidth="1.2" />
+                  {/* Vault top */}
+                  <rect x="7" y="8" width="18" height="3" rx="1" fill="#E4002B" fillOpacity="0.25" />
+                  {/* Radiating lines */}
+                  <line x1="3" y1="14" x2="1" y2="12" stroke="#E4002B" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="29" y1="14" x2="31" y2="12" stroke="#E4002B" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="16" y1="6" x2="16" y2="3" stroke="#E4002B" strokeWidth="0.8" opacity="0.4" />
+                  <line x1="8" y1="8" x2="6" y2="5" stroke="#E4002B" strokeWidth="0.8" opacity="0.3" />
+                  <line x1="24" y1="8" x2="26" y2="5" stroke="#E4002B" strokeWidth="0.8" opacity="0.3" />
+                </svg>
+              ),
             },
             {
-              icon: Trophy,
               title: "Season Rewards",
               desc: "Hold top-performing team tokens. Season-end ranking distributes the reward pool: 30% to #1.",
               accent: "#FDB913",
+              accentRgb: "253, 185, 19",
+              svg: (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Trophy cup */}
+                  <path d="M10 8h12v8c0 4-2.5 6-6 7-3.5-1-6-3-6-7V8z" stroke="#FDB913" strokeWidth="1.3" fill="#FDB913" fillOpacity="0.15" />
+                  {/* Trophy handles */}
+                  <path d="M10 10C8 10 6 11 6 13s2 3 4 3" stroke="#FDB913" strokeWidth="1.2" fill="none" />
+                  <path d="M22 10c2 0 4 1 4 3s-2 3-4 3" stroke="#FDB913" strokeWidth="1.2" fill="none" />
+                  {/* Base */}
+                  <rect x="13" y="23" width="6" height="2" rx="0.5" fill="#FDB913" fillOpacity="0.4" />
+                  <rect x="11" y="25" width="10" height="2" rx="0.5" fill="#FDB913" fillOpacity="0.3" />
+                  {/* Crown / sparkle at top */}
+                  <path d="M16 4l1 2.5L19 6l-1.5 1.5L18 10h-4l.5-2.5L13 6l2-.5L16 4z" fill="#FDB913" fillOpacity="0.5" />
+                  {/* Sparkle */}
+                  <circle cx="22" cy="6" r="0.8" fill="#FDB913">
+                    <animate attributeName="opacity" values="0.3;1;0.3" dur="1.8s" repeatCount="indefinite" />
+                  </circle>
+                  <circle cx="9" cy="7" r="0.6" fill="#FDB913">
+                    <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+              ),
             },
             {
               title: "Fan Wars",
               desc: "Lock tokens before matches. Winning team's lockers get boosted returns from the losing side.",
               accent: "#6A0DAD",
-              iconText: "⚔️",
+              accentRgb: "106, 13, 173",
+              svg: (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Left shield */}
+                  <path d="M5 8l6-3v14c0 3-2.5 5-6 6V8z" stroke="#6A0DAD" strokeWidth="1.2" fill="#6A0DAD" fillOpacity="0.15" />
+                  <line x1="8" y1="10" x2="8" y2="18" stroke="#6A0DAD" strokeWidth="0.8" opacity="0.4" />
+                  {/* Right shield */}
+                  <path d="M27 8l-6-3v14c0 3 2.5 5 6 6V8z" stroke="#6A0DAD" strokeWidth="1.2" fill="#6A0DAD" fillOpacity="0.15" />
+                  <line x1="24" y1="10" x2="24" y2="18" stroke="#6A0DAD" strokeWidth="0.8" opacity="0.4" />
+                  {/* Crossed swords */}
+                  <line x1="12" y1="6" x2="22" y2="26" stroke="#6A0DAD" strokeWidth="1.5" opacity="0.7" />
+                  <line x1="20" y1="6" x2="10" y2="26" stroke="#6A0DAD" strokeWidth="1.5" opacity="0.7" />
+                  {/* Sword handles */}
+                  <rect x="11" y="3" width="2" height="4" rx="0.5" fill="#6A0DAD" fillOpacity="0.5" />
+                  <rect x="19" y="3" width="2" height="4" rx="0.5" fill="#6A0DAD" fillOpacity="0.5" />
+                  {/* Center clash spark */}
+                  <circle cx="16" cy="16" r="2" fill="#6A0DAD" fillOpacity="0.3">
+                    <animate attributeName="r" values="1.5;3;1.5" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.5;0.15;0.5" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                </svg>
+              ),
             },
             {
               title: "Predict & Earn",
               desc: "Answer match questions live. Score accuracy points. Top predictors split the prize pool 10/30/60.",
               accent: "#58A6FF",
-              iconText: "🎯",
+              accentRgb: "88, 166, 255",
+              svg: (
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* Target rings */}
+                  <circle cx="16" cy="16" r="12" stroke="#58A6FF" strokeWidth="1" opacity="0.2" />
+                  <circle cx="16" cy="16" r="8" stroke="#58A6FF" strokeWidth="1" opacity="0.35" />
+                  <circle cx="16" cy="16" r="4" stroke="#58A6FF" strokeWidth="1.2" fill="#58A6FF" fillOpacity="0.15" />
+                  {/* Bullseye */}
+                  <circle cx="16" cy="16" r="1.5" fill="#58A6FF" />
+                  {/* Arrow */}
+                  <line x1="24" y1="8" x2="17" y2="15" stroke="#58A6FF" strokeWidth="1.5" />
+                  <path d="M24 8l-3 0.5 0.5-3z" fill="#58A6FF" opacity="0.8" />
+                  {/* Arrow fletching */}
+                  <line x1="25" y1="7" x2="27" y2="5" stroke="#58A6FF" strokeWidth="0.8" opacity="0.5" />
+                  <line x1="25" y1="7" x2="27" y2="7" stroke="#58A6FF" strokeWidth="0.8" opacity="0.5" />
+                </svg>
+              ),
             },
-          ] as { icon?: React.ElementType; title: string; desc: string; accent: string; iconText?: string }[]).map(({ icon: FeatureIcon, title, desc, accent, iconText }, idx) => (
+          ] as { title: string; desc: string; accent: string; accentRgb: string; svg: React.ReactNode }[]).map(({ title, desc, accent, accentRgb, svg }) => (
             <motion.div
               key={title}
-              initial={prefersReduced ? { opacity: 1 } : { opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={prefersReduced ? instantTransition : { duration: 0.4, delay: idx * 0.08 }}
-              className="group relative rounded-xl border border-[#21262D] bg-[#161B22] p-6 transition-all duration-300 hover:border-[#21262D]/80 hover:bg-[#161B22]/80"
-              style={{
-                boxShadow: 'none',
+              variants={{
+                hidden: prefersReduced ? { opacity: 1 } : { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: prefersReduced ? instantTransition : { duration: 0.4 },
+                },
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 40px ${accent}10, 0 0 80px ${accent}05`;
-                (e.currentTarget as HTMLElement).style.borderColor = `${accent}30`;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-                (e.currentTarget as HTMLElement).style.borderColor = '#21262D';
-              }}
+              whileHover={prefersReduced ? undefined : { y: -4, transition: { duration: 0.2 } }}
             >
-              <div
-                className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg text-lg"
-                style={{ backgroundColor: `${accent}15`, color: accent }}
+              <CardSpotlight
+                color={accentRgb}
+                radius={250}
+                opacity={0.1}
+                className="h-full rounded-xl border border-[#21262D] bg-[#161B22] p-6 transition-colors duration-300 hover:border-opacity-50"
               >
-                {FeatureIcon ? <FeatureIcon className="h-5 w-5" /> : <span>{iconText}</span>}
-              </div>
-              <h3 className="text-sm font-bold text-[#E6EDF3] mb-1.5">{title}</h3>
-              <p className="text-xs leading-relaxed text-[#9CA3AF]">{desc}</p>
+                <div
+                  className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: `${accent}15` }}
+                >
+                  {svg}
+                </div>
+                <h3 className="text-sm font-bold text-[#E6EDF3] mb-1.5">{title}</h3>
+                <p className="text-xs leading-relaxed text-[#9CA3AF]">{desc}</p>
+              </CardSpotlight>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* Built on WireFluid */}
@@ -777,7 +908,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
             {[
               { label: "Blockchain", value: "WireFluid", sub: "Chain ID 92533" },
-              { label: "Smart Contracts", value: "6 Deployed", sub: "Solidity 0.8.24" },
+              { label: "Smart Contracts", value: "7 Deployed", sub: "Solidity 0.8.24" },
               { label: "Oracle", value: "CricAPI", sub: "Live PSL Data" },
               { label: "AI Engine", value: "LangChain", sub: "RAG Pipeline" },
             ].map(({ label, value, sub }, idx) => (
